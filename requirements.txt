@@ -1,0 +1,73 @@
+aioftp @ file:///home/conda/feedstock_root/build_artifacts/aioftp_1597983627979/work
+aiohttp==3.6.2
+appdirs==1.4.3
+astropy==4.0.1.post1
+async-timeout==3.0.1
+attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1599308529326/work
+beautifulsoup4 @ file:///home/conda/feedstock_root/build_artifacts/beautifulsoup4_1601138718136/work
+brotlipy==0.7.0
+cached-property==1.5.1
+cassinipy-richardhaythorn @ file:///C:/Users/richa/OneDrive%20-%20University%20College%20London/PyCharm%20Projects/cassinipy
+certifi==2020.6.20
+cffi @ file:///D:/bld/cffi_1600276628150/work
+chardet @ file:///D:/bld/chardet_1600358690877/work
+cloudpickle @ file:///home/conda/feedstock_root/build_artifacts/cloudpickle_1598400192773/work
+contextlib2==0.6.0.post1
+cryptography @ file:///D:/bld/cryptography_1600960404355/work
+cycler==0.10.0
+cytoolz==0.11.0
+dask @ file:///home/conda/feedstock_root/build_artifacts/dask-core_1601097215442/work
+decorator==4.4.2
+defusedxml==0.6.0
+drms==0.5.7
+Glymur==0.9.1
+h5py @ file:///D:/bld/h5py_1595110386688/work
+HelioPy @ file:///home/conda/feedstock_root/build_artifacts/heliopy_1601490466809/work
+idna @ file:///home/conda/feedstock_root/build_artifacts/idna_1593328102638/work
+imagecodecs @ file:///D:/bld/imagecodecs_1593295673180/work
+imageio @ file:///home/conda/feedstock_root/build_artifacts/imageio_1594044661732/work
+isodate==0.6.0
+kiwisolver==1.2.0
+lxml @ file:///D:/bld/lxml_1594322910610/work
+matplotlib @ file:///D:/bld/matplotlib-base_1600159364636/work
+mkl-service==2.3.0
+multidict @ file:///D:/bld/multidict_1588134888164/work
+networkx @ file:///home/conda/feedstock_root/build_artifacts/networkx_1598210780226/work
+numpy @ file:///D:/bld/numpy_1595523081734/work
+olefile==0.46
+pandas @ file:///D:/bld/pandas_1599601180493/work
+parfive @ file:///home/conda/feedstock_root/build_artifacts/parfive_1597664582702/work
+patsy==0.5.1
+Pillow @ file:///D:/bld/pillow_1594213067156/work
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
+pyOpenSSL==19.1.0
+pyparsing==2.4.7
+PyQt5==5.12.3
+PyQt5-sip==4.19.18
+PyQtWebEngine==5.12.1
+pyreadline==2.1
+PySocks==1.7.1
+python-dateutil==2.8.1
+pytz==2020.1
+PyWavelets @ file:///D:/bld/pywavelets_1599487624734/work
+PyYAML==5.3.1
+requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1592425495151/work
+requests-toolbelt==0.9.1
+scikit-image==0.17.2
+scipy @ file:///C:/ci/scipy_1592916963468/work
+seaborn @ file:///home/conda/feedstock_root/build_artifacts/seaborn-base_1599592695803/work
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
+soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1597680516047/work
+spiceypy==3.1.1
+SQLAlchemy @ file:///D:/bld/sqlalchemy_1597702122451/work
+statsmodels @ file:///D:/bld/statsmodels_1598551276148/work
+sunpy @ file:///D:/bld/sunpy_1601373105330/work
+tifffile @ file:///home/conda/feedstock_root/build_artifacts/tifffile_1601436230205/work
+toolz @ file:///home/conda/feedstock_root/build_artifacts/toolz_1600973991856/work
+tornado==6.0.4
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1601259122622/work
+urllib3 @ file:///home/conda/feedstock_root/build_artifacts/urllib3_1595434816409/work
+win-inet-pton==1.1.0
+wincertstore==0.2
+yarl==1.3.0
+zeep==3.4.0
