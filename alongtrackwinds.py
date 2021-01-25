@@ -92,14 +92,16 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
     lowerenergyslice = CAPS_energyslice("ibs", 4, 4)[0]
+    upperenergyslice = CAPS_energyslice("ibs", 20, 20)[0]
     spacecraftpotential = 0
 
     massarray = energy2mass(ibscalib['ibsearray'], cassini_speed, 0, spacecraftpotential)
 
-    dataslice = ibsdata['ibsdata'][lowerenergyslice:, 1, slicenumber]
+    dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
+    print(len(dataslice))
     negated_dataslice = 1 - dataslice
     tempconversionfactor = (2 * e) / (AMU * ((cassini_speed) ** 2))
-    datasliceaverage = np.mean(dataslice)
+    datasliceaverage = 0.5*np.mean(dataslice)
     print("datasliceaverage",datasliceaverage)
     # TO DO tidy this
 
@@ -107,7 +109,13 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     residualslist=[]
     for i in np.arange(1,4,1):
         peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=int(i),height=datasliceaverage)
-        masspeaks = massarray[lowerenergyslice:][peaks]
+        startwidth = 8
+        stopwidth = 0
+        variablewidth = np.arange(startwidth,stopwidth,-(startwidth-stopwidth)/len(dataslice))
+        print(len(negated_dataslice),len(variablewidth))
+        peaks_minima, properties_minima = scipy.signal.find_peaks(negated_dataslice, prominence=5 * np.sqrt(dataslice),width=variablewidth,distance=5)
+        print("test minima widths",variablewidth[peaks_minima])
+        masspeaks = massarray[lowerenergyslice:upperenergyslice][peaks]
         if len(masspeaks) < 6:
             continue
         massdifflist = masspeaks[:6] - masses
@@ -120,7 +128,7 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     print("Peak width",correctpeakwidth)
 
     peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=correctpeakwidth,height=datasliceaverage)
-    masspeaks = massarray[lowerenergyslice:][peaks]
+    masspeaks = massarray[lowerenergyslice:upperenergyslice][peaks]
     massdifflist = masspeaks[:6] - masses
     uncorrectedmasspeaks = masspeaks[:6]
     SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
@@ -143,8 +151,8 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     corrected_massarray = energy2mass(ibscalib['ibsearray'], cassini_speed, ionwindspeed, spacecraftpotential)
 
     # Correct for SCP
-    wind_correctedmasspeaks = corrected_massarray[lowerenergyslice:][peaks][:6]
-    scp_massdifflist = corrected_massarray[lowerenergyslice:][peaks][:6] - masses
+    wind_correctedmasspeaks = corrected_massarray[lowerenergyslice:upperenergyslice][peaks][:6]
+    scp_massdifflist = corrected_massarray[lowerenergyslice:upperenergyslice][peaks][:6] - masses
     average_scp_massdiff = np.mean(scp_massdifflist)
     scp_test = -average_scp_massdiff / tempconversionfactor
     #print("average scp mass diff", average_scp_massdiff)
@@ -155,13 +163,14 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     correctedmasspeaks = scp_corrected_massarray[lowerenergyslice:][peaks][:6]
 
     # Plotting
-    ax3.plot(massarray[lowerenergyslice:], dataslice,
+    ax3.plot(massarray[lowerenergyslice:upperenergyslice], dataslice,
              label="Pre-correction " + str(tempdatetime), color='C0')
-    ax3.scatter(massarray[lowerenergyslice:][peaks], dataslice[peaks], marker='x', color='C0')
+    ax3.scatter(massarray[lowerenergyslice:upperenergyslice][peaks], dataslice[peaks], marker='x', color='C0')
+    ax3.scatter(massarray[lowerenergyslice:upperenergyslice][peaks_minima], dataslice[peaks_minima], marker='o', color='C0')
 
-    ax3.plot(scp_corrected_massarray[lowerenergyslice:], dataslice, label="Post-correction " + str(tempdatetime),
+    ax3.plot(scp_corrected_massarray[lowerenergyslice:upperenergyslice], dataslice, label="Post-correction " + str(tempdatetime),
              color='C1')
-    ax3.scatter(scp_corrected_massarray[lowerenergyslice:][peaks], dataslice[peaks], color='C1', marker='x')
+    ax3.scatter(scp_corrected_massarray[lowerenergyslice:upperenergyslice][peaks], dataslice[peaks], color='C1', marker='x')
     ax3.hlines(datasliceaverage,1,100,color='k')
     ax3.set_xscale("log")
     ax3.set_yscale("log")
