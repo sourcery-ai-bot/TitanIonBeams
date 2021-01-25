@@ -101,33 +101,30 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     tempconversionfactor = (2 * e) / (AMU * ((cassini_speed) ** 2))
 
     # TO DO tidy this
-    peaks, properties = scipy.signal.find_peaks(dataslice, prominence=3 * np.sqrt(dataslice), width=2)
-    peaks_minima, properties_minima = scipy.signal.find_peaks(negated_dataslice, prominence=3 * np.sqrt(dataslice))
-    minima = scipy.signal.argrelmin(dataslice, order=2)[0]
-    masspeaks = massarray[lowerenergyslice:][peaks]
-    print("mass peaks", masspeaks)
-    massdifflist = []
-    masses = [28, 39, 52, 66, 78, 91]
-    uncorrectedmasspeaks = []
+    residuals=1
+    peakwidth = 0
+    while abs(residuals) > 0.2:
+        peakwidth +=1
+        peaks, properties = scipy.signal.find_peaks(dataslice, prominence=10 * np.sqrt(dataslice), distance=5, width=peakwidth)
+        peaks_minima, properties_minima = scipy.signal.find_peaks(negated_dataslice, prominence=5 * np.sqrt(dataslice))
+        masspeaks = massarray[lowerenergyslice:][peaks]
+        print("mass peaks", masspeaks)
 
-    massdifflist = masspeaks[:6] -  masses
-    print(massdifflist)
-    # for i in masses:
-    #     diff = masspeaks - i
-    #     mindiff_index = np.argmin(abs(diff))  # finds smallest difference
-    #     massdifflist.append(diff[mindiff_index])
-    #     uncorrectedmasspeaks.append(masspeaks[mindiff_index])
-    #     print(i, "min diff", diff[mindiff_index])
+        masses = [28, 39, 52, 66, 78, 91]
+        massdifflist = masspeaks[:6] -  masses
+        uncorrectedmasspeaks = masspeaks[:6]
+        print(massdifflist)
 
-    SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
-    print("SC offset due to wind", SCoffset)
-    print("SC offset due to wind - conversionfactor", massdifflist / tempconversionfactor)
-    # print(ibsdata['ibsdata'].shape)
+        SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
+        #print("SC offset due to wind", SCoffset)
+        #print("SC offset due to wind - conversionfactor", massdifflist / tempconversionfactor)
+        z = np.polyfit(x=np.array(masses), y=SCoffset, deg=1)
+        residuals = z[1]
+        print(ibsdata['flyby'], " Residuals %.3f" % residuals)
 
-    z = np.polyfit(x=np.array(masses), y=SCoffset, deg=1)
+    print("Peak width",peakwidth)
     ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
     print(ibsdata['flyby'], " Ion wind velocity %.1f" % ionwindspeed, "m/s")
-    print(ibsdata['flyby'], " Residuals %.3f" % z[1])
     p = np.poly1d(z)
 
     ax.scatter(masses, SCoffset)
@@ -135,45 +132,23 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax.set_xlabel("Mass (amu/q)")
     ax.set_ylabel("Energy offset (E/q)")
     ax.hlines(0,0,100,color='k')
+    ax.legend()
     # print("conversion factor", tempconversionfactor)
     # peaks, properties = scipy.signal.find_peaks(counts)
 
-    postcorrection_conversionfactor = (2 * e) / (AMU * ((cassini_speed + ionwindspeed) ** 2))
     corrected_massarray = energy2mass(ibscalib['ibsearray'], cassini_speed, ionwindspeed, spacecraftpotential)
-    print("new mass peaks", corrected_massarray[lowerenergyslice:][peaks])
-    # postcorrection_masspeaks = ibscalib['ibsearray'][lowerenergyslice:][peaks]
 
     # Correct for SCP
     wind_correctedmasspeaks = corrected_massarray[lowerenergyslice:][peaks][:6]
     scp_massdifflist = corrected_massarray[lowerenergyslice:][peaks][:6] - masses
-
-
-    # scp_massdifflist = []
-    # wind_correctedmasspeaks = []
-    print(massdifflist)
-    # for i in masses:
-    #     newdiff = corrected_massarray[lowerenergyslice:][peaks] - i
-    #     newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
-    #     scp_massdifflist.append(newdiff[newmindiff_index])
-    #     wind_correctedmasspeaks.append(corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
-    #     print(i, "new min diff", newdiff[newmindiff_index])
     average_scp_massdiff = np.mean(scp_massdifflist)
     scp_test = -average_scp_massdiff / tempconversionfactor
-    print("average scp mass diff", average_scp_massdiff)
-    print("Test SCP", -average_scp_massdiff / tempconversionfactor)
+    #print("average scp mass diff", average_scp_massdiff)
+    #print("Test SCP", -average_scp_massdiff / tempconversionfactor)
 
     scp_corrected_massarray = energy2mass(ibscalib['ibsearray'], cassini_speed, ionwindspeed,
                                           -average_scp_massdiff / tempconversionfactor)
-    print("new new mass peaks", scp_corrected_massarray[lowerenergyslice:][peaks])
-    # postcorrection_masspeaks = ibscalib['ibsearray'][lowerenergyslice:][peaks]
-
-    correctedmasspeaks = scp_corrected_massarray[lowerenergyslice:][peaks][:6] - masses
-
-    #correctedmasspeaks = []
-    # for i in masses:
-    #     newdiff = scp_corrected_massarray[lowerenergyslice:][peaks] - i
-    #     newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
-    #     correctedmasspeaks.append(scp_corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
+    correctedmasspeaks = scp_corrected_massarray[lowerenergyslice:][peaks][:6]
 
     # Plotting
     ax3.plot(massarray[lowerenergyslice:], dataslice,
@@ -189,6 +164,7 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax3.set_ylim(3e3, 1e6)
     ax3.set_xlabel("Mass (amu/q)")
     ax3.set_ylabel("Counts")
+    ax3.legend()
 
     for counter, (i, j) in enumerate(zip([uncorrectedmasspeaks, wind_correctedmasspeaks, correctedmasspeaks],
                     ["no correction", "wind corrected", "wind + scp corrected"])):
@@ -203,40 +179,45 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax4.set_ylabel("Found Masses (amu/q)")
     ax4.legend()
 
-    return ionwindspeed
+    return ionwindspeed, z[1]
 
 
 fig, ax = plt.subplots()
 fig3, ax3 = plt.subplots()
 fig4, ax4 = plt.subplots()
 
-# windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-# windsdf['Bulk Time'] = pd.to_datetime(windsdf['Bulk Time'])
+windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+windsdf['Bulk Time'] = pd.to_datetime(windsdf['Bulk Time'])
 
-# usedflybys = ['t17']
+# usedflybys = ['t16']
 # for flyby in usedflybys:
-#     els_ionwindspeeds, ibs_ionwindspeeds = [], []
+#     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals = [], [], []
 #     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 #     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
 #     generate_mass_bins(elsdata, flyby, "els")
 #     ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 #     generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 #     for i in tempdf['Bulk Time']:
-#         ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata,i)
+#         ibs_ionwindspeed, ibs_residual  = ibs_alongtrack_velocity(ibsdata,i)
 #         print(i,ibs_ionwindspeed)
 #         ibs_ionwindspeeds.append(ibs_ionwindspeed)
+#         ibs_residuals.append(ibs_residual)
+#
+# testoutputdf = pd.DataFrame()
+# testoutputdf['Bulk Time'] = tempdf['Bulk Time']
+# testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
+# testoutputdf['IBS residuals'] = ibs_residuals
+# testoutputdf.to_csv("testalongtrackvelocity.csv")
 
-flyby = 't17'
+flyby = 't16'
 elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
 generate_mass_bins(elsdata, flyby, "els")
 ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-windsdf['Bulk Time'] = pd.to_datetime(windsdf['Bulk Time'])
 tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 #print(tempdf['Bulk Time'])
-ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[3])
+ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[0])
 
-ax.legend()
-ax3.legend()
+
+
 plt.show()
