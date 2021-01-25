@@ -99,24 +99,27 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     dataslice = ibsdata['ibsdata'][lowerenergyslice:, 1, slicenumber]
     negated_dataslice = 1 - dataslice
     tempconversionfactor = (2 * e) / (AMU * ((cassini_speed) ** 2))
-
+    datasliceaverage = np.mean(dataslice)
+    print("datasliceaverage",datasliceaverage)
     # TO DO tidy this
 
     masses = [28, 39, 52, 66, 78, 91]
     residualslist=[]
-    for i in np.arange(1,5,1):
-        peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=int(i))
+    for i in np.arange(1,4,1):
+        peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=int(i),height=datasliceaverage)
         masspeaks = massarray[lowerenergyslice:][peaks]
+        if len(masspeaks) < 6:
+            continue
         massdifflist = masspeaks[:6] - masses
         SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
         z = np.polyfit(x=np.array(masses), y=SCoffset, deg=1)
         residualslist.append(z[1])
 
     print("Residuals list", residualslist)
-    correctpeakwidth = np.argmin(abs(np.array(residualslist)))
+    correctpeakwidth = np.argmin(abs(np.array(residualslist)))+1
     print("Peak width",correctpeakwidth)
 
-    peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=correctpeakwidth)
+    peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=correctpeakwidth,height=datasliceaverage)
     masspeaks = massarray[lowerenergyslice:][peaks]
     massdifflist = masspeaks[:6] - masses
     uncorrectedmasspeaks = masspeaks[:6]
@@ -159,6 +162,7 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax3.plot(scp_corrected_massarray[lowerenergyslice:], dataslice, label="Post-correction " + str(tempdatetime),
              color='C1')
     ax3.scatter(scp_corrected_massarray[lowerenergyslice:][peaks], dataslice[peaks], color='C1', marker='x')
+    ax3.hlines(datasliceaverage,1,100,color='k')
     ax3.set_xscale("log")
     ax3.set_yscale("log")
     ax3.set_xlim(10, 170)
@@ -180,7 +184,7 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax4.set_ylabel("Found Masses (amu/q)")
     ax4.legend()
 
-    return ionwindspeed, z[1]
+    return ionwindspeed, z[1], scp_test
 
 
 fig, ax = plt.subplots()
@@ -189,25 +193,27 @@ fig4, ax4 = plt.subplots()
 
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Bulk Time'] = pd.to_datetime(windsdf['Bulk Time'])
-
+#
 # usedflybys = ['t16']
 # for flyby in usedflybys:
-#     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals = [], [], []
+#     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
 #     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 #     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
 #     generate_mass_bins(elsdata, flyby, "els")
 #     ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 #     generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 #     for i in tempdf['Bulk Time']:
-#         ibs_ionwindspeed, ibs_residual  = ibs_alongtrack_velocity(ibsdata,i)
+#         ibs_ionwindspeed, ibs_residual, ibs_scp  = ibs_alongtrack_velocity(ibsdata,i)
 #         print(i,ibs_ionwindspeed)
 #         ibs_ionwindspeeds.append(ibs_ionwindspeed)
 #         ibs_residuals.append(ibs_residual)
+#         ibs_scps.append(ibs_scp)
 #
 # testoutputdf = pd.DataFrame()
 # testoutputdf['Bulk Time'] = tempdf['Bulk Time']
 # testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
 # testoutputdf['IBS residuals'] = ibs_residuals
+# testoutputdf['IBS spacecraft potentials'] = ibs_scps
 # testoutputdf.to_csv("testalongtrackvelocity.csv")
 
 flyby = 't16'
@@ -216,8 +222,10 @@ generate_mass_bins(elsdata, flyby, "els")
 ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-#print(tempdf['Bulk Time'])
-ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[3])
+
+slicenumber = 4
+print(tempdf['Bulk Time'].iloc[slicenumber])
+ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[slicenumber])
 
 
 
