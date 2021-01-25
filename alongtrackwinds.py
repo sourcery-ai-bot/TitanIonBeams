@@ -101,29 +101,29 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     tempconversionfactor = (2 * e) / (AMU * ((cassini_speed) ** 2))
 
     # TO DO tidy this
-    residuals=1
-    peakwidth = 0
+
     masses = [28, 39, 52, 66, 78, 91]
-    while abs(residuals) > 0.2:
-        peakwidth +=1
-        peaks, properties = scipy.signal.find_peaks(dataslice, prominence=10 * np.sqrt(dataslice), distance=5, width=peakwidth)
-        peaks_minima, properties_minima = scipy.signal.find_peaks(negated_dataslice, prominence=5 * np.sqrt(dataslice))
+    residualslist=[]
+    for i in np.arange(1,5,1):
+        peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=int(i))
         masspeaks = massarray[lowerenergyslice:][peaks]
-
-        massdifflist = masspeaks[:6] -  masses
-        uncorrectedmasspeaks = masspeaks[:6]
-        print("mass peaks", uncorrectedmasspeaks)
-        print(massdifflist)
-
+        massdifflist = masspeaks[:6] - masses
         SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
-        #print("SC offset due to wind", SCoffset)
-        #print("SC offset due to wind - conversionfactor", massdifflist / tempconversionfactor)
         z = np.polyfit(x=np.array(masses), y=SCoffset, deg=1)
-        residuals = z[1]
-        print(ibsdata['flyby'], " Peak width %.3f" % peakwidth)
-        print(ibsdata['flyby'], " Residuals %.3f" % residuals)
+        residualslist.append(z[1])
 
-    print("Peak width",peakwidth)
+    print("Residuals list", residualslist)
+    correctpeakwidth = np.argmin(abs(np.array(residualslist)))
+    print("Peak width",correctpeakwidth)
+
+    peaks, properties = scipy.signal.find_peaks(dataslice, prominence=5 * np.sqrt(dataslice), distance=5, width=correctpeakwidth)
+    masspeaks = massarray[lowerenergyslice:][peaks]
+    massdifflist = masspeaks[:6] - masses
+    uncorrectedmasspeaks = masspeaks[:6]
+    SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
+    z = np.polyfit(x=np.array(masses), y=SCoffset, deg=1)
+    print(ibsdata['flyby'], " Residuals %.3f" % z[1])
+
     ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
     print(ibsdata['flyby'], " Ion wind velocity %.1f" % ionwindspeed, "m/s")
     p = np.poly1d(z)
@@ -155,7 +155,7 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax3.plot(massarray[lowerenergyslice:], dataslice,
              label="Pre-correction " + str(tempdatetime), color='C0')
     ax3.scatter(massarray[lowerenergyslice:][peaks], dataslice[peaks], marker='x', color='C0')
-    ax3.scatter(massarray[lowerenergyslice:][peaks_minima], dataslice[peaks_minima], color='C0')
+
     ax3.plot(scp_corrected_massarray[lowerenergyslice:], dataslice, label="Post-correction " + str(tempdatetime),
              color='C1')
     ax3.scatter(scp_corrected_massarray[lowerenergyslice:][peaks], dataslice[peaks], color='C1', marker='x')
@@ -217,7 +217,7 @@ ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 #print(tempdf['Bulk Time'])
-ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[0])
+ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[3])
 
 
 
