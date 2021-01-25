@@ -109,12 +109,16 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     massdifflist = []
     masses = [28, 39, 52, 66, 78, 91]
     uncorrectedmasspeaks = []
-    for i in masses:
-        diff = masspeaks - i
-        mindiff_index = np.argmin(abs(diff))  # finds smallest difference
-        massdifflist.append(diff[mindiff_index])
-        uncorrectedmasspeaks.append(masspeaks[mindiff_index])
-        print(i, "min diff", diff[mindiff_index])
+
+    massdifflist = masspeaks[:6] -  masses
+    print(massdifflist)
+    # for i in masses:
+    #     diff = masspeaks - i
+    #     mindiff_index = np.argmin(abs(diff))  # finds smallest difference
+    #     massdifflist.append(diff[mindiff_index])
+    #     uncorrectedmasspeaks.append(masspeaks[mindiff_index])
+    #     print(i, "min diff", diff[mindiff_index])
+
     SCoffset = mass2energy(np.array(massdifflist), cassini_speed, 0, spacecraftpotential)
     print("SC offset due to wind", SCoffset)
     print("SC offset due to wind - conversionfactor", massdifflist / tempconversionfactor)
@@ -128,6 +132,9 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
 
     ax.scatter(masses, SCoffset)
     ax.plot(masses, p(masses), linestyle='dashed', label=tempdatetime)
+    ax.set_xlabel("Mass (amu/q)")
+    ax.set_ylabel("Energy offset (E/q)")
+    ax.hlines(0,0,100,color='k')
     # print("conversion factor", tempconversionfactor)
     # peaks, properties = scipy.signal.find_peaks(counts)
 
@@ -137,15 +144,21 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     # postcorrection_masspeaks = ibscalib['ibsearray'][lowerenergyslice:][peaks]
 
     # Correct for SCP
-    scp_massdifflist = []
-    wind_correctedmasspeaks = []
-    for i in masses:
-        newdiff = corrected_massarray[lowerenergyslice:][peaks] - i
-        newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
-        scp_massdifflist.append(newdiff[newmindiff_index])
-        wind_correctedmasspeaks.append(corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
-        print(i, "new min diff", newdiff[newmindiff_index])
+    wind_correctedmasspeaks = corrected_massarray[lowerenergyslice:][peaks][:6]
+    scp_massdifflist = corrected_massarray[lowerenergyslice:][peaks][:6] - masses
+
+
+    # scp_massdifflist = []
+    # wind_correctedmasspeaks = []
+    print(massdifflist)
+    # for i in masses:
+    #     newdiff = corrected_massarray[lowerenergyslice:][peaks] - i
+    #     newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
+    #     scp_massdifflist.append(newdiff[newmindiff_index])
+    #     wind_correctedmasspeaks.append(corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
+    #     print(i, "new min diff", newdiff[newmindiff_index])
     average_scp_massdiff = np.mean(scp_massdifflist)
+    scp_test = -average_scp_massdiff / tempconversionfactor
     print("average scp mass diff", average_scp_massdiff)
     print("Test SCP", -average_scp_massdiff / tempconversionfactor)
 
@@ -153,11 +166,14 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
                                           -average_scp_massdiff / tempconversionfactor)
     print("new new mass peaks", scp_corrected_massarray[lowerenergyslice:][peaks])
     # postcorrection_masspeaks = ibscalib['ibsearray'][lowerenergyslice:][peaks]
-    correctedmasspeaks = []
-    for i in masses:
-        newdiff = scp_corrected_massarray[lowerenergyslice:][peaks] - i
-        newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
-        correctedmasspeaks.append(scp_corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
+
+    correctedmasspeaks = scp_corrected_massarray[lowerenergyslice:][peaks][:6] - masses
+
+    #correctedmasspeaks = []
+    # for i in masses:
+    #     newdiff = scp_corrected_massarray[lowerenergyslice:][peaks] - i
+    #     newmindiff_index = np.argmin(abs(newdiff))  # finds smallest difference
+    #     correctedmasspeaks.append(scp_corrected_massarray[lowerenergyslice:][peaks][newmindiff_index])
 
     # Plotting
     ax3.plot(massarray[lowerenergyslice:], dataslice,
@@ -171,6 +187,8 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
     ax3.set_yscale("log")
     ax3.set_xlim(10, 170)
     ax3.set_ylim(3e3, 1e6)
+    ax3.set_xlabel("Mass (amu/q)")
+    ax3.set_ylabel("Counts")
 
     for counter, (i, j) in enumerate(zip([uncorrectedmasspeaks, wind_correctedmasspeaks, correctedmasspeaks],
                     ["no correction", "wind corrected", "wind + scp corrected"])):
@@ -179,8 +197,10 @@ def ibs_alongtrack_velocity(ibsdata, tempdatetime):
         ax4.scatter(masses,i,label=j + ", Grad = %.2f, " % p.c[0] + "Residuals = %.2f" % z[1],color='C'+str(counter))
         ax4.plot(range(100), p(range(100)), color='C' + str(counter))
     ax4.plot(range(100), range(100), color='k')
-    ax4.set_xlabel("Expected Masses")
-    ax4.set_ylabel("Found Masses")
+    ax4.text(50,99,"IBS derived s/c potential = %.1f" % scp_test)
+    ax4.text(50,95, "IBS derived alongtrack wind = %.1f" % ionwindspeed)
+    ax4.set_xlabel("Expected Masses (amu/q)")
+    ax4.set_ylabel("Found Masses (amu/q)")
     ax4.legend()
 
     return ionwindspeed
@@ -214,8 +234,8 @@ generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Bulk Time'] = pd.to_datetime(windsdf['Bulk Time'])
 tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-print(tempdf['Bulk Time'])
-ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[2])
+#print(tempdf['Bulk Time'])
+ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Bulk Time'].iloc[3])
 
 ax.legend()
 ax3.legend()
