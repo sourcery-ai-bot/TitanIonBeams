@@ -201,7 +201,7 @@ data_times_pairs = [
     ["t16", [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 45)], 20, 15, 30],
     ["t17", [datetime.datetime(2006, 9, 7, 20, 13, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)], 20, 15, 30],
     ["t20", [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)], 20, 15, 40],
-    ["t21", [datetime.datetime(2006, 12, 12, 11, 39, 45), datetime.datetime(2006, 12, 12, 11, 43, 20)], 20, 15, 30],
+    ["t21", [datetime.datetime(2006, 12, 12, 11, 40, 30), datetime.datetime(2006, 12, 12, 11, 43, 20)], 20, 15, 30],
     ["t25", [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)], 20, 15, 30],
     ["t26", [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)], 20, 15, 30],
     ["t27", [datetime.datetime(2007, 3, 26, 0, 21, 30), datetime.datetime(2007, 3, 26, 0, 26)], 20, 15, 30],
