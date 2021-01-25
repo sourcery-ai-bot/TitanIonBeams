@@ -281,58 +281,15 @@ fig5.legend()
 # print(tempdf['Positive Peak Time'].iloc[slicenumber])
 # ibs_ionwindspeed = ibs_alongtrack_velocity(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber])
 
-
-
 plt.show()
 
 Af = 0.33e-4
 MCPefficiency = 0.05
 
-
-def geometric_factor():
-    G = Af * (ELS_FWHM) * MCPefficiency
-    return G
-
-
-def anioncurrentapprox(counts, spacecraftvelocity):
-    n = counts / (spacecraftvelocity * Af * MCPefficiency)
-    return n
-
-
-def ELS_repsonsefunction_counts(E, E0, countrate):
-    '''
-    E and E0 are in eV
-    '''
-
-    value = countrate * np.exp(-0.5 * (((E - E0) / (ELS_FWHM / 2.355)) ** 2))
-    return value
-
-
-def drifting_maxwellian_countrates(E, E0_2, mass, n=5, kT=0.02):
-    mass_kg = mass * AMU
-    maxwellianvalue_term1 = (2 * n * (((E * e) ** 2) * geometric_factor()) / (np.sqrt(mass_kg)))
-    maxwellianvalue_term2 = ((1 / (2 * np.pi * kT * e)) ** (1.5))
-    maxwellianvalue_term3 = np.exp(-(E - E0_2) / kT)
-    # print(maxwellianvalue_term1,maxwellianvalue_term2,maxwellianvalue_term3)
-    maxwellianvalue = maxwellianvalue_term1 * maxwellianvalue_term2 * maxwellianvalue_term3
-    # print(maxwellianvalue)
-    return maxwellianvalue
-
-
-def convolve(arr, kernel):
-    """Simple convolution of two arrays."""
-    npts = min(arr.size, kernel.size)
-    pad = np.ones(npts)
-    tmp = np.concatenate((pad * arr[0], arr, pad * arr[-1]))
-    out = np.convolve(tmp, kernel, mode='valid')
-    noff = int((len(out) - npts) / 2)
-    return out[noff:noff + npts]
-
-
-def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, flowspeed, LPvalue, temperature):
+def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature):
     gaussmodels = []
     pars = Parameters()
-    pars.add('flowspeed', value=flowspeed, min=-400, max=250)
+    pars.add('windspeed', value=windspeed, min=-400, max=250)
     pars.add('scp', value=LPvalue, min=-2, max=0)
     pars.add('temp', value=temperature, min=70, max=170)
     pars.add('spacecraftvelocity', value=tempcassini_speed)
@@ -358,9 +315,9 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, flowspeed, L
         pars.update(gaussmodels[-1].make_params())
         # pars.add('mass',value=mass, min=mass-0.1, max=mass+0.1)
 
-        peakenergy = (0.5 * (pars[tempprefix] * pars['AMU']) * ((pars['spacecraftvelocity'] + pars['flowspeed']) ** 2) +
+        peakenergy = (0.5 * (pars[tempprefix] * pars['AMU']) * ((pars['spacecraftvelocity'] + pars['windspeed']) ** 2) +
                       pars['scp'] * pars['e'] + 8 * pars['k'] * pars['temp']) / pars['e']
-        temppeakflux = peakflux(mass, tempcassini_speed, pars['flowspeed'], pars['scp'], pars['temp'], charge=-1)
+        temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=-1)
         # print(peakenergy,temppeakflux)
 
         # pars.add(tempprefix + 'testcenter',expr='0.5*((mass*AMU)/e)*((spacecraftvelocity + flowspeed)**2) + scp*e + 8*k*temp')
@@ -377,10 +334,10 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, flowspeed, L
         # Need to set the parameters to be temp,
 
         # pars[tempprefix + 'center'].set(value=peakflux(mass,tempcassini_speed,pars['flowspeed'],pars['scp'],pars['temp'],charge=-1), min=temppeakflux-1, max=temppeakflux+1)
-        tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + flowspeed)**2) + scp*e + 8*k*temp)/e'
+        tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) + scp*e + 8*k*temp)/e'
 
         pars[tempprefix + 'center'].set(
-            value=peakflux(mass, tempcassini_speed, pars['flowspeed'], pars['scp'], pars['temp'], charge=-1),
+            value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=-1),
             expr=tempstring, min=temppeakflux - 1, max=temppeakflux + 1)
         # print(pars[tempprefix + 'center'])
         pars[tempprefix + 'sigma'].set(value=tempwidth, min=tempwidth / 2, max=tempwidth * 2)
@@ -401,16 +358,11 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, flowspeed, L
 
 
 def ELS_fluxfitting(elsdata, time, seconds, anode, lpvalue=-1.3):
-    countlimits = {'t55': [1e1, 5e5], 't56': [1e1, 5e5], 't57': [1e2, 5e5], 't58': [1e1, 5e5], 't59': [6e2, 3e5]}
-    deflimits = {'t55': [1e9, 1e13], 't56': [1e9, 1e13], 't57': [1e9, 1e13], 't58': [1e9, 1e13], 't59': [1e9, 1e13]}
-
     for counter, i in enumerate(elsdata['times_utc_strings']):
         if i >= time:
             slicenumber = counter
-            actualtime = i
             break
 
-    masspeaks = []
     temputc = str(titan_flybydates[elsdata['flyby']][0]) + '-' + str(titan_flybydates[elsdata['flyby']][1]) + '-' + str(
         titan_flybydates[elsdata['flyby']][2]) + 'T' + elsdata['times_utc_strings'][slicenumber]
     tempphase = cassini_phase(temputc)
