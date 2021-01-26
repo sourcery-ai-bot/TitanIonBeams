@@ -66,11 +66,11 @@ def mass2energy(massarray, spacecraftvelocity, ionvelocity, spacecraftpotential,
     return energyarray
 
 
-def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature):
+def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature,charge):
     gaussmodels = []
     pars = Parameters()
     pars.add('windspeed', value=windspeed, min=-400, max=400)
-    pars.add('scp', value=LPvalue, min=-2, max=2)
+    pars.add('scp', value=LPvalue, min=-2, max=0)
     pars.add('temp', value=temperature, min=130, max=170)
     pars.add('spacecraftvelocity', value=tempcassini_speed)
     pars['spacecraftvelocity'].vary = False
@@ -82,48 +82,23 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
     pars['AMU'].vary = False
     pars['k'].vary = False
 
-    # fitter = Minimizer()
-    # fitter.asteval.symtable['peakflux'] = peakflux
-
     for masscounter, mass in enumerate(masses):
         tempprefix = "mass" + str(mass) + '_'
         gaussmodels.append(GaussianModel(prefix=tempprefix))
-        # if masscounter == 0:
-        # pars = gaussmodels[-1].guess(yvalues, x=xvalues)
         pars.add(tempprefix, value=mass)
-        # pars[tempprefix].vary = False
-
         pars.update(gaussmodels[-1].make_params())
-        # pars.add('mass',value=mass, min=mass-0.1, max=mass+0.1)
 
-        peakenergy = (0.5 * (pars[tempprefix] * pars['AMU']) * ((pars['spacecraftvelocity'] + pars['windspeed']) ** 2) +
-                      pars['scp'] * pars['e'] + 8 * pars['k'] * pars['temp']) / pars['e']
-        temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=-1)
-        # print(peakenergy,temppeakflux)
-
-        # pars.add(tempprefix + 'testcenter',expr='0.5*((mass*AMU)/e)*((spacecraftvelocity + flowspeed)**2) + scp*e + 8*k*temp')
-        # peakenergy = 0.5*mass_kg*((spacecraftvelocity + flowspeed + charge*deflectionvelocity)**2) - charge*spacecraftpotential*e + 8*k*temperature
-        # peakenergy_eV = peakenergy/e
-
-        #         thermalvelocity = np.sqrt((2*k*temperature)/(mass*AMU))
-        #         print(thermalvelocity)
-        #         tempwidth = ((mass*AMU)*(thermalvelocity**2))/e
-        #         print(tempwidth)
+        temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
         tempwidth = temppeakflux * 0.167 / 2.355
-
-        # COnvolve with response function to increase width?
-        # Need to set the parameters to be temp,
-
-        # pars[tempprefix + 'center'].set(value=peakflux(mass,tempcassini_speed,pars['flowspeed'],pars['scp'],pars['temp'],charge=-1), min=temppeakflux-1, max=temppeakflux+1)
         tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) + scp*e + 8*k*temp)/e'
 
         pars[tempprefix].set(value=mass, min=mass - 1, max=mass + 1)
         pars[tempprefix + 'center'].set(
             value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=-1),
             expr=tempstring, min=temppeakflux - 1, max=temppeakflux + 1)
-        # print(pars[tempprefix + 'center'])
-        pars[tempprefix + 'sigma'].set(value=tempwidth, min=tempwidth / 4, max=1.5*tempwidth)
-        pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.1 * max(yvalues))
+
+        pars[tempprefix + 'sigma'].set(value=tempwidth, min=tempwidth / 4, max=1.2*tempwidth)
+        pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.2 * max(yvalues))
 
     for counter, model in enumerate(gaussmodels):
         if counter == 0:
@@ -155,7 +130,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 78, 91], 
     # plt.show()
 
     x = ibscalib['ibsearray']
-    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature)
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=1)
     comps = out.eval_components(x=x)
 
     stepplotfig, stepplotax = plt.subplots()
@@ -174,9 +149,9 @@ def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 78, 91], 
         "Histogram of " + ibsdata['flyby'].upper() + " IBS data from " + ibsdata['times_utc_strings'][slicenumber],
         fontsize=32)
     stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
-    stepplotax.text(0, 0, "Ion wind = %2.2f" % out.params['windspeed'], transform=stepplotax.transAxes)
-    stepplotax.text(0, .05, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax.transAxes)
-    stepplotax.text(0, .10, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
+    stepplotax.text(0, 0.52, "Ion wind = %2.2f" % out.params['windspeed'], transform=stepplotax.transAxes)
+    stepplotax.text(0, .54, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax.transAxes)
+    stepplotax.text(0, .56, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
     for mass in ibs_masses:
         stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
     stepplotax.legend(loc='best')
