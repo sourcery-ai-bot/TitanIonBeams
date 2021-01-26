@@ -84,7 +84,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
     pars.add('spacecraftvelocity', value=tempcassini_speed)
     pars['spacecraftvelocity'].vary = False
 
-    #TO DO make temperature dependent on peak width?
+
     pars.add('e', value=e)
     pars.add('AMU', value=AMU)
     pars.add('k', value=k)
@@ -101,13 +101,19 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
-        tempwidth = temppeakflux * FWHM / 2.355
-        tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) - scp*e*charge + 8*k*temp)/e'
+
+        thermalvelocity = np.sqrt((2*k*temperature)/(mass*AMU))
+
+        # TO DO make temperature dependent on peak width?
+        tempwidth = ((mass*AMU)*(thermalvelocity**2))/e
+        print(mass, thermalvelocity,tempwidth,8*k*pars['temp'])
+        tempwidth = temppeakflux * FWHM / 2.35482
+        peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) - scp*e*charge + 8*k*temp)/e'
 
         pars[tempprefix].set(value=mass, min=mass - 1, max=mass + 1)
         pars[tempprefix + 'center'].set(
             value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge),
-            expr=tempstring, min=temppeakflux - 1, max=temppeakflux + 1)
+            expr=peakfluxexpr, min=temppeakflux - 1, max=temppeakflux + 1)
 
         pars[tempprefix + 'sigma'].set(value=0.5,max=2)
         pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.2 * max(yvalues))
