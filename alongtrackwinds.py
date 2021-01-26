@@ -37,6 +37,8 @@ sngcalib = readsav('calib\\sngdisplaycalib.dat')
 
 Af = 0.33e-4
 MCPefficiency = 0.05
+ELS_FWHM = 0.167
+IBS_FWHM = 0.014
 
 AMU = scipy.constants.physical_constants['atomic mass constant'][0]
 AMU_eV = scipy.constants.physical_constants['atomic mass unit-electron volt relationship'][0]
@@ -53,6 +55,13 @@ filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006",
              "t30": "12-may-2007", "t32": "13-jun-2007",
              "t42": "25-mar-2008", "t46": "03-nov-2008", "t47": "19-nov-2008"}
 
+IBS_fluxfitting_dict = {"mass28_":{"sigma":[],"amplitude":[]},
+                        "mass39_":{"sigma":[],"amplitude":[]},
+                        "mass52_":{"sigma":[],"amplitude":[]},
+                        "mass66_":{"sigma":[],"amplitude":[]}, \
+                        "mass78_":{"sigma":[],"amplitude":[]}, \
+                        "mass91_":{"sigma":[],"amplitude":[]}}
+
 
 def energy2mass(energyarray, spacecraftvelocity, ionvelocity, spacecraftpotential, iontemperature=150, charge=1):
     massarray = (2 * (energyarray * e + (spacecraftpotential * charge * e) - 8 * k * iontemperature)) / (
@@ -66,7 +75,7 @@ def mass2energy(massarray, spacecraftvelocity, ionvelocity, spacecraftpotential,
     return energyarray
 
 
-def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature,charge):
+def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature,charge,FWHM):
     gaussmodels = []
     pars = Parameters()
     pars.add('windspeed', value=windspeed, min=-400, max=400)
@@ -75,12 +84,15 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
     pars.add('spacecraftvelocity', value=tempcassini_speed)
     pars['spacecraftvelocity'].vary = False
 
+    #TO DO make temperature dependent on peak width?
     pars.add('e', value=e)
     pars.add('AMU', value=AMU)
     pars.add('k', value=k)
+    pars.add('charge', value=charge)
     pars['e'].vary = False
     pars['AMU'].vary = False
     pars['k'].vary = False
+    pars['charge'].vary = False
 
     for masscounter, mass in enumerate(masses):
         tempprefix = "mass" + str(mass) + '_'
@@ -89,15 +101,15 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
-        tempwidth = temppeakflux * 0.167 / 2.355
-        tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) + scp*e + 8*k*temp)/e'
+        tempwidth = temppeakflux * FWHM / 2.355
+        tempstring = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) - scp*e*charge + 8*k*temp)/e'
 
         pars[tempprefix].set(value=mass, min=mass - 1, max=mass + 1)
         pars[tempprefix + 'center'].set(
-            value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=-1),
+            value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge),
             expr=tempstring, min=temppeakflux - 1, max=temppeakflux + 1)
 
-        pars[tempprefix + 'sigma'].set(value=tempwidth, min=tempwidth / 4, max=1.2*tempwidth)
+        pars[tempprefix + 'sigma'].set(value=0.5,max=2)
         pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.2 * max(yvalues))
 
     for counter, model in enumerate(gaussmodels):
@@ -119,23 +131,24 @@ def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 78, 91], 
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
+    upperenergyslice = CAPS_energyslice("ibs", 20, 20)[0]
 
     windspeed = 0
     temperature = 150
 
-    dataslice = ibsdata['ibsdata'][:, 1, slicenumber]
+    dataslice = ibsdata['ibsdata'][:upperenergyslice, 1, slicenumber]
 
 
     # stepplotax.plot(elscalib['earray'],smoothedcounts_full,color='k')
     # plt.show()
 
-    x = ibscalib['ibsearray']
-    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=-1)
+    x = ibscalib['ibsearray'][:upperenergyslice]
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=-1,FWHM=IBS_FWHM)
     comps = out.eval_components(x=x)
 
     stepplotfig, stepplotax = plt.subplots()
-    stepplotax.step(ibscalib['ibspolyearray'][:-1], dataslice, where='post', label=elsdata['flyby'], color='k')
-    stepplotax.errorbar(ibscalib['ibsearray'], dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+    stepplotax.step(ibscalib['ibspolyearray'][:upperenergyslice], dataslice, where='post', label=elsdata['flyby'], color='k')
+    stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax.set_xlim(0, 20)
     stepplotax.set_ylim(bottom=1e2)
     stepplotax.set_yscale("log")
