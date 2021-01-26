@@ -130,7 +130,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 78, 91], 
     # plt.show()
 
     x = ibscalib['ibsearray']
-    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=1)
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=-1)
     comps = out.eval_components(x=x)
 
     stepplotfig, stepplotax = plt.subplots()
