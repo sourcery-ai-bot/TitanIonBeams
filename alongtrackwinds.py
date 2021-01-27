@@ -83,7 +83,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
     pars.add('temp', value=temperature, min=130, max=170)
     pars.add('spacecraftvelocity', value=tempcassini_speed)
     pars['spacecraftvelocity'].vary = False
-
+    pars['temp'].vary = False
 
     pars.add('e', value=e)
     pars.add('AMU', value=AMU)
@@ -99,20 +99,19 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
         gaussmodels.append(GaussianModel(prefix=tempprefix))
         pars.add(tempprefix, value=mass)
         pars.update(gaussmodels[-1].make_params())
-
+        print(mass)
         temppeakflux = peakflux(mass, pars['spacecraftvelocity'], pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
-
+        print("Init Flux", temppeakflux)
         beamwidth = np.sqrt((2* k * temperature) / (mass * AMU))/(tempcassini_speed+pars['windspeed'])*temppeakflux
-        print("beamwidth",beamwidth)
         peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) - scp*e*charge + 8*k*temp)/e'
-        beamwidthexpr = tempprefix + 'center*(((2*k*temp)/(' + tempprefix +'*AMU))**0.5)/(2.35482*(spacecraftvelocity+windspeed))'
+        #beamwidthexpr = tempprefix + 'center*(((2*k*temp)/(' + tempprefix +'*AMU))**0.5)/(2.35482*(spacecraftvelocity+windspeed))'
 
         pars[tempprefix].set(value=mass, min=mass - 1, max=mass + 1)
         pars[tempprefix + 'center'].set(
             value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge),
             expr=peakfluxexpr)
 
-        pars[tempprefix + 'sigma'].set(value=0.5,expr=beamwidthexpr,max=1.5)
+        pars[tempprefix + 'sigma'].set(value=(temppeakflux*0.05),max=(temppeakflux*0.1))
         pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.2 * max(yvalues))
 
     for counter, model in enumerate(gaussmodels):
@@ -128,29 +127,37 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
 
     return out
 
+def titan_linearfit_temperature(altitude):
+    if altitude > 1150:
+        temperature = 110 + 0.26*(altitude-1200)
+    else:
+        temperature = 133 - 0.12 * (altitude - 1100)
+    return temperature
+
 #[28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
-def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 79, 91], lpvalue=-0.6):
+def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53, 66, 78, 91], lpvalue=-0.3):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
-    upperenergyslice = CAPS_energyslice("ibs", 20, 20)[0]
+    lowerenergyslice = CAPS_energyslice("ibs", 4, 4)[0]
+    upperenergyslice = CAPS_energyslice("ibs", 18-lpvalue, 18-lpvalue)[0]
 
     windspeed = 0
-    temperature = 150
+    temperature = titan_linearfit_temperature(titanaltitude)
 
-    dataslice = ibsdata['ibsdata'][:upperenergyslice, 1, slicenumber]
+    dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
 
 
     # stepplotax.plot(elscalib['earray'],smoothedcounts_full,color='k')
     # plt.show()
 
-    x = ibscalib['ibsearray'][:upperenergyslice]
-    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=-1,FWHM=IBS_FWHM)
+    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=1,FWHM=IBS_FWHM)
     comps = out.eval_components(x=x)
 
     stepplotfig, stepplotax = plt.subplots()
-    stepplotax.step(ibscalib['ibspolyearray'][:upperenergyslice], dataslice, where='post', label=elsdata['flyby'], color='k')
+    stepplotax.step(ibscalib['ibspolyearray'][lowerenergyslice:upperenergyslice], dataslice, where='post', label=elsdata['flyby'], color='k')
     stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax.set_xlim(0, 20)
     stepplotax.set_ylim(bottom=1e2)
@@ -164,6 +171,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 79, 91], 
     stepplotax.set_title(
         "Histogram of " + ibsdata['flyby'].upper() + " IBS data from " + ibsdata['times_utc_strings'][slicenumber],
         fontsize=32)
+    stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
     stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
     stepplotax.text(0, 0.52, "Ion wind = %2.2f" % out.params['windspeed'], transform=stepplotax.transAxes)
     stepplotax.text(0, .54, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax.transAxes)
@@ -263,8 +271,8 @@ ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
 generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 
-slicenumber = 0
+slicenumber = 4
 print(tempdf['Positive Peak Time'].iloc[slicenumber])
-ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber])
+ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],tempdf['Altitude'].iloc[slicenumber])
 
 plt.show()
