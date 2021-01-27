@@ -100,22 +100,19 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
         pars.add(tempprefix, value=mass)
         pars.update(gaussmodels[-1].make_params())
 
-        temppeakflux = peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
+        temppeakflux = peakflux(mass, pars['spacecraftvelocity'], pars['windspeed'], pars['scp'], pars['temp'], charge=charge)
 
-        thermalvelocity = np.sqrt((2*k*temperature)/(mass*AMU))
-
-        # TO DO make temperature dependent on peak width?
-        tempwidth = ((mass*AMU)*(thermalvelocity**2))/e
-        print(mass, thermalvelocity,tempwidth,8*k*pars['temp'])
-        tempwidth = temppeakflux * FWHM / 2.35482
+        beamwidth = np.sqrt((2* k * temperature) / (mass * AMU))/(tempcassini_speed+pars['windspeed'])*temppeakflux
+        print("beamwidth",beamwidth)
         peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity + windspeed)**2) - scp*e*charge + 8*k*temp)/e'
+        beamwidthexpr = tempprefix + 'center*(((2*k*temp)/(' + tempprefix +'*AMU))**0.5)/(2.35482*(spacecraftvelocity+windspeed))'
 
         pars[tempprefix].set(value=mass, min=mass - 1, max=mass + 1)
         pars[tempprefix + 'center'].set(
             value=peakflux(mass, tempcassini_speed, pars['windspeed'], pars['scp'], pars['temp'], charge=charge),
-            expr=peakfluxexpr, min=temppeakflux - 1, max=temppeakflux + 1)
+            expr=peakfluxexpr)
 
-        pars[tempprefix + 'sigma'].set(value=0.5,max=2)
+        pars[tempprefix + 'sigma'].set(value=0.5,expr=beamwidthexpr,max=1.5)
         pars[tempprefix + 'amplitude'].set(value=1e5, min=0.1 * max(yvalues), max=1.2 * max(yvalues))
 
     for counter, model in enumerate(gaussmodels):
@@ -131,8 +128,8 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
 
     return out
 
-
-def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 78, 91], lpvalue=-0.6):
+#[28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
+def IBS_fluxfitting(ibsdata, tempdatetime, ibs_masses=[28, 39, 52, 66, 79, 91], lpvalue=-0.6):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
