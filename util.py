@@ -38,7 +38,7 @@ def read_LP_V1(flyby):
     if flyby[0] == 'e':
         moon = 'enceladus'
 
-    print('data/lp/RPWS_LP_T_2009*' + flyby.upper() + "_V1.TAB")
+    print('data/lp/RPWS_LP_T_' + str(titan_flybydates[flyby][0]) + "*" + flyby.upper() + "_V1.TAB")
     with open(glob.glob(
             'data/lp/RPWS_LP_T_' + str(titan_flybydates[flyby][0]) + "*" + flyby.upper() + "_V1.TAB")[0],
               'r') as csvfile:
