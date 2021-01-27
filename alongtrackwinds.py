@@ -187,6 +187,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
         stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
     stepplotax.legend(loc='best')
 
+    return out.params['windspeed'], out.params['scp']
 
 def ELS_fluxfitting(elsdata, time, seconds, anode, lpvalue=-1.3):
     for counter, i in enumerate(elsdata['times_utc_strings']):
@@ -241,45 +242,45 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-# usedflybys = ['t16']
-# for flyby in usedflybys:
-#     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
-#     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-#     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
-#     generate_mass_bins(elsdata, flyby, "els")
-#     ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
-#     generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-#     for i in tempdf['Positive Peak Time']:
-#         print(i)
-#         ibs_ionwindspeed, ibs_residual, ibs_scp = ibs_alongtrack_velocity(ibsdata, i)
-#         ibs_ionwindspeeds.append(ibs_ionwindspeed)
-#         ibs_residuals.append(ibs_residual)
-#         ibs_scps.append(ibs_scp)
-#
-# testoutputdf = pd.DataFrame()
-# testoutputdf['Bulk Time'] = tempdf['Bulk Time']
-# testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
+usedflybys = ['t16']
+for flyby in usedflybys:
+    els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
+    tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
+    elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
+    generate_mass_bins(elsdata, flyby, "els")
+    ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
+    generate_aligned_ibsdata(ibsdata, elsdata, flyby)
+    for (i,j) in zip(tempdf['Positive Peak Time'],tempdf['Altitude']):
+        print(i)
+        ibs_ionwindspeed, ibs_scp = IBS_fluxfitting(ibsdata, i,j)
+        ibs_ionwindspeeds.append(ibs_ionwindspeed)
+        # ibs_residuals.append(ibs_residual)
+        ibs_scps.append(ibs_scp)
+
+testoutputdf = pd.DataFrame()
+testoutputdf['Bulk Time'] = tempdf['Bulk Time']
+testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
 # testoutputdf['IBS residuals'] = ibs_residuals
-# testoutputdf['IBS spacecraft potentials'] = ibs_scps
-# testoutputdf.to_csv("testalongtrackvelocity.csv")
-# #
-# fig5, ax5 = plt.subplots()
-# ax5.plot(tempdf['Positive Peak Time'], ibs_ionwindspeeds, color='C0', label="Ion Wind Speeds")
+testoutputdf['IBS spacecraft potentials'] = ibs_scps
+testoutputdf.to_csv("testalongtrackvelocity.csv")
+#
+fig5, ax5 = plt.subplots()
+ax5.plot(tempdf['Positive Peak Time'], ibs_ionwindspeeds, color='C0', label="Ion Wind Speeds")
 # ax5_1 = ax5.twinx()
 # ax5_1.plot(tempdf['Positive Peak Time'], ibs_scps, color='C1', label="S/C potential, IBS derived")
-# fig5.legend()
+fig5.legend()
 
 # Single slice test
 
-flyby = 't16'
-elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
-generate_mass_bins(elsdata, flyby, "els")
-ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
-generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-
-slicenumber = 0
-print(tempdf['Positive Peak Time'].iloc[slicenumber])
-ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],tempdf['Altitude'].iloc[slicenumber])
+# flyby = 't16'
+# elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
+# generate_mass_bins(elsdata, flyby, "els")
+# ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
+# generate_aligned_ibsdata(ibsdata, elsdata, flyby)
+# tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
+#
+# slicenumber = 1
+# print(tempdf['Positive Peak Time'].iloc[slicenumber])
+# ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],tempdf['Altitude'].iloc[slicenumber])
 
 plt.show()
