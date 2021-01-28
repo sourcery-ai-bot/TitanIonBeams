@@ -78,8 +78,9 @@ def mass2energy(massarray, spacecraftvelocity, ionvelocity, spacecraftpotential,
 def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, LPvalue, temperature,charge,FWHM):
     gaussmodels = []
     pars = Parameters()
+    eval_pars = Parameters()
     pars.add('windspeed', value=windspeed, min=-400, max=400)
-    pars.add('scp', value=LPvalue, min=LPvalue-0.5, max=LPvalue+0.5)
+    pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue+0.75)
     pars.add('temp', value=temperature, min=130, max=170)
     pars.add('spacecraftvelocity', value=tempcassini_speed)
     pars['spacecraftvelocity'].vary = False
@@ -125,7 +126,8 @@ def total_fluxgaussian(xvalues, yvalues, masses, tempcassini_speed, windspeed, L
     init = mod.eval(pars, x=xvalues)
     out = mod.fit(yvalues, pars, x=xvalues)
 
-    print(out.fit_report(min_correl=0.7))
+    #Calculating CI's
+    #print(out.ci_report(p_names=["scp","windspeed"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
 
     return out
 
@@ -137,17 +139,20 @@ def titan_linearfit_temperature(altitude):
     return temperature
 
 #[28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
-def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53, 66, 78, 91], lpvalue=-0.3):
+def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53, 66, 78, 91]):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
-    lowerenergyslice = CAPS_energyslice("ibs", 4-lpvalue, 4-lpvalue)[0]
-    upperenergyslice = CAPS_energyslice("ibs", 17-lpvalue, 17-lpvalue)[0]
     lpdata = read_LP_V1(ibsdata['flyby'])
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime),lp_timestamps,lpdata['SPACECRAFT_POTENTIAL'])
     print("interp lpvalue", lpvalue)
+
+
+    lowerenergyslice = CAPS_energyslice("ibs", 3.5-lpvalue, 3.5-lpvalue)[0]
+    upperenergyslice = CAPS_energyslice("ibs", 16.25-lpvalue, 16.25-lpvalue)[0]
+
 
     windspeed = 0
     temperature = titan_linearfit_temperature(titanaltitude)
@@ -159,7 +164,9 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     # plt.show()
 
     x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
-    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, 0, temperature,charge=1,FWHM=IBS_FWHM)
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue, temperature,charge=1,FWHM=IBS_FWHM)
+
+    #print(out.fit_report(min_correl=0.7))
     comps = out.eval_components(x=x)
 
     stepplotfig, stepplotax = plt.subplots()
@@ -242,7 +249,7 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t16']
+usedflybys = ['t17']
 for flyby in usedflybys:
     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
@@ -266,8 +273,8 @@ testoutputdf.to_csv("testalongtrackvelocity.csv")
 #
 fig5, ax5 = plt.subplots()
 ax5.plot(tempdf['Positive Peak Time'], ibs_ionwindspeeds, color='C0', label="Ion Wind Speeds")
-# ax5_1 = ax5.twinx()
-# ax5_1.plot(tempdf['Positive Peak Time'], ibs_scps, color='C1', label="S/C potential, IBS derived")
+ax5_1 = ax5.twinx()
+ax5_1.plot(tempdf['Positive Peak Time'], ibs_scps, color='C1', label="S/C potential, IBS derived")
 fig5.legend()
 
 # Single slice test
