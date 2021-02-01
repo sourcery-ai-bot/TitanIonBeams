@@ -149,12 +149,12 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         windspeeds.append(out.params[tempprefix + "windspeed"].value)
         print(out.params[tempprefix + "windspeed"],out.params[tempprefix + "windspeed"].stderr)
     ionwindspeed = np.mean(windspeeds)
-    ionwindspeed_err =  np.std(windspeeds)
+    ionwindspeed_err = np.std(windspeeds)
 
     print(out.fit_report(min_correl=0.7))
 
     # Calculating CI's
-    # print(out.ci_report(p_names=["scp","windspeed"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
+    print(out.ci_report(p_names=["scp"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
 
     return out, ionwindspeed, ionwindspeed_err
 
@@ -318,7 +318,7 @@ ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits]
 ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
 ax5_1.set_ylabel("S/C Potential (V)")
 for counter,x in enumerate(ibs_fits):
-    ax5.text(tempdf['Positive Peak Time'].iloc[counter], ibs_ionwindspeeds, "Chi-Sqr =  %.1E"  % x.chisqr)
+    ax5.text(tempdf['Positive Peak Time'].iloc[counter], ibs_ionwindspeeds[counter], "Chi-Sqr =  %.1E"  % x.chisqr)
 fig5.legend()
 
 # Single slice test
