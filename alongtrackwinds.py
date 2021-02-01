@@ -278,7 +278,7 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t28']
+usedflybys = ['t16']
 for flyby in usedflybys:
     els_fits, ibs_fits, lpvalues = [], [], []
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
@@ -309,7 +309,7 @@ ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits]
 ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
 ax5_1.set_ylabel("S/C Potential (V)")
 for counter,x in enumerate(ibs_fits):
-    ax5.text(tempdf['Positive Peak Time'].iloc[counter], x.params['windspeed'], "Corr = %0.2f \nChi-Sqr =  %.1E"  % (x.params['windspeed'].correl['scp'],x.chisqr))
+    ax5.text(tempdf['Positive Peak Time'].iloc[counter], x.params['windspeed'], "Chi-Sqr =  %.1E"  % x.chisqr)
 fig5.legend()
 
 # Single slice test
