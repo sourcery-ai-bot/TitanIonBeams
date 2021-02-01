@@ -63,11 +63,11 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
-                        "t20": "25-oct-2006", "t21": "12-dec-2006", "t25": "22-feb-2007", "t26": "10-mar-2007",
-                        "t27": "26-mar-2007",
-                        "t28": "10-apr-2007", "t29": "26-apr-2007",
-                        "t30": "12-may-2007", "t32": "13-jun-2007",
-                        "t42": "25-mar-2008", "t46": "03-nov-2008", "t47": "19-nov-2008"}
+                        "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [3.5, 16.25], "t26": [3.5, 16.25],
+                        "t27": [3.5, 16.25],
+                        "t28": [3.5, 16.25], "t29": [3.5, 16.25],
+                        "t30": [3.5, 16.25], "t32": [3.5, 16.25],
+                        "t42": [3.5, 16.25], "t46": [3.5, 16.25], "t47": [3.5, 16.25]}
 
 
 def energy2mass(energyarray, spacecraftvelocity, ionvelocity, spacecraftpotential, iontemperature=150, charge=1):
@@ -87,7 +87,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars = Parameters()
     eval_pars = Parameters()
 
-    pars.add('scp', value=LPvalue + 0.2, min=LPvalue + 0.1, max=LPvalue + 0.35)
+    pars.add('scp', value=LPvalue + 0.1, min=LPvalue, max=LPvalue + 0.35)
     pars.add('temp', value=temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('windspeed', value=0, min=-400, max=400)
@@ -192,7 +192,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
                     label=elsdata['flyby'], color='k')
     stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax.set_xlim(3, 19)
-    stepplotax.set_ylim(bottom=1e4)
+    stepplotax.set_ylim(min(dataslice),max(dataslice))
     stepplotax.set_yscale("log")
     stepplotax.set_ylabel("DEF [$m^{-2} s^{1} str^{-1} eV^{-1}$]", fontsize=20)
     stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
@@ -276,7 +276,7 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t16']
+usedflybys = ['t20']
 for flyby in usedflybys:
     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
