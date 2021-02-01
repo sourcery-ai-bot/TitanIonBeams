@@ -298,6 +298,7 @@ testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
 testoutputdf.to_csv("testalongtrackvelocity.csv")
 #
 fig5, ax5 = plt.subplots()
+ax5.set_title(str(usedflybys))
 ax5.errorbar(tempdf['Positive Peak Time'], [i.params['windspeed'] for i in ibs_fits], yerr=[i.params['windspeed'].stderr for i in ibs_fits], color='C0',
              label="Ion Wind Speeds",linestyle='--')
 ax5.set_xlabel("Time")
