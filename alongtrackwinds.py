@@ -63,7 +63,7 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
-                        "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [3.5, 16.25], "t26": [3.5, 16.25],
+                        "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.1, 18.25], "t26": [3.5, 16.25],
                         "t27": [3.5, 16.25],
                         "t28": [3.5, 16.25], "t29": [3.5, 16.25],
                         "t30": [3.5, 16.25], "t32": [3.5, 16.25],
@@ -209,13 +209,14 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
         out.params['windspeed'].stderr = out.params['windspeed']
     if out.params['scp'].stderr is None:
         out.params['scp'].stderr = out.params['scp']
-    stepplotax.text(0, 0.81, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['windspeed'], out.params['windspeed'].stderr),
+    stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['windspeed'], out.params['windspeed'].stderr),
                     transform=stepplotax.transAxes)
-    stepplotax.text(0, .84,
+    stepplotax.text(0.8, .05,
                     "IBS-derived SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
                     transform=stepplotax.transAxes)
-    stepplotax.text(0, .87, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
-    stepplotax.text(0, .9, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
+    stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
+    stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
+    stepplotax.text(0.8, .14, "Chi-square = %.2E" % out.chisqr, transform=stepplotax.transAxes)
     for mass in ibs_masses:
         stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
     stepplotax.legend(loc='best')
@@ -276,7 +277,7 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t20']
+usedflybys = ['t25']
 for flyby in usedflybys:
     els_ionwindspeeds, ibs_ionwindspeeds, ibs_residuals, ibs_scps = [], [], [], []
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
