@@ -14,6 +14,7 @@ from cassinipy.spice import *
 from scipy.signal import peak_widths
 import pandas as pd
 import spiceypy as spice
+from alongtrackwinds import multiple_alongtrackwinds_flybys
 
 import datetime
 from util import *
@@ -170,19 +171,20 @@ def cassini_titan_altlatlon(tempdatetime):
 
     return alt, lat * spice.dpr(), lon * spice.dpr()
 
-def els_alongtrack_velocity(elsdata,tempdatetime):
+
+def els_alongtrack_velocity(elsdata, tempdatetime):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[4]) ** 2 + (state[5]) ** 2 + (state[6]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
 
-    plt.plot(elscalib['earray'],elsdata['def'][:,4,slicenumber])
-    print("cassini_speed",cassini_speed)
+    plt.plot(elscalib['earray'], elsdata['def'][:, 4, slicenumber])
+    print("cassini_speed", cassini_speed)
 
-    #return alongtrackvelocity
+    # return alongtrackvelocity
 
 
-#def ibs_alongtrack_velocity(ibsdata,tempdatetime):
+# def ibs_alongtrack_velocity(ibsdata,tempdatetime):
 
 
 filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006",
@@ -215,8 +217,10 @@ data_times_pairs = [
 ]
 
 usedflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
+
+
 # usedflybys = ['t42', 't46']
-#usedflybys = ['t16', 't17', 't29']
+# usedflybys = ['t16', 't17', 't29']
 
 
 def CAPS_winds(data_times_pairs):
@@ -276,25 +280,31 @@ def CAPS_winds(data_times_pairs):
     return capsdf
 
 
-data = CAPS_winds(data_times_pairs)
-data.drop_duplicates(subset=["Azimuthal Ram Angle"],inplace=True)
-data["Negative crosstrack velocity"] = np.sin(data["Negative Deflection from Ram Angle"] * spice.rpd()) * data[
-    'Flyby velocity']
-data["Positive crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angle"] * spice.rpd()) * data[
-    'Flyby velocity']
+crosstrackdata = CAPS_winds(data_times_pairs)
+crosstrackdata.drop_duplicates(subset=["Azimuthal Ram Angle"], inplace=True)
+crosstrackdata["Negative crosstrack velocity"] = np.sin(
+    crosstrackdata["Negative Deflection from Ram Angle"] * spice.rpd()) * crosstrackdata[
+                                                     'Flyby velocity']
+crosstrackdata["Positive crosstrack velocity"] = np.sin(
+    crosstrackdata["Positive Deflection from Ram Angle"] * spice.rpd()) * crosstrackdata[
+                                                     'Flyby velocity']
 
+crosstrackdata["Crosstrack velocity"] = np.sin(crosstrackdata["Bulk Deflection from Ram Angle"] * spice.rpd()) * \
+                                        crosstrackdata['Flyby velocity']
+crosstrackdata["Absolute Crosstrack velocity"] = crosstrackdata["Crosstrack velocity"].abs()
 
-data["Crosstrack velocity"] = np.sin(data["Bulk Deflection from Ram Angle"] * spice.rpd()) * data['Flyby velocity']
-data["Absolute Crosstrack velocity"] = data["Crosstrack velocity"].abs()
+alongtrack_windsdf = multiple_alongtrackwinds_flybys(usedflybys)
+
+windsdata = crosstrackdata.join(alongtrack_windsdf, on="Positive Peak Time")
 
 alts, lats, lons = [], [], []
-for tempdatetime in data['Bulk Time']:
+for tempdatetime in windsdata['Bulk Time']:
     alt, lat, lon = cassini_titan_altlatlon(tempdatetime)
     alts.append(alt)
     lats.append(lat)
     lons.append(lon)
-data['Altitude'] = alts
-data['Longitude'] = lons
-data['Latitude'] = lats
+windsdata['Altitude'] = alts
+windsdata['Longitude'] = lons
+windsdata['Latitude'] = lats
 
-data.to_csv("crosswinds_full.csv")
+windsdata.to_csv("winds_full.csv")
