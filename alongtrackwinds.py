@@ -107,9 +107,9 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         tempprefix = "mass" + str(mass) + '_'
         gaussmodels.append(GaussianModel(prefix=tempprefix))
         pars.add(tempprefix, value=mass, vary=False)
-        pars.add(tempprefix+'windspeed', value=0, min=-400, max=400)
-        effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
-        pars.add(tempprefix + "effectivescp", expr=effectivescpexpr)
+        #pars.add(tempprefix+'windspeed', value=0, min=-400, max=400)
+        #effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
+        pars.add(tempprefix + "effectivescp", value=LPvalue)
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = peakflux(mass, pars['spacecraftvelocity'], 0, LPvalue, temperature, charge=charge)
