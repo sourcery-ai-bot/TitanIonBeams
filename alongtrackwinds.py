@@ -62,10 +62,10 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass78_": {"sigma": 0.7, "amplitude": []}, \
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
-IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
+IBS_energybound_dict = {"t16": [4, 17.1], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
                         "t27": [4.5, 18.25],
-                        "t28": [3.5, 16.25], "t29": [3.5, 16.25],
+                        "t28": [4.5, 18.25], "t29": [4.5, 18.25],
                         "t30": [3.5, 16.25], "t32": [3.5, 16.25],
                         "t42": [3.5, 16.25], "t46": [3.5, 16.25], "t47": [3.5, 16.25]}
 
@@ -278,7 +278,7 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t16']
+usedflybys = ['t29']
 for flyby in usedflybys:
     els_fits, ibs_fits, lpvalues = [], [], []
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
@@ -309,11 +309,11 @@ ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits]
 ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
 ax5_1.set_ylabel("S/C Potential (V)")
 for counter,x in enumerate(ibs_fits):
-    ax5.text(tempdf['Positive Peak Time'].iloc[counter], x.params['windspeed'], "Chi-Sqr =  %.1E"  % x.chisqr)
+    ax5.text(tempdf['Positive Peak Time'].iloc[counter], x.params['windspeed'], "Chi-Sqr =  %.1E\nCorr = %.2f " % (x.chisqr,x.params['windspeed'].correl['scp']))
 fig5.legend()
 
 # Single slice test
-
+#
 # flyby = 't16'
 # elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
 # generate_mass_bins(elsdata, flyby, "els")
