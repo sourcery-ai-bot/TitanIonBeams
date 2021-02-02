@@ -87,11 +87,11 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars = Parameters()
     eval_pars = Parameters()
 
-    pars.add('scp', value=LPvalue) #)min=LPvalue-0.1, max=LPvalue + 0.15)
+    pars.add('scp', value=LPvalue, min=LPvalue-0.1, max=LPvalue + 0.1)
     pars.add('temp', value=temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('windspeed', value=0, min=-400, max=400)
-    pars['scp'].vary = False
+    #pars['scp'].vary = False
     pars['spacecraftvelocity'].vary = False
     pars['temp'].vary = False
 
