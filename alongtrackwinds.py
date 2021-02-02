@@ -87,7 +87,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars = Parameters()
     eval_pars = Parameters()
 
-    pars.add('scp', value=LPvalue + 0.1, min=LPvalue-0.1, max=LPvalue + 0.15)
+    pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
     pars.add('temp', value=temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     #pars.add('windspeed', value=0, min=-400, max=400)
@@ -140,7 +140,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         while out.params['scp'].stderr is None:
             print("Trying better fit")
             maxscpincrease += 0.1
-            pars["scp"].set(value=LPvalue + 0.1, min=LPvalue - 0.1, max=LPvalue + 0.15 + maxscpincrease)
+            pars["scp"].set(value=LPvalue, min=LPvalue - 0.5, max=LPvalue + 0.25 + maxscpincrease)
             out = mod.fit(yvalues, pars, x=xvalues)
 
     windspeeds = []
@@ -154,7 +154,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     print(out.fit_report(min_correl=0.7))
 
     # Calculating CI's
-    print(out.ci_report(p_names=["scp"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
+    #print(out.ci_report(p_names=["scp"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
 
     return out, ionwindspeed, ionwindspeed_err
 
@@ -305,7 +305,7 @@ testoutputdf = pd.DataFrame()
 testoutputdf['Bulk Time'] = tempdf['Bulk Time']
 testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
 # testoutputdf['IBS residuals'] = ibs_residuals
-testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
+testoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_fits]
 testoutputdf.to_csv("testalongtrackvelocity.csv")
 #
 fig5, ax5 = plt.subplots()
