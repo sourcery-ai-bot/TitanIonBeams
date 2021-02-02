@@ -143,6 +143,23 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
             pars["scp"].set(value=LPvalue, min=LPvalue - 0.5, max=LPvalue + 0.25 + maxscpincrease)
             out = mod.fit(yvalues, pars, x=xvalues)
 
+    fig, ax = plt.subplots()
+    effectivescplist = []
+    for masscounter, mass in enumerate(masses):
+        tempprefix = "mass" + str(mass) + '_'
+        print(peakfluxvalues_nowind[masscounter],out.params[tempprefix + "center"].value)
+        effectivescplist.append(peakfluxvalues_nowind[masscounter] - out.params[tempprefix + "center"].value)
+    z, cov = np.polyfit(x=np.array(masses), y=np.array(effectivescplist), deg=1, cov=True)
+    print(z)
+    ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
+    ionwindspeed_error = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
+    print(np.sqrt(np.diag(cov)[0]))
+    print(ibsdata['flyby'], " Ion wind velocity %.1f" % ionwindspeed, "m/s")
+    print(ibsdata['flyby'], " Ion wind velocity error %.3f" % ionwindspeed_error, "m/s")
+    p = np.poly1d(z)
+    ax.scatter(masses, np.array(effectivescplist))
+    ax.plot(masses, p(masses))
+
     windspeeds = []
     for masscounter, mass in enumerate(masses):
         tempprefix = "mass" + str(mass) + '_'
