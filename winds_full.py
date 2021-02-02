@@ -277,6 +277,7 @@ def CAPS_winds(data_times_pairs):
 
 
 data = CAPS_winds(data_times_pairs)
+data.drop_duplicates(subset=["Azimuthal Ram Angle"],inplace=True)
 data["Negative crosstrack velocity"] = np.sin(data["Negative Deflection from Ram Angle"] * spice.rpd()) * data[
     'Flyby velocity']
 data["Positive crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angle"] * spice.rpd()) * data[
