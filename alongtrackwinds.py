@@ -103,6 +103,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars['k'].vary = False
     pars['charge'].vary = False
 
+    peakfluxvalues_nowind = []
     for masscounter, mass in enumerate(masses):
         tempprefix = "mass" + str(mass) + '_'
         gaussmodels.append(GaussianModel(prefix=tempprefix))
@@ -113,6 +114,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = peakflux(mass, pars['spacecraftvelocity'], 0, LPvalue, temperature, charge=charge)
+        peakfluxvalues_nowind.append(temppeakflux)
         print("mass", mass, "Init Flux", temppeakflux)
 
         peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity)**2) - ' + tempprefix + 'effectivescp*e*charge + 8*k*temp)/e'
@@ -152,21 +154,13 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     z, cov = np.polyfit(x=np.array(masses), y=np.array(effectivescplist), deg=1, cov=True)
     print(z)
     ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
-    ionwindspeed_error = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
+    ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
     print(np.sqrt(np.diag(cov)[0]))
     print(ibsdata['flyby'], " Ion wind velocity %.1f" % ionwindspeed, "m/s")
-    print(ibsdata['flyby'], " Ion wind velocity error %.3f" % ionwindspeed_error, "m/s")
+    print(ibsdata['flyby'], " Ion wind velocity error %.3f" % ionwindspeed_err, "m/s")
     p = np.poly1d(z)
     ax.scatter(masses, np.array(effectivescplist))
     ax.plot(masses, p(masses))
-
-    windspeeds = []
-    for masscounter, mass in enumerate(masses):
-        tempprefix = "mass" + str(mass) + '_'
-        windspeeds.append(out.params[tempprefix + "windspeed"].value)
-        print(out.params[tempprefix + "windspeed"],out.params[tempprefix + "windspeed"].stderr)
-    ionwindspeed = np.mean(windspeeds)
-    ionwindspeed_err = np.std(windspeeds)
 
     print(out.fit_report(min_correl=0.7))
 
