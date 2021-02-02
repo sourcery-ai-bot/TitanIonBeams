@@ -87,7 +87,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars = Parameters()
     eval_pars = Parameters()
 
-    pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
+    #pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
     pars.add('temp', value=temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     #pars.add('windspeed', value=0, min=-400, max=400)
@@ -110,7 +110,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         pars.add(tempprefix, value=mass, vary=False)
         #pars.add(tempprefix+'windspeed', value=0, min=-400, max=400)
         #effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
-        pars.add(tempprefix + "effectivescp", value=LPvalue)
+        pars.add(tempprefix + "effectivescp", value=LPvalue+0.25, min=LPvalue-2,max=LPvalue+2)
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = peakflux(mass, pars['spacecraftvelocity'], 0, LPvalue, temperature, charge=charge)
@@ -136,15 +136,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     init = mod.eval(pars, x=xvalues)
     out = mod.fit(yvalues, pars, x=xvalues)
 
-    # if poor fit essentially
-    if out.params['scp'].stderr is None:
-        maxscpincrease = 0.1
-        while out.params['scp'].stderr is None:
-            print("Trying better fit")
-            maxscpincrease += 0.1
-            pars["scp"].set(value=LPvalue, min=LPvalue - 0.5, max=LPvalue + 0.25 + maxscpincrease)
-            out = mod.fit(yvalues, pars, x=xvalues)
-
+    #SCP offset plot
     fig, ax = plt.subplots()
     effectivescplist = []
     for masscounter, mass in enumerate(masses):
@@ -227,13 +219,13 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
     # if out.params['windspeed'].stderr is None:
     #     out.params['windspeed'].stderr = out.params['windspeed']
-    if out.params['scp'].stderr is None:
-        out.params['scp'].stderr = out.params['scp']
+    # if out.params['scp'].stderr is None:
+    #     out.params['scp'].stderr = out.params['scp']
     stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
                     transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .05,
-                    "IBS-derived SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                    transform=stepplotax.transAxes)
+    # stepplotax.text(0.8, .05,
+    #                 "IBS-derived SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+    #                 transform=stepplotax.transAxes)
     stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
     stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
     stepplotax.text(0.8, .14, "Chi-square = %.2E" % out.chisqr, transform=stepplotax.transAxes)
@@ -297,55 +289,54 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 
 # TO DO add LP potentials
-usedflybys = ['t16']
-for flyby in usedflybys:
-    els_fits, ibs_fits, lpvalues, ibs_ionwindspeeds, ibs_ionwindspeeds_err = [], [], [], [], []
-    tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-    elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
-    generate_mass_bins(elsdata, flyby, "els")
-    ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
-    generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-    for (i, j) in zip(tempdf['Positive Peak Time'], tempdf['Altitude']):
-        ibs_fit, lpvalue, ibs_ionwindspeed,ibs_ionwindspeed_err = IBS_fluxfitting(ibsdata, i, j)
-        ibs_fits.append(ibs_fit)
-        lpvalues.append(lpvalue)
-        ibs_ionwindspeeds.append(ibs_ionwindspeed)
-        ibs_ionwindspeeds_err.append(ibs_ionwindspeed_err)
-
-testoutputdf = pd.DataFrame()
-testoutputdf['Bulk Time'] = tempdf['Bulk Time']
-testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
-# testoutputdf['IBS residuals'] = ibs_residuals
-testoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_fits]
-testoutputdf.to_csv("testalongtrackvelocity.csv")
+# usedflybys = ['t16']
+# for flyby in usedflybys:
+#     els_fits, ibs_fits, lpvalues, ibs_ionwindspeeds, ibs_ionwindspeeds_err = [], [], [], [], []
+#     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
+#     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
+#     generate_mass_bins(elsdata, flyby, "els")
+#     ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
+#     generate_aligned_ibsdata(ibsdata, elsdata, flyby)
+#     for (i, j) in zip(tempdf['Positive Peak Time'], tempdf['Altitude']):
+#         ibs_fit, lpvalue, ibs_ionwindspeed,ibs_ionwindspeed_err = IBS_fluxfitting(ibsdata, i, j)
+#         ibs_fits.append(ibs_fit)
+#         lpvalues.append(lpvalue)
+#         ibs_ionwindspeeds.append(ibs_ionwindspeed)
+#         ibs_ionwindspeeds_err.append(ibs_ionwindspeed_err)
 #
-fig5, ax5 = plt.subplots()
-ax5.errorbar(tempdf['Positive Peak Time'], ibs_ionwindspeeds, yerr=ibs_ionwindspeeds_err, color='C0',
-             label="Ion Wind Speeds",linestyle='--')
-ax5.set_xlabel("Time")
-ax5.set_ylabel("Ion Wind Speed (m/s)")
-ax5_1 = ax5.twinx()
-ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits], yerr=[i.params['scp'].stderr for i in ibs_fits], color='C1', label="S/C potential, IBS derived")
-ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
-ax5_1.set_ylabel("S/C Potential (V)")
-for counter,x in enumerate(ibs_fits):
-    ax5.text(tempdf['Positive Peak Time'].iloc[counter], ibs_ionwindspeeds[counter], "Chi-Sqr =  %.1E"  % x.chisqr)
-fig5.legend()
+# testoutputdf = pd.DataFrame()
+# testoutputdf['Bulk Time'] = tempdf['Bulk Time']
+# testoutputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
+# # testoutputdf['IBS residuals'] = ibs_residuals
+# testoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_fits]
+# testoutputdf.to_csv("testalongtrackvelocity.csv")
+# #
+# fig5, ax5 = plt.subplots()
+# ax5.errorbar(tempdf['Positive Peak Time'], ibs_ionwindspeeds, yerr=ibs_ionwindspeeds_err, color='C0',
+#              label="Ion Wind Speeds",linestyle='--')
+# ax5.set_xlabel("Time")
+# ax5.set_ylabel("Ion Wind Speed (m/s)")
+# ax5_1 = ax5.twinx()
+# ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits], yerr=[i.params['scp'].stderr for i in ibs_fits], color='C1', label="S/C potential, IBS derived")
+# ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
+# ax5_1.set_ylabel("S/C Potential (V)")
+# for counter,x in enumerate(ibs_fits):
+#     ax5.text(tempdf['Positive Peak Time'].iloc[counter], ibs_ionwindspeeds[counter], "Chi-Sqr =  %.1E"  % x.chisqr)
+# fig5.legend()
 
 # Single slice test
 
-# flyby = 't16'
-# elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
-# generate_mass_bins(elsdata, flyby, "els")
-# ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
-# generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-# tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
-#
-# slicenumber = 2
-# print(tempdf['Positive Peak Time'].iloc[slicenumber])
-# ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
-#                                    tempdf['Altitude'].iloc[slicenumber])
+flyby = 't16'
+elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
+generate_mass_bins(elsdata, flyby, "els")
+ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
+generate_aligned_ibsdata(ibsdata, elsdata, flyby)
+tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
+
+slicenumber = 2
+print(tempdf['Positive Peak Time'].iloc[slicenumber])
+ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
+                                   tempdf['Altitude'].iloc[slicenumber])
 
 plt.show()
 
-#test commit
