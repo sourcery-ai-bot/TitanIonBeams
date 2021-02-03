@@ -66,6 +66,13 @@ sns.histplot(data=windsdf, x="Crosstrack velocity", bins=np.arange(-550, 550, 50
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
 figdist.legend()
 
+
+figdist, axdist = plt.subplots()
+sns.histplot(data=windsdf, x="IBS Alongtrack velocity", bins=np.arange(-550, 550, 50), ax=axdist, element="step",
+             stat="probability")
+# sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
+figdist.legend()
+
 g = sns.FacetGrid(windsdf, row="Flyby", hue="Flyby", aspect=8, height=2, sharey=False)
 g.map(sns.kdeplot, "Crosstrack velocity", fill=True, clip=[-500, 500])
 g.map(sns.rugplot, "Crosstrack velocity", height=0.2)
