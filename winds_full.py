@@ -294,8 +294,10 @@ crosstrackdata["Crosstrack velocity"] = np.sin(crosstrackdata["Bulk Deflection f
 crosstrackdata["Absolute Crosstrack velocity"] = crosstrackdata["Crosstrack velocity"].abs()
 
 alongtrack_windsdf = multiple_alongtrackwinds_flybys(usedflybys)
-
-windsdata = crosstrackdata.join(alongtrack_windsdf, on="Positive Peak Time")
+crosstrackdata['Positive Peak Time'] = pd.to_datetime(crosstrackdata['Positive Peak Time'])
+print("crosstrack",crosstrackdata['Positive Peak Time'])
+print("alongtrack",alongtrack_windsdf['Positive Peak Time'])
+windsdata = crosstrackdata.merge(alongtrack_windsdf, on='Positive Peak Time')
 
 alts, lats, lons = [], [], []
 for tempdatetime in windsdata['Bulk Time']:

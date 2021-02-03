@@ -320,8 +320,8 @@ def multiple_alongtrackwinds_flybys(usedflybys):
     outputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
     # outputdf['IBS residuals'] = ibs_residuals
     outputdf['IBS spacecraft potentials'] = ibs_scps
-    outputdf.to_csv("testalongtrackvelocity.csv")
-
+    #outputdf.to_csv("testalongtrackvelocity.csv")
+    print(outputdf['Positive Peak Time'])
     #
     # fig5, axes = plt.subplots(2)
     # axes[0].errorbar(tempdf['Positive Peak Time'], ibs_ionwindspeeds, yerr=ibs_ionwindspeeds_err, color='C0',

@@ -12,7 +12,7 @@ matplotlib.rcParams['axes.grid'] = True
 matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
 
-windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
 
 flybyslist = windsdf.Flyby.unique()
 
