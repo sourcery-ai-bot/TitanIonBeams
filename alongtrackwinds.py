@@ -62,10 +62,10 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass78_": {"sigma": 0.7, "amplitude": []},
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.4, "amplitude": []},
-                        "mass50_": {"sigma": 0.5, "amplitude": []},
-                        "mass74_": {"sigma": 0.5, "amplitude": []},
-                        "mass117_": {"sigma": 0.6, "amplitude": []},
-                        "mass154_": {"sigma": 0.7, "amplitude": []}}
+                        "mass50_": {"sigma": 0.7, "amplitude": []},
+                        "mass74_": {"sigma": 1.1, "amplitude": []},
+                        "mass117_": {"sigma": 1.7, "amplitude": []},
+                        "mass154_": {"sigma": 2.3, "amplitude": []}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
@@ -86,7 +86,7 @@ IBS_initvalues_dict = {"t16": [0.25, 0], "t17": [0.6, 350],
                        "t28": [0.25, 0], "t29": [0.25, 200],
                        "t30": [0.25, 250], "t32": [0.25, 200],
                        "t42": [0.25, 0], "t46": [0.5, 300], "t47": [0.25, 200]}
-ELS_initvalues_dict = {"t16": [0.25, 0], "t17": [0.6, 350],
+ELS_initvalues_dict = {"t16": [0.25, 0], "t17": [-0.42, 234],
                        "t20": [0.25, 200], "t21": [0.25, 0], "t25": [0.25, 250], "t26": [0.25, 0],
                        "t27": [0.25, 200],
                        "t28": [0.25, 0], "t29": [0.25, 200],
@@ -146,7 +146,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, l
         print("mass", mass, "Init Flux - with init wind",
               (0.5 * (mass * AMU) * ((cassini_speed) ** 2) - effectivescp_init * e + 8 * k * temperature) / e)
 
-        peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity)**2) - ' + tempprefix + 'effectivescp*e*charge + 8*k*temp)/e'
+        peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity)**2) - ' + tempprefix + 'effectivescp*e + 8*k*temp)/e'
         pars[tempprefix + 'center'].set(expr=peakfluxexpr)
         # min=temppeakflux - 2, max=temppeakflux + 2)
         if charge == 1:
@@ -398,13 +398,13 @@ def single_slice_test(flyby, slicenumber):
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
-    ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
+    ibs_result = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
-    els_ionwindspeed = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
+    els_result = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
 
 
 # multiple_alongtrackwinds_flybys(['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
-single_slice_test(flyby="t17", slicenumber=3)
+single_slice_test(flyby="t17", slicenumber=4)
 
 plt.show()
