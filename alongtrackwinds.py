@@ -16,6 +16,7 @@ import pandas as pd
 import spiceypy as spice
 from astropy.modeling import models, fitting
 
+
 from lmfit import CompositeModel, Model
 from lmfit.models import GaussianModel
 from lmfit import Parameters
@@ -105,6 +106,13 @@ def mass2energy(massarray, spacecraftvelocity, ionvelocity, spacecraftpotential,
             spacecraftpotential * charge * e) + 8 * k * iontemperature) / e
     return energyarray
 
+def ELS_maxflux_anode(elsdata, starttime, endtime):
+    startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
+    dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)
+    anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
+    maxflux_anode = np.argmax(anodesums)
+    return maxflux_anode
+
 
 def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, lpvalue, temperature, charge, FWHM):
     gaussmodels = []
@@ -112,7 +120,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, l
     eval_pars = Parameters()
 
     # pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
-    pars.add('temp', value=temperature)  # , min=130, max=170)
+    pars.add('temp', value=temperature-20)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     # pars.add('windspeed', value=0, min=-400, max=400)
     pars['spacecraftvelocity'].vary = False
@@ -176,10 +184,10 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, l
     ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
     # print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
 
-    # fig, ax = plt.subplots()
-    # p = np.poly1d(z)
-    # ax.errorbar(masses, np.array(effectivescplist), fmt='.')  # ,yerr=effectivescplist_errors)
-    # ax.plot(masses, p(masses))
+    fig, ax = plt.subplots()
+    p = np.poly1d(z)
+    ax.errorbar(masses, np.array(effectivescplist), fmt='.')  # ,yerr=effectivescplist_errors)
+    ax.plot(masses, p(masses))
 
     # SCP calculation
     scpvalues = []
@@ -284,10 +292,12 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74
     upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1] - lpvalue,
                                         ELS_energybound_dict[elsdata['flyby']][1] - lpvalue)[0]
 
-    windspeed = 0
     temperature = titan_linearfit_temperature(titanaltitude)
-
-    dataslice = elsdata['data'][lowerenergyslice:upperenergyslice, 3, slicenumber]
+    anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10), tempdatetime  + datetime.timedelta(seconds=10))
+    print("anode",anode)
+    dataslice = ELS_backgroundremoval(elsdata, slicenumber, slicenumber+1)[lowerenergyslice:upperenergyslice, anode,0]
+    print("dataslice",dataslice.shape)
+    #dataslice = elsdata['data'][lowerenergyslice:upperenergyslice, 3, slicenumber]
     print(elsdata['flyby'], "Cassini velocity", cassini_speed)
     x = elscalib['earray'][lowerenergyslice:upperenergyslice]
     out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = total_fluxgaussian(x, dataslice, els_masses, cassini_speed,
