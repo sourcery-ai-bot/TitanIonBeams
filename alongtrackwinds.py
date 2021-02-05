@@ -76,12 +76,12 @@ IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t30": [4.5, 18.25], "t32": [4.5, 18.25],
                         "t42": [4.5, 19.5], "t46": [3.75, 17.5], "t47": [4.5, 18.25]}
 
-ELS_energybound_dict = {"t16": [4, 17], "t17": [1, 35],
-                        "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
-                        "t27": [4.5, 18.25],
-                        "t28": [4.5, 18.25], "t29": [4.5, 18.25],
-                        "t30": [4.5, 18.25], "t32": [4.5, 18.25],
-                        "t42": [4.5, 19.5], "t46": [3.75, 17.5], "t47": [4.5, 18.25]}
+ELS_energybound_dict = {"t16": [1, 35], "t17": [1, 35],
+                        "t20": [1, 35], "t21": [1, 35], "t25": [1, 35], "t26": [1, 35],
+                        "t27": [1, 35],
+                        "t28": [1, 35], "t29": [1, 35],
+                        "t30": [1, 35], "t32": [1, 35],
+                        "t42": [1, 35], "t46": [1, 35], "t47": [1, 35]}
 
 IBS_initvalues_dict = {"t16": [0.25, 0], "t17": [0.6, 300],
                        "t20": [0.25, 200], "t21": [0.25, 0], "t25": [0.25, 250], "t26": [0.25, 0],
@@ -251,35 +251,35 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 41, 53
     # print(out.fit_report(min_correl=0.7))
     comps = out.eval_components(x=x)
     #
-    stepplotfig, stepplotax = plt.subplots()
-    stepplotax.step(ibscalib['ibspolyearray'][lowerenergyslice:upperenergyslice], dataslice, where='post',
-                    label=ibsdata['flyby'], color='k')
-    stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
-    stepplotax.set_xlim(3, 20)
-    stepplotax.set_ylim(min(dataslice), max(dataslice))
-    stepplotax.set_yscale("log")
-    stepplotax.set_ylabel("Counts [/s]", fontsize=20)
-    stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
-    stepplotax.tick_params(axis='both', which='major', labelsize=15)
-    stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    stepplotax.minorticks_on()
-    stepplotax.set_title(
-        "Histogram of " + ibsdata['flyby'].upper() + " IBS data from " + ibsdata['times_utc_strings'][slicenumber],
-        fontsize=32)
-    stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
-    stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
-    stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
-                    transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .05,
-                    "IBS-derived SC Potential = %2.2f ± %2.2f V" % (scp_mean, scp_err),
-                    transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=stepplotax.transAxes)
-    for mass in ibs_masses:
-        stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
-    stepplotax.legend(loc='best')
+    # stepplotfig, stepplotax = plt.subplots()
+    # stepplotax.step(ibscalib['ibspolyearray'][lowerenergyslice:upperenergyslice], dataslice, where='post',
+    #                 label=ibsdata['flyby'], color='k')
+    # stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+    # stepplotax.set_xlim(3, 20)
+    # stepplotax.set_ylim(min(dataslice), max(dataslice))
+    # stepplotax.set_yscale("log")
+    # stepplotax.set_ylabel("Counts [/s]", fontsize=20)
+    # stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
+    # stepplotax.tick_params(axis='both', which='major', labelsize=15)
+    # stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+    # stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+    # stepplotax.minorticks_on()
+    # stepplotax.set_title(
+    #     "Histogram of " + ibsdata['flyby'].upper() + " IBS data from " + ibsdata['times_utc_strings'][slicenumber],
+    #     fontsize=32)
+    # stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
+    # stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
+    # stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
+    #                 transform=stepplotax.transAxes)
+    # stepplotax.text(0.8, .05,
+    #                 "IBS-derived SC Potential = %2.2f ± %2.2f V" % (scp_mean, scp_err),
+    #                 transform=stepplotax.transAxes)
+    # stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
+    # stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
+    # stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=stepplotax.transAxes)
+    # for mass in ibs_masses:
+    #     stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+    # stepplotax.legend(loc='best')
 
     return out, lpvalue, ionwindspeed, ionwindspeed_err, scp_mean, scp_err, cassini_speed
 
@@ -309,7 +309,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74
     #
     dataslice = elsdata['data'][lowerenergyslice:upperenergyslice, 4, slicenumber]
     # print("dataslice", dataslice,type(dataslice))
-    print(elsdata['flyby'], "Cassini velocity", cassini_speed)
+    print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude",titanaltitude)
     x = elscalib['earray'][lowerenergyslice:upperenergyslice]
     out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = total_fluxgaussian(x, dataslice, els_masses, cassini_speed,
                                                                                 initwindspeed, lpvalue, temperature,
@@ -319,37 +319,37 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74
     # print(out.fit_report(min_correl=0.7))
     comps = out.eval_components(x=x)
 
-    # els_stepplotfig, els_stepplotax = plt.subplots()
-    # els_stepplotax.step(elscalib['polyearray'][lowerenergyslice:upperenergyslice], dataslice, where='post',
-    #                     label=elsdata['flyby'], color='k')
-    # # els_stepplotax.step(elscalib['polyearray'][lowerenergyslice:upperenergyslice], removed_dataslice, where='post',
-    # #                     label=elsdata['flyby'], color='m')
-    # els_stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
-    # els_stepplotax.set_xlim(1, 30)
-    # els_stepplotax.set_ylim(min(dataslice), max(dataslice))
-    # els_stepplotax.set_yscale("log")
-    # els_stepplotax.set_ylabel("Counts [/s]", fontsize=20)
-    # els_stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
-    # els_stepplotax.tick_params(axis='both', which='major', labelsize=15)
-    # els_stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    # els_stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    # els_stepplotax.minorticks_on()
-    # els_stepplotax.set_title(
-    #     "Histogram of " + elsdata['flyby'].upper() + " ELS data from " + elsdata['times_utc_strings'][slicenumber],
-    #     fontsize=32)
-    # els_stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
-    # els_stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
-    # els_stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
-    #                     transform=els_stepplotax.transAxes)
-    # els_stepplotax.text(0.8, .05,
-    #                     "ELS-derived SC Potential = %2.2f ± %2.2f V" % (scp_mean, scp_err),
-    #                     transform=els_stepplotax.transAxes)
-    # els_stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=els_stepplotax.transAxes)
-    # els_stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=els_stepplotax.transAxes)
-    # els_stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=els_stepplotax.transAxes)
-    # for mass in els_masses:
-    #     els_stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
-    # els_stepplotax.legend(loc='best')
+    els_stepplotfig, els_stepplotax = plt.subplots()
+    els_stepplotax.step(elscalib['polyearray'][lowerenergyslice:upperenergyslice], dataslice, where='post',
+                        label=elsdata['flyby'], color='k')
+    # els_stepplotax.step(elscalib['polyearray'][lowerenergyslice:upperenergyslice], removed_dataslice, where='post',
+    #                     label=elsdata['flyby'], color='m')
+    els_stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+    els_stepplotax.set_xlim(1, 30)
+    els_stepplotax.set_ylim(min(dataslice), max(dataslice))
+    els_stepplotax.set_yscale("log")
+    els_stepplotax.set_ylabel("Counts [/s]", fontsize=20)
+    els_stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
+    els_stepplotax.tick_params(axis='both', which='major', labelsize=15)
+    els_stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+    els_stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+    els_stepplotax.minorticks_on()
+    els_stepplotax.set_title(
+        "Histogram of " + elsdata['flyby'].upper() + " ELS data from " + elsdata['times_utc_strings'][slicenumber],
+        fontsize=32)
+    els_stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
+    els_stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
+    els_stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
+                        transform=els_stepplotax.transAxes)
+    els_stepplotax.text(0.8, .05,
+                        "ELS-derived SC Potential = %2.2f ± %2.2f V" % (scp_mean, scp_err),
+                        transform=els_stepplotax.transAxes)
+    els_stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=els_stepplotax.transAxes)
+    els_stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=els_stepplotax.transAxes)
+    els_stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=els_stepplotax.transAxes)
+    for mass in els_masses:
+        els_stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+    els_stepplotax.legend(loc='best')
 
     return out, lpvalue, ionwindspeed, ionwindspeed_err, scp_mean, scp_err, cassini_speed
 
@@ -438,7 +438,7 @@ def single_slice_test(flyby, slicenumber):
                                        tempdf['Altitude'].iloc[slicenumber])
 
 
-multiple_alongtrackwinds_flybys(['t17'])
-#single_slice_test(flyby="t17", slicenumber=4)
+#multiple_alongtrackwinds_flybys(['t16'])
+single_slice_test(flyby="t16", slicenumber=4)
 
 plt.show()
