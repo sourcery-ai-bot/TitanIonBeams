@@ -292,6 +292,7 @@ crosstrackdata["Positive crosstrack velocity"] = np.sin(
 crosstrackdata["Crosstrack velocity"] = np.sin(crosstrackdata["Bulk Deflection from Ram Angle"] * spice.rpd()) * \
                                         crosstrackdata['Flyby velocity']
 crosstrackdata["Absolute Crosstrack velocity"] = crosstrackdata["Crosstrack velocity"].abs()
+crosstrackdata.to_csv("crosswinds_full.csv")
 
 alongtrack_windsdf = multiple_alongtrackwinds_flybys(usedflybys)
 crosstrackdata['Positive Peak Time'] = pd.to_datetime(crosstrackdata['Positive Peak Time'])
