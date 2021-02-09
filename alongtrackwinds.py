@@ -90,7 +90,7 @@ IBS_initvalues_dict = {"t16": [0.25, 200], "t17": [0.6, 300],
                        "t30": [0.25, 250], "t32": [0.25, 200],
                        "t42": [0.25, 0], "t46": [0.5, 300], "t47": [0.25, 200]}
 
-ELS_initvalues_dict = {"t16": [0.25, 100], "t17": [-0.5, 268],
+ELS_initvalues_dict = {"t16": [0.25, 100], "t17": [-0.5, 400],
                        "t20": [0.25, 200], "t21": [0.25, 0], "t25": [0.25, 250], "t26": [0.25, 0],
                        "t27": [0.25, 200],
                        "t28": [0.25, 0], "t29": [0.25, 200],
@@ -117,13 +117,13 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, lpvalue, temperature, charge, FWHM):
+def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, lpvalue, temperature, charge, FWHM, flyby):
     gaussmodels = []
     pars = Parameters()
     eval_pars = Parameters()
 
     # pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
-    pars.add('temp', value=temperature-20)  # , min=130, max=170)
+    pars.add('temp', value=temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     # pars.add('windspeed', value=0, min=-400, max=400)
     pars['spacecraftvelocity'].vary = False
@@ -154,8 +154,8 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, l
         # pars.add(tempprefix+'windspeed', value=0, min=-400, max=400)
         # effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
         # lpvaluewithoffset = lpvalue + IBS_initvalues_dict[ibsdata['flyby']][0]
-        effectivescp_init = lpvalue * charge + ((mass * AMU * cassini_speed * initwindspeed)/ e)
-        print(mass, lpvalue * charge,((mass * AMU * cassini_speed * initwindspeed)/ e),effectivescp_init)
+        effectivescp_init = (lpvalue+IBS_initvalues_dict[flyby][0]) * charge + ((mass * AMU * cassini_speed * initwindspeed)/ e)
+        print(mass, lpvalue,lpvalue+IBS_initvalues_dict[flyby][0],((mass * AMU * cassini_speed * initwindspeed)/ e),effectivescp_init)
         pars.add(tempprefix + "effectivescp", value=effectivescp_init, min=effectivescp_init - 2,
                  max=effectivescp_init + 2)
         pars.update(gaussmodels[-1].make_params())
@@ -203,7 +203,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, initwindspeed, l
     scpvalues = []
     for masscounter, mass in enumerate(masses):
         scpvalues.append((effectivescplist[masscounter] - ((mass * AMU * cassini_speed * ionwindspeed) / e))/charge)
-        #print(mass, scpvalues[-1])
+    print("scplist", scpvalues)
     scp_mean = np.mean(scpvalues)
     scp_err = np.std(scpvalues)
 
@@ -248,7 +248,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 41, 53
     out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed,
                                                                                 initwindspeed, lpvalue, temperature,
                                                                                 charge=1,
-                                                                                FWHM=IBS_FWHM)
+                                                                                FWHM=IBS_FWHM,flyby=ibsdata['flyby'])
 
     # print(out.fit_report(min_correl=0.7))
     comps = out.eval_components(x=x)
@@ -316,7 +316,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[25, 50, 74
     out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = total_fluxgaussian(x, dataslice, els_masses, cassini_speed,
                                                                                 initwindspeed, lpvalue, temperature,
                                                                                 charge=-1,
-                                                                                FWHM=ELS_FWHM)
+                                                                                FWHM=ELS_FWHM,flyby=elsdata['flyby'])
 
     # print(out.fit_report(min_correl=0.7))
     comps = out.eval_components(x=x)
@@ -440,7 +440,7 @@ def single_slice_test(flyby, slicenumber):
                                        tempdf['Altitude'].iloc[slicenumber])
 
 
-multiple_alongtrackwinds_flybys(['t16'])
+multiple_alongtrackwinds_flybys(['t17'])
 #single_slice_test(flyby="t27", slicenumber=4)
 
 plt.show()
