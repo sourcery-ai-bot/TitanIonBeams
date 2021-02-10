@@ -272,7 +272,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     stepplotax.step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], els_dataslice, where='post',
                         label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
     stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
-                    label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
+                    label="IBS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
 
     stepplotax.errorbar(els_x, els_dataslice, yerr=[np.sqrt(i) for i in els_dataslice], color='k', fmt='none')
     stepplotax.errorbar(ibs_x, ibs_dataslice, yerr=[np.sqrt(i) for i in ibs_dataslice], color='r', fmt='none')
@@ -382,13 +382,11 @@ def single_slice_test(flyby, slicenumber):
     tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
 
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
-    ibs_result = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
-                                       tempdf['Altitude'].iloc[slicenumber])
-    els_result = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
+    result = ELS_IBS_fluxfitting(elsdata, ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
 
 
-multiple_alongtrackwinds_flybys(['t17'])
-#single_slice_test(flyby="t27", slicenumber=4)
+#multiple_alongtrackwinds_flybys(['t17'])
+single_slice_test(flyby="t27", slicenumber=4)
 
 plt.show()
