@@ -35,7 +35,7 @@ def base_spectrogram(data, datacalib, datanorm, Z, slicenumbers, ax=None, cax=No
     """
     Plots a spectrogram
     """
-    CS = ax.pcolormesh(data['times_utc'][slicenumbers[0]:slicenumbers[-1] + 1], datacalib, Z, norm=datanorm,
+    CS = ax.pcolormesh(data['times_utc'][slicenumbers[0]:slicenumbers[-1] + 1], datacalib, Z, shading="flat", norm=datanorm,
                        cmap='viridis')
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="1.5%", pad=.05)
