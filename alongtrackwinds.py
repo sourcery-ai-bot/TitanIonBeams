@@ -119,18 +119,19 @@ def energy_gauss(x, amp, sigma, mass, cassini_speed, ionvelocity, lpvalue, charg
     cen = (0.5 * (mass * AMU) * ((cassini_speed+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temperature)) / e
     return amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
 
+def combinedFunction(comboData, *parameters):
+    # single data reference passed in, extract separate data
+    extract1 = #ELSdata
+    extract2 = #IBSdata
 
-def objective(params, x, data):
-    """Calculate total residual for fits of Gaussians to several data sets."""
-    ndata, _ = data.shape
-    resid = 0.0*data[:]
+    for i in parameters:
+        print(i)
 
-    # make residual per data set
-    for i in range(ndata):
-        resid[i, :] = data[i, :] - gauss_dataset(params, i, x)
+    result1 = gauss(extract1, amp1_1, cen1_1 + shift, sig1_1) + gauss(extract1, amp1_2, cen1_2 + shift, sig1_2)
+    result2 = gauss(extract2, amp2_1, cen2_1 + shift, sig2_1) + gauss(extract2, amp2_2, cen2_2 + shift, sig2_2)
 
-    # now flatten this to a 1D array, as minimize() needs
-    return resid.flatten()
+    return np.append(result1, result2)
+
 
 def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, lpvalue, temperature):
     gaussmodels = []
