@@ -136,12 +136,23 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                 'mass66_amp, mass66_cen, mass66_sig, ' \
                 'mass78_amp, mass78_cen, mass78_sig, ' \
                 'mass91_amp, mass91_cen, mass91_sig'
-    params = 'ionvelocity, lpvalue, temperature, ' + elsparams + ibsparams
+    params = elsparams + ibsparams
     print(params)
-    ionvelocity, lpvalue, temperature, mass26_amp, mass26_cen, mass26_sig, mass50_amp, mass50_cen, mass50_sig, mass74_amp, mass74_cen, mass74_sig, mass117_amp, mass117_cen, mass117_sig, mass28_amp, mass28_cen, mass28_sig, mass41_amp, mass41_cen, mass41_sig, mass53_amp, mass53_cen, mass53_sig, mass66_amp, mass66_cen, mass66_sig, mass78_amp, mass78_cen, mass78_sig, mass91_amp, mass91_cen, mass91_sig  = parameters(
+    mass26_amp, mass26_cen, mass26_sig, mass50_amp, mass50_cen, mass50_sig, mass74_amp, mass74_cen, mass74_sig, mass117_amp, mass117_cen, mass117_sig, mass28_amp, mass28_cen, mass28_sig, mass41_amp, mass41_cen, mass41_sig, mass53_amp, mass53_cen, mass53_sig, mass66_amp, mass66_cen, mass66_sig, mass78_amp, mass78_cen, mass78_sig, mass91_amp, mass91_cen, mass91_sig = parameters(
         params)
-    temperature.fixed=True
+    # temperature.fixed=True
 
+    mass26_cen.value = 3
+    mass50_cen.value = 7
+    mass74_cen.value = 14
+    mass117_cen.value = 19
+
+    mass28_cen.value = 5
+    mass41_cen.value = 7
+    mass53_cen.value = 9.5
+    mass66_cen.value = 11.5
+    mass78_cen.value = 13
+    mass91_cen.value = 16
 
     # cen = (0.5 * (mass * AMU) * ((cassini_speed+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temperature)) / e
     # amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
@@ -151,110 +162,59 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
              (mass50_amp * exp(-(x_1 - mass50_cen) ** 2 / (2. * mass50_sig ** 2))) +
              (mass74_amp * exp(-(x_1 - mass74_cen) ** 2 / (2. * mass74_sig ** 2))) +
              (mass117_amp * exp(-(x_1 - mass117_cen) ** 2 / (2. * mass117_sig ** 2))),
-        y_2: (mass28_amp * exp(-(x_1 - mass28_cen) ** 2 / (2. * mass28_sig ** 2))) +
-             (mass41_amp * exp(-(x_1 - mass41_cen) ** 2 / (2. * mass41_sig ** 2))) +
-             (mass53_amp * exp(-(x_1 - mass53_cen) ** 2 / (2. * mass53_sig ** 2))) +
-             (mass66_amp * exp(-(x_1 - mass66_cen) ** 2 / (2. * mass66_sig ** 2))) +
-             (mass78_amp * exp(-(x_1 - mass78_cen) ** 2 / (2. * mass78_sig ** 2))) +
-             (mass91_amp * exp(-(x_1 - mass91_cen) ** 2 / (2. * mass91_sig ** 2)))
+        y_2: (mass28_amp * exp(-(x_2 - mass28_cen) ** 2 / (2. * mass28_sig ** 2))) +
+             (mass41_amp * exp(-(x_2 - mass41_cen) ** 2 / (2. * mass41_sig ** 2))) +
+             (mass53_amp * exp(-(x_2 - mass53_cen) ** 2 / (2. * mass53_sig ** 2))) +
+             (mass66_amp * exp(-(x_2 - mass66_cen) ** 2 / (2. * mass66_sig ** 2))) +
+             (mass78_amp * exp(-(x_2 - mass78_cen) ** 2 / (2. * mass78_sig ** 2))) +
+             (mass91_amp * exp(-(x_2 - mass91_cen) ** 2 / (2. * mass91_sig ** 2)))
     })
-
-    # # pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
-    # pars.add('temp', value=temperature)  # , min=130, max=170)
-    # pars.add('spacecraftvelocity', value=cassini_speed)
-    # # pars.add('windspeed', value=0, min=-400, max=400)
-    # pars['spacecraftvelocity'].vary = False
-    # pars['temp'].vary = False
-    #
-    # pars.add('e', value=e)
-    # pars.add('AMU', value=AMU)
-    # pars.add('k', value=k)
-    # pars.add('charge', value=charge)
-    # pars['e'].vary = False
-    # pars['AMU'].vary = False
-    # pars['k'].vary = False
-    # pars['charge'].vary = False
-    #
-    # peakfluxvalues_nowind = []
-    # for masscounter, mass in enumerate(masses):
-    #     tempprefix = "mass" + str(mass) + '_'
-    #     if charge == 1:
-    #         sigmaval = IBS_fluxfitting_dict[tempprefix]['sigma']
-    #         ampval = IBS_fluxfitting_dict[tempprefix]['amplitude'][0]
-    #     elif charge == -1:
-    #         # sigmaval = ELS_fluxfitting_dict[tempprefix]['sigma']
-    #         sigmaval = 0.1 * (mass / 5.64)
-    #         ampval = ELS_fluxfitting_dict[tempprefix]['amplitude'][0]
-    #
-    #     gaussmodels.append(GaussianModel(prefix=tempprefix))
-    #     pars.add(tempprefix, value=mass, vary=False)
-    #     # pars.add(tempprefix+'windspeed', value=0, min=-400, max=400)
-    #     # effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
-    #     # lpvaluewithoffset = lpvalue + IBS_initvalues_dict[ibsdata['flyby']][0]
-    #     effectivescp_init = (lpvalue + IBS_initvalues_dict[flyby][0]) * charge + (
-    #             (mass * AMU * cassini_speed * initwindspeed) / e)
-    #     print(mass, lpvalue, lpvalue + IBS_initvalues_dict[flyby][0],
-    #           ((mass * AMU * cassini_speed * initwindspeed) / e), effectivescp_init)
-    #     pars.add(tempprefix + "effectivescp", value=effectivescp_init, min=effectivescp_init - 2,
-    #              max=effectivescp_init + 2)
-    #     pars.update(gaussmodels[-1].make_params())
-    #
-    #     temppeakflux = (0.5 * (mass * AMU) * ((cassini_speed) ** 2) - (lpvalue * e * charge) + (
-    #             8 * k * temperature)) / e
-    #     peakfluxvalues_nowind.append(temppeakflux)
-    #     print("mass", mass, "Init Flux - no wind", temppeakflux)
-    #     print("mass", mass, "Init Flux - with init wind",
-    #           (0.5 * (mass * AMU) * ((cassini_speed) ** 2) - (effectivescp_init * e) + (8 * k * temperature)) / e)
-    #
-    #     peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity)**2) - ' + tempprefix + 'effectivescp*e + 8*k*temp)/e'
-    #     pars[tempprefix + 'center'].set(expr=peakfluxexpr)
-    #     # min=temppeakflux - 2, max=temppeakflux + 2)
-    #     # pars[tempprefix + 'sigma'].set(value=sigmaval, min=0.5 * sigmaval, max=1.5 * sigmaval)
-    #     pars[tempprefix + 'sigma'].set(value=sigmaval, min=0.75 * sigmaval, max=1.25 * sigmaval)
-    #     pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (ampval + (0.1 * masscounter)), min=min(yvalues))
-    #
-    # for counter, model in enumerate(gaussmodels):
-    #     if counter == 0:
-    #         mod = model
-    #     else:
-    #         mod = mod + model
-    #
-    # init = mod.eval(pars, x=xvalues)
-    # out = mod.fit(yvalues, pars, x=xvalues)
 
     fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
     fit_result = fit.execute()
+    print(fit_result)
 
-    # SCP offset plot
-    effectivescplist, effectivescplist_errors = [], []
-    for masscounter, mass in enumerate(masses):
-        tempprefix = "mass" + str(mass) + '_'
-        effectivescplist.append(out.params[tempprefix + "effectivescp"].value)
-        # effectivescplist_errors.append(out.params[tempprefix + "effectivescp"].stderr)
-    print("effectivescp", effectivescplist)
-    z, cov = np.polyfit(x=np.array(masses), y=np.array(effectivescplist), deg=1, cov=True)
-    ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
-    ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
-    # print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
+    y = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
+    print(y)
 
-    fig, ax = plt.subplots()
-    p = np.poly1d(z)
-    ax.errorbar(masses, np.array(effectivescplist), fmt='.')  # ,yerr=effectivescplist_errors)
-    ax.plot(masses, p(masses))
+    plt.plot(els_x, y[0],color='C0')
+    plt.step(els_x, els_dataslice, where='post', color='k')
 
-    # SCP calculation
-    scpvalues = []
-    for masscounter, mass in enumerate(masses):
-        scpvalues.append((effectivescplist[masscounter] - ((mass * AMU * cassini_speed * ionwindspeed) / e)) / charge)
-    print("scplist", scpvalues)
-    scp_mean = np.mean(scpvalues)
-    scp_err = np.std(scpvalues)
+    plt.plot(ibs_x, y[1],color='C1')
+    plt.step(ibs_x, ibs_dataslice, where='post', color='r')
+    plt.yscale("log")
+    plt.show()
 
-    # print(ibsdata['flyby'], " IBS-derived SCP = %2.2f ± %2.2f V" % (scp_mean, scp_err))
-
-    print(out.fit_report(min_correl=0.7))
-
-    return out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err
+    # # SCP offset plot
+    # effectivescplist, effectivescplist_errors = [], []
+    # for masscounter, mass in enumerate(masses):
+    #     tempprefix = "mass" + str(mass) + '_'
+    #     effectivescplist.append(out.params[tempprefix + "effectivescp"].value)
+    #     # effectivescplist_errors.append(out.params[tempprefix + "effectivescp"].stderr)
+    # print("effectivescp", effectivescplist)
+    # z, cov = np.polyfit(x=np.array(masses), y=np.array(effectivescplist), deg=1, cov=True)
+    # ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
+    # ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
+    # # print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
+    #
+    # fig, ax = plt.subplots()
+    # p = np.poly1d(z)
+    # ax.errorbar(masses, np.array(effectivescplist), fmt='.')  # ,yerr=effectivescplist_errors)
+    # ax.plot(masses, p(masses))
+    #
+    # # SCP calculation
+    # scpvalues = []
+    # for masscounter, mass in enumerate(masses):
+    #     scpvalues.append((effectivescplist[masscounter] - ((mass * AMU * cassini_speed * ionwindspeed) / e)) / charge)
+    # print("scplist", scpvalues)
+    # scp_mean = np.mean(scpvalues)
+    # scp_err = np.std(scpvalues)
+    #
+    # # print(ibsdata['flyby'], " IBS-derived SCP = %2.2f ± %2.2f V" % (scp_mean, scp_err))
+    #
+    # print(out.fit_report(min_correl=0.7))
+    #
+    # return out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err
 
 
 def titan_linearfit_temperature(altitude):
