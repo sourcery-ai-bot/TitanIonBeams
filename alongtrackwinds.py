@@ -120,11 +120,18 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def symfit_gaussian_fit(xvalues, yvalues, masses, cassini_speed, initwindspeed, lpvalue, temperature, charge, FWHM,
-                        flyby):
+def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, lpvalue, temperature):
     gaussmodels = []
     pars = Parameters()
     eval_pars = Parameters()
+
+    x_1, x_2, y_1, y_2 = variables('x_1, x_2, y_1, y_2')
+    y0, a_1, a_2, b_1, b_2 = parameters('y0, a_1, a_2, b_1, b_2')
+
+    model = Model({
+        y_1: y0 + a_1 * exp(- b_1 * x_1),
+        y_2: y0 + a_2 * exp(- b_2 * x_2),
+    })
 
     # pars.add('scp', value=LPvalue, min=LPvalue-0.25, max=LPvalue + 0.5)
     pars.add('temp', value=temperature)  # , min=130, max=170)
@@ -159,7 +166,7 @@ def symfit_gaussian_fit(xvalues, yvalues, masses, cassini_speed, initwindspeed, 
         # effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*' + tempprefix + 'windspeed' #Windspeed defined positive if going in same direction as Cassini
         # lpvaluewithoffset = lpvalue + IBS_initvalues_dict[ibsdata['flyby']][0]
         effectivescp_init = (lpvalue + IBS_initvalues_dict[flyby][0]) * charge + (
-                    (mass * AMU * cassini_speed * initwindspeed) / e)
+                (mass * AMU * cassini_speed * initwindspeed) / e)
         print(mass, lpvalue, lpvalue + IBS_initvalues_dict[flyby][0],
               ((mass * AMU * cassini_speed * initwindspeed) / e), effectivescp_init)
         pars.add(tempprefix + "effectivescp", value=effectivescp_init, min=effectivescp_init - 2,
@@ -167,7 +174,7 @@ def symfit_gaussian_fit(xvalues, yvalues, masses, cassini_speed, initwindspeed, 
         pars.update(gaussmodels[-1].make_params())
 
         temppeakflux = (0.5 * (mass * AMU) * ((cassini_speed) ** 2) - (lpvalue * e * charge) + (
-                    8 * k * temperature)) / e
+                8 * k * temperature)) / e
         peakfluxvalues_nowind.append(temppeakflux)
         print("mass", mass, "Init Flux - no wind", temppeakflux)
         print("mass", mass, "Init Flux - with init wind",
@@ -188,6 +195,9 @@ def symfit_gaussian_fit(xvalues, yvalues, masses, cassini_speed, initwindspeed, 
 
     init = mod.eval(pars, x=xvalues)
     out = mod.fit(yvalues, pars, x=xvalues)
+
+    fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
+    fit_result = fit.execute()
 
     # SCP offset plot
     effectivescplist, effectivescplist_errors = [], []
@@ -270,10 +280,10 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     # print("dataslice", dataslice,type(dataslice),type(dataslice[0]))
     print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude", titanaltitude)
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
-    # out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = total_fluxgaussian(x, dataslice, els_masses, cassini_speed,
-    #                                                                             initwindspeed, lpvalue, temperature,
-    #                                                                             charge=-1,
-    #                                                                             FWHM=ELS_FWHM,flyby=elsdata['flyby'])
+    out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = IBS_ELS_gaussian(ibs_x, ibs_dataslice,
+                                                                              els_x, els_dataslice,
+                                                                              cassini_speed,
+                                                                              lpvalue, temperature)
 
     # print(out.fit_report(min_correl=0.7))
     # comps = out.eval_components(x=x)
