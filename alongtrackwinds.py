@@ -114,21 +114,42 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     maxflux_anode = np.argmax(anodesums)
     return maxflux_anode
 
-def energy_gauss(x, amp, sigma, mass, cassini_speed, ionvelocity, lpvalue, charge, temperature):
+def energy_gauss(x, amp, sigma, mass, ionvelocity, charge):
     """Gaussian lineshape."""
     cen = (0.5 * (mass * AMU) * ((cassini_speed+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temperature)) / e
     return amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
 
+def var_name(variable):
+ for name in globals():
+     print(globals())
+     if variable.ty
+     if eval(name) == variable:
+        return name
+
 def combinedFunction(comboData, *parameters):
     # single data reference passed in, extract separate data
-    extract1 = #ELSdata
-    extract2 = #IBSdata
-
+    elsamps, elssigmas, elsmasses = [], [], []
+    ibsamps, ibssigmas, ibsmasses = [], [], []
     for i in parameters:
-        print(i)
+        tempname = var_name(i)
+        if "els" in tempname:
+            if "amp" in tempname:
+                elsamps.append(i)
+            if "sigma" in tempname:
+                elssigmas.append(i)
+            if "mass" in tempname:
+                elsmasses.append(i)
+        elif "ibs" in tempname:
+            if "amp" in tempname:
+                elsamps.append(i)
+            if "sigma" in tempname:
+                elssigmas.append(i)
+            if "mass" in tempname:
+                elsmasses.append(i)
 
-    result1 = gauss(extract1, amp1_1, cen1_1 + shift, sig1_1) + gauss(extract1, amp1_2, cen1_2 + shift, sig1_2)
-    result2 = gauss(extract2, amp2_1, cen2_1 + shift, sig2_1) + gauss(extract2, amp2_2, cen2_2 + shift, sig2_2)
+    for i
+    result1 = energy_gauss(els_dataslice, amp, sigma, mass, ionvelocity, -1) + energy_gauss(els_dataslice1, amp1_2, cen1_2 + shift, sig1_2)
+    #result2 = energy_gauss(extract2, amp2_1, cen2_1 + shift, sig2_1) + energy_gauss(extract2, amp2_2, cen2_2 + shift, sig2_2)
 
     return np.append(result1, result2)
 
@@ -244,12 +265,12 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
                         els_masses=[25, 50, 74, 117]):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
-    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+    global cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
     ibs_slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
     lpdata = read_LP_V1(elsdata['flyby'])
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
-    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
+    global lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
     # print("interp lpvalue", lpvalue)
     els_initwindspeed = ELS_initvalues_dict[elsdata['flyby']][1]
     ibs_initwindspeed = IBS_initvalues_dict[ibsdata['flyby']][1]
@@ -265,15 +286,15 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
                                             IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue)[0]
 
     windspeed = 0
-    temperature = titan_linearfit_temperature(titanaltitude)
+    global temperature = titan_linearfit_temperature(titanaltitude)
 
-    ibs_dataslice = ibsdata['ibsdata'][ibs_lowerenergyslice:ibs_upperenergyslice, 1, ibs_slicenumber]
+    global ibs_dataslice = ibsdata['ibsdata'][ibs_lowerenergyslice:ibs_upperenergyslice, 1, ibs_slicenumber]
     ibs_x = ibscalib['ibsearray'][ibs_lowerenergyslice:ibs_upperenergyslice]
 
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
-    els_dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
+    global els_dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
                                els_lowerenergyslice:els_upperenergyslice, anode, 0])
     # print("removed_dataslice", removed_dataslice,type(removed_dataslice),type(removed_dataslice[0]))
 
