@@ -123,21 +123,27 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
 def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, lpvalue, temperature):
     x_1, x_2, y_1, y_2 = variables('x_1, x_2, y_1, y_2')
 
-    #Constants
-    k = Parameter("k", value=scipy.constants.physical_constants['Boltzmann constant'][0])
-    AMU = Parameter("AMU", value=scipy.constants.physical_constants['atomic mass constant'][0])
-    e = Parameter("e", scipy.constants.physical_constants['atomic unit of charge'][0])
-    k.fixed = True
-    AMU.fixed = True
-    e.fixed = True
+    # Constants
+    # k = Parameter("k", value=scipy.constants.physical_constants['Boltzmann constant'][0])
+    # k.fixed = True
+    # AMU = Parameter("AMU", value=scipy.constants.physical_constants['atomic mass constant'][0])
+    # AMU.fixed = True
+    # e = Parameter("e", scipy.constants.physical_constants['atomic unit of charge'][0])
+    # e.fixed = True
+    k_e = Parameter("k_e", value=scipy.constants.physical_constants['Boltzmann constant'][0] /
+                                 scipy.constants.physical_constants['atomic unit of charge'][0])
+    k_e.fixed = True
+    AMU_e = Parameter("AMU_e", value=scipy.constants.physical_constants['atomic mass constant'][0] /
+                                     scipy.constants.physical_constants['atomic unit of charge'][0])
+    AMU_e.fixed = True
 
-    #Physical parameters
+    # Physical parameters
     sc_velocity = Parameter("sc_velocity", value=cassini_speed)
-    lp_pot = Parameter("lp_pot", value=lpvalue)
-    temp = Parameter("temp", value=temperature)
     sc_velocity.fixed = True
-    lp_pot.fixed = True
-    temp.fixed = True
+    temp_eV = Parameter("temp", value=(8 * scipy.constants.physical_constants['Boltzmann constant'][0]*temperature)/scipy.constants.physical_constants['atomic unit of charge'][0])
+    temp_eV.fixed = True
+    lp_pot = Parameter("lp_pot", value=lpvalue)
+    ionvelocity = Parameter("ionvelocity", value=0)
 
     # Negative Ion Parameters
     mass26_neg_cen = Parameter("mass26_neg_cen", value=3)
@@ -150,10 +156,10 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass74_neg_amp = Parameter("mass74_neg_amp", value=3e4)
     mass117_neg_amp = Parameter("mass117_neg_amp", value=2e4)
 
-    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5)
-    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8)
-    mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9)
-    mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2)
+    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=2)
+    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=2)
+    mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9, min=0.1, max=2)
+    mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2, min=0.1, max=2)
 
     # Positive Ion Parameters
     mass28_cen = Parameter("mass28_cen", value=5)
@@ -163,37 +169,57 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass78_cen = Parameter("mass78_cen", value=13)
     mass91_cen = Parameter("mass91_cen", value=16)
 
-    mass28_amp = Parameter("mass28_amp", value=3e5)
-    mass41_amp = Parameter("mass41_amp", value=3e5)
+    mass28_amp = Parameter("mass28_amp", value=5e5)
+    mass41_amp = Parameter("mass41_amp", value=4e5)
     mass53_amp = Parameter("mass53_amp", value=3e5)
     mass66_amp = Parameter("mass66_amp", value=3e5)
     mass78_amp = Parameter("mass78_amp", value=3e5)
     mass91_amp = Parameter("mass91_amp", value=3e5)
 
-    mass28_sig = Parameter("mass28_sig", value=1)
-    mass41_sig = Parameter("mass41_sig", value=1)
-    mass53_sig = Parameter("mass53_sig", value=1)
-    mass66_sig = Parameter("mass66_sig", value=1)
-    mass78_sig = Parameter("mass78_sig", value=1)
-    mass91_sig = Parameter("mass91_sig", value=1)
+    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.1, max=1.5)
+    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.1, max=1.5)
+    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.1, max=1.5)
+    mass66_sig = Parameter("mass66_sig", value=0.6, min=0.1, max=1.5)
+    mass78_sig = Parameter("mass78_sig", value=0.7, min=0.1, max=1.5)
+    mass91_sig = Parameter("mass91_sig", value=0.8, min=0.1, max=1.5)
 
-    # cen = (0.5 * (mass * AMU) * ((cassini_speed+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temperature)) / e
+    # cen = ((0.5 * (mass * AMU) * ((sc_velocity+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temp)) / e)
     # amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
 
     model = Model({
-        y_1: (mass26_neg_amp * exp(-(x_1 - mass26_neg_cen) ** 2 / (2. * mass26_neg_sig ** 2))) +
-             (mass50_neg_amp * exp(-(x_1 - mass50_neg_cen) ** 2 / (2. * mass50_neg_sig ** 2))) +
-             (mass74_neg_amp * exp(-(x_1 - mass74_neg_cen) ** 2 / (2. * mass74_neg_sig ** 2))) +
-             (mass117_neg_amp * exp(-(x_1 - mass117_neg_cen) ** 2 / (2. * mass117_neg_sig ** 2))),
-        y_2: (mass28_amp * exp(-(x_2 - mass28_cen) ** 2 / (2. * mass28_sig ** 2))) +
-             (mass41_amp * exp(-(x_2 - mass41_cen) ** 2 / (2. * mass41_sig ** 2))) +
-             (mass53_amp * exp(-(x_2 - mass53_cen) ** 2 / (2. * mass53_sig ** 2))) +
-             (mass66_amp * exp(-(x_2 - mass66_cen) ** 2 / (2. * mass66_sig ** 2))) +
-             (mass78_amp * exp(-(x_2 - mass78_cen) ** 2 / (2. * mass78_sig ** 2))) +
-             (mass91_amp * exp(-(x_2 - mass91_cen) ** 2 / (2. * mass91_sig ** 2)))
+        y_1: (mass26_neg_amp * exp(
+            -(x_1 - (0.5 * (26 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                        2. * mass26_neg_sig ** 2))) +
+             (mass50_neg_amp * exp(
+                 -(x_1 - (0.5 * (50 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                             2. * mass50_neg_sig ** 2))) +
+             (mass74_neg_amp * exp(
+                 -(x_1 - (0.5 * (74 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                             2. * mass74_neg_sig ** 2))) +
+             (mass117_neg_amp * exp(-(x_1 - (
+                         0.5 * (117 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                                                2. * mass117_neg_sig ** 2))),
+        y_2: (mass28_amp * exp(
+            -(x_2 - (0.5 * (28 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                        2. * mass28_sig ** 2))) +
+             (mass41_amp * exp(
+                 -(x_2 - (0.5 * (41 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                             2. * mass41_sig ** 2))) +
+             (mass53_amp * exp(
+                 -(x_2 - (0.5 * (53 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                             2. * mass53_sig ** 2))) +
+             (mass66_amp * exp(
+                 -(x_2 - (0.5 * (66 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                             2. * mass66_sig ** 2))) +
+             (mass78_amp * exp(
+                 -(x_2 - (0.5 * (78 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                             2. * mass78_sig ** 2))) +
+             (mass91_amp * exp(
+                 -(x_2 - (0.5 * (91 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                             2. * mass91_sig ** 2)))
     })
 
-    #init_y  = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
+    # init_y  = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
 
     fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
     fit_result = fit.execute()
