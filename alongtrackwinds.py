@@ -66,9 +66,9 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": [1]},
                         "mass91_": {"sigma": 0.8, "amplitude": [1]}}
 
 ELS_fluxfitting_dict = {"mass25_": {"sigma": 0.5, "amplitude": [5]},
-                        "mass50_": {"sigma": 0.8, "amplitude": [4]},
-                        "mass74_": {"sigma": 0.9, "amplitude": [3]},
-                        "mass117_": {"sigma": 1.2, "amplitude": [3]},
+                        "mass50_neg_": {"sigma": 0.8, "amplitude": [4]},
+                        "mass74_neg_": {"sigma": 0.9, "amplitude": [3]},
+                        "mass117_neg_": {"sigma": 1.2, "amplitude": [3]},
                         "mass122_": {"sigma": 1.5, "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
@@ -121,47 +121,70 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
 
 
 def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, lpvalue, temperature):
-    gaussmodels = []
-    pars = Parameters()
-    eval_pars = Parameters()
-
     x_1, x_2, y_1, y_2 = variables('x_1, x_2, y_1, y_2')
-    elsparams = 'mass26_amp, mass26_cen, mass26_sig, ' \
-                'mass50_amp, mass50_cen, mass50_sig, ' \
-                'mass74_amp, mass74_cen, mass74_sig, ' \
-                'mass117_amp, mass117_cen, mass117_sig, '
-    ibsparams = 'mass28_amp, mass28_cen, mass28_sig, ' \
-                'mass41_amp, mass41_cen, mass41_sig, ' \
-                'mass53_amp, mass53_cen, mass53_sig, ' \
-                'mass66_amp, mass66_cen, mass66_sig, ' \
-                'mass78_amp, mass78_cen, mass78_sig, ' \
-                'mass91_amp, mass91_cen, mass91_sig'
-    params = elsparams + ibsparams
-    print(params)
-    mass26_amp, mass26_cen, mass26_sig, mass50_amp, mass50_cen, mass50_sig, mass74_amp, mass74_cen, mass74_sig, mass117_amp, mass117_cen, mass117_sig, mass28_amp, mass28_cen, mass28_sig, mass41_amp, mass41_cen, mass41_sig, mass53_amp, mass53_cen, mass53_sig, mass66_amp, mass66_cen, mass66_sig, mass78_amp, mass78_cen, mass78_sig, mass91_amp, mass91_cen, mass91_sig = parameters(
-        params)
-    # temperature.fixed=True
 
-    mass26_cen.value = 3
-    mass50_cen.value = 7
-    mass74_cen.value = 14
-    mass117_cen.value = 19
+    #Constants
+    k = Parameter("k", value=scipy.constants.physical_constants['Boltzmann constant'][0])
+    AMU = Parameter("AMU", value=scipy.constants.physical_constants['atomic mass constant'][0])
+    e = Parameter("e", scipy.constants.physical_constants['atomic unit of charge'][0])
+    k.fixed = True
+    AMU.fixed = True
+    e.fixed = True
 
-    mass28_cen.value = 5
-    mass41_cen.value = 7
-    mass53_cen.value = 9.5
-    mass66_cen.value = 11.5
-    mass78_cen.value = 13
-    mass91_cen.value = 16
+    #Physical parameters
+    sc_velocity = Parameter("sc_velocity", value=cassini_speed)
+    lp_pot = Parameter("lp_pot", value=lpvalue)
+    temp = Parameter("temp", value=temperature)
+    sc_velocity.fixed = True
+    lp_pot.fixed = True
+    temp.fixed = True
+
+    # Negative Ion Parameters
+    mass26_neg_cen = Parameter("mass26_neg_cen", value=3)
+    mass50_neg_cen = Parameter("mass50_neg_cen", value=7)
+    mass74_neg_cen = Parameter("mass74_neg_cen", value=15)
+    mass117_neg_cen = Parameter("mass117_neg_cen", value=19)
+
+    mass26_neg_amp = Parameter("mass26_neg_amp", value=1e5)
+    mass50_neg_amp = Parameter("mass50_neg_amp", value=1e5)
+    mass74_neg_amp = Parameter("mass74_neg_amp", value=3e4)
+    mass117_neg_amp = Parameter("mass117_neg_amp", value=2e4)
+
+    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5)
+    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8)
+    mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9)
+    mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2)
+
+    # Positive Ion Parameters
+    mass28_cen = Parameter("mass28_cen", value=5)
+    mass41_cen = Parameter("mass41_cen", value=7)
+    mass53_cen = Parameter("mass53_cen", value=9.5)
+    mass66_cen = Parameter("mass66_cen", value=11.5)
+    mass78_cen = Parameter("mass78_cen", value=13)
+    mass91_cen = Parameter("mass91_cen", value=16)
+
+    mass28_amp = Parameter("mass28_amp", value=3e5)
+    mass41_amp = Parameter("mass41_amp", value=3e5)
+    mass53_amp = Parameter("mass53_amp", value=3e5)
+    mass66_amp = Parameter("mass66_amp", value=3e5)
+    mass78_amp = Parameter("mass78_amp", value=3e5)
+    mass91_amp = Parameter("mass91_amp", value=3e5)
+
+    mass28_sig = Parameter("mass28_sig", value=1)
+    mass41_sig = Parameter("mass41_sig", value=1)
+    mass53_sig = Parameter("mass53_sig", value=1)
+    mass66_sig = Parameter("mass66_sig", value=1)
+    mass78_sig = Parameter("mass78_sig", value=1)
+    mass91_sig = Parameter("mass91_sig", value=1)
 
     # cen = (0.5 * (mass * AMU) * ((cassini_speed+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temperature)) / e
     # amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
 
     model = Model({
-        y_1: (mass26_amp * exp(-(x_1 - mass26_cen) ** 2 / (2. * mass26_sig ** 2))) +
-             (mass50_amp * exp(-(x_1 - mass50_cen) ** 2 / (2. * mass50_sig ** 2))) +
-             (mass74_amp * exp(-(x_1 - mass74_cen) ** 2 / (2. * mass74_sig ** 2))) +
-             (mass117_amp * exp(-(x_1 - mass117_cen) ** 2 / (2. * mass117_sig ** 2))),
+        y_1: (mass26_neg_amp * exp(-(x_1 - mass26_neg_cen) ** 2 / (2. * mass26_neg_sig ** 2))) +
+             (mass50_neg_amp * exp(-(x_1 - mass50_neg_cen) ** 2 / (2. * mass50_neg_sig ** 2))) +
+             (mass74_neg_amp * exp(-(x_1 - mass74_neg_cen) ** 2 / (2. * mass74_neg_sig ** 2))) +
+             (mass117_neg_amp * exp(-(x_1 - mass117_neg_cen) ** 2 / (2. * mass117_neg_sig ** 2))),
         y_2: (mass28_amp * exp(-(x_2 - mass28_cen) ** 2 / (2. * mass28_sig ** 2))) +
              (mass41_amp * exp(-(x_2 - mass41_cen) ** 2 / (2. * mass41_sig ** 2))) +
              (mass53_amp * exp(-(x_2 - mass53_cen) ** 2 / (2. * mass53_sig ** 2))) +
@@ -170,6 +193,8 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
              (mass91_amp * exp(-(x_2 - mass91_cen) ** 2 / (2. * mass91_sig ** 2)))
     })
 
+    #init_y  = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
+
     fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
     fit_result = fit.execute()
     print(fit_result)
@@ -177,11 +202,11 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     y = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
     print(y)
 
-    plt.plot(els_x, y[0],color='C0')
-    plt.step(els_x, els_dataslice, where='post', color='k')
+    plt.plot(els_x, y[0], color='C0')
+    plt.step(els_x, els_dataslice, where='mid', color='k')
 
-    plt.plot(ibs_x, y[1],color='C1')
-    plt.step(ibs_x, ibs_dataslice, where='post', color='r')
+    plt.plot(ibs_x, y[1], color='C1')
+    plt.step(ibs_x, ibs_dataslice, where='mid', color='r')
     plt.yscale("log")
     plt.show()
 
