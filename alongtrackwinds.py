@@ -140,21 +140,18 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     # Physical parameters
     sc_velocity = Parameter("sc_velocity", value=cassini_speed)
     sc_velocity.fixed = True
-    temp_eV = Parameter("temp", value=(8 * scipy.constants.physical_constants['Boltzmann constant'][0]*temperature)/scipy.constants.physical_constants['atomic unit of charge'][0])
+    temp_eV = Parameter("temp_eV",
+                        value=(8 * scipy.constants.physical_constants['Boltzmann constant'][0] * temperature) /
+                              scipy.constants.physical_constants['atomic unit of charge'][0])
     temp_eV.fixed = True
     lp_pot = Parameter("lp_pot", value=lpvalue)
     ionvelocity = Parameter("ionvelocity", value=0)
 
     # Negative Ion Parameters
-    mass26_neg_cen = Parameter("mass26_neg_cen", value=3)
-    mass50_neg_cen = Parameter("mass50_neg_cen", value=7)
-    mass74_neg_cen = Parameter("mass74_neg_cen", value=15)
-    mass117_neg_cen = Parameter("mass117_neg_cen", value=19)
-
-    mass26_neg_amp = Parameter("mass26_neg_amp", value=1e5)
-    mass50_neg_amp = Parameter("mass50_neg_amp", value=1e5)
-    mass74_neg_amp = Parameter("mass74_neg_amp", value=3e4)
-    mass117_neg_amp = Parameter("mass117_neg_amp", value=2e4)
+    mass26_neg_amp = Parameter("mass26_neg_amp", value=0.5, max=1.5)
+    mass50_neg_amp = Parameter("mass50_neg_amp", value=0.5, max=1.5)
+    mass74_neg_amp = Parameter("mass74_neg_amp", value=0.5, max=1.5)
+    mass117_neg_amp = Parameter("mass117_neg_amp", value=0.5, max=1.5)
 
     mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=2)
     mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=2)
@@ -162,61 +159,51 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2, min=0.1, max=2)
 
     # Positive Ion Parameters
-    mass28_cen = Parameter("mass28_cen", value=5)
-    mass41_cen = Parameter("mass41_cen", value=7)
-    mass53_cen = Parameter("mass53_cen", value=9.5)
-    mass66_cen = Parameter("mass66_cen", value=11.5)
-    mass78_cen = Parameter("mass78_cen", value=13)
-    mass91_cen = Parameter("mass91_cen", value=16)
+    mass28_amp = Parameter("mass28_amp", value=0.75, max=1.5)
+    mass41_amp = Parameter("mass41_amp", value=0.75, max=1.5)
+    mass53_amp = Parameter("mass53_amp", value=0.75, max=1.5)
+    mass66_amp = Parameter("mass66_amp", value=0.6, max=1.5)
+    mass78_amp = Parameter("mass78_amp", value=0.5, max=1.5)
+    mass91_amp = Parameter("mass91_amp", value=0.5, max=1.5)
 
-    mass28_amp = Parameter("mass28_amp", value=5e5)
-    mass41_amp = Parameter("mass41_amp", value=4e5)
-    mass53_amp = Parameter("mass53_amp", value=3e5)
-    mass66_amp = Parameter("mass66_amp", value=3e5)
-    mass78_amp = Parameter("mass78_amp", value=3e5)
-    mass91_amp = Parameter("mass91_amp", value=3e5)
-
-    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.1, max=1.5)
-    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.1, max=1.5)
-    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.1, max=1.5)
-    mass66_sig = Parameter("mass66_sig", value=0.6, min=0.1, max=1.5)
-    mass78_sig = Parameter("mass78_sig", value=0.7, min=0.1, max=1.5)
-    mass91_sig = Parameter("mass91_sig", value=0.8, min=0.1, max=1.5)
-
-    # cen = ((0.5 * (mass * AMU) * ((sc_velocity+ionvelocity) ** 2) - (lpvalue * e * charge) + (8 * k * temp)) / e)
-    # amp * np.exp(-(x - cen) ** 2 / (2. * sigma ** 2))
+    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.1, max=1)
+    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.1, max=1)
+    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.1, max=1)
+    mass66_sig = Parameter("mass66_sig", value=0.5, min=0.1, max=0.8)
+    mass78_sig = Parameter("mass78_sig", value=0.7, min=0.1, max=1)
+    mass91_sig = Parameter("mass91_sig", value=0.7, min=0.1, max=1)
 
     model = Model({
         y_1: (mass26_neg_amp * exp(
             -(x_1 - (0.5 * (26 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
-                        2. * mass26_neg_sig ** 2))) +
+                    2. * mass26_neg_sig ** 2))) +
              (mass50_neg_amp * exp(
                  -(x_1 - (0.5 * (50 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
-                             2. * mass50_neg_sig ** 2))) +
+                         2. * mass50_neg_sig ** 2))) +
              (mass74_neg_amp * exp(
                  -(x_1 - (0.5 * (74 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
-                             2. * mass74_neg_sig ** 2))) +
+                         2. * mass74_neg_sig ** 2))) +
              (mass117_neg_amp * exp(-(x_1 - (
-                         0.5 * (117 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
-                                                2. * mass117_neg_sig ** 2))),
+                     0.5 * (117 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                                            2. * mass117_neg_sig ** 2))),
         y_2: (mass28_amp * exp(
             -(x_2 - (0.5 * (28 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                        2. * mass28_sig ** 2))) +
+                    2. * mass28_sig ** 2))) +
              (mass41_amp * exp(
                  -(x_2 - (0.5 * (41 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                             2. * mass41_sig ** 2))) +
+                         2. * mass41_sig ** 2))) +
              (mass53_amp * exp(
                  -(x_2 - (0.5 * (53 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                             2. * mass53_sig ** 2))) +
+                         2. * mass53_sig ** 2))) +
              (mass66_amp * exp(
                  -(x_2 - (0.5 * (66 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                             2. * mass66_sig ** 2))) +
+                         2. * mass66_sig ** 2))) +
              (mass78_amp * exp(
                  -(x_2 - (0.5 * (78 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                             2. * mass78_sig ** 2))) +
+                         2. * mass78_sig ** 2))) +
              (mass91_amp * exp(
                  -(x_2 - (0.5 * (91 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
-                             2. * mass91_sig ** 2)))
+                         2. * mass91_sig ** 2)))
     })
 
     # init_y  = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
@@ -226,14 +213,50 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     print(fit_result)
 
     y = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
-    print(y)
 
-    plt.plot(els_x, y[0], color='C0')
-    plt.step(els_x, els_dataslice, where='mid', color='k')
+    print("Negative Ions")
+    for i in [26, 50, 74, 117]:
+        negionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) +
+                        fit_result.params['lp_pot'] + temp_eV.value)
+        print("mass" + str(i), "%2.2f" % negionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_neg_sig'],
+              "%2.2f" % fit_result.params['mass' + str(i) + '_neg_amp'])
 
-    plt.plot(ibs_x, y[1], color='C1')
-    plt.step(ibs_x, ibs_dataslice, where='mid', color='r')
-    plt.yscale("log")
+    print("Positive Ions")
+    for i in [28, 41, 53, 66, 78, 91]:
+        posionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) -
+                        fit_result.params['lp_pot'] + temp_eV.value)
+        print("mass" + str(i), "%2.2f" % posionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_sig'],
+              "%2.2f" % fit_result.params['mass' + str(i) + '_amp'])
+
+    #
+    # for j in [28, 41, 53, 66, 78, 91]:
+    #     posionenergies.append((0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
+    #
+    # print("Negative Ions")
+    # for i in [26, 50, 74, 117]:
+    # print("26amu energy", (0.5 * (26 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
+    # print("50amu energy", (0.5 * (50 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
+    # print("74amu energy", (0.5 * (74 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
+    # print("117amu energy", (0.5 * (117 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
+    #
+    # print("28amu energy", (0.5 * (28 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+    # print("41amu energy", (0.5 * (41 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+    # print("53amu energy", (0.5 * (53 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+    # print("66amu energy", (0.5 * (66 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+    # print("78amu energy", (0.5 * (78 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+    # print("91amu energy", (0.5 * (91 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
+
+    stepplotfig, stepplotax = plt.subplots()
+    stepplotax.plot(els_x, y[0], color='C0')
+    stepplotax.step(els_x, els_dataslice, where='mid', color='k')
+
+    stepplotax.plot(ibs_x, y[1], color='C1')
+    stepplotax.step(ibs_x, ibs_dataslice, where='mid', color='r')
+    stepplotax.set_yscale("log")
+    stepplotax.set_xlabel("Energy (ev/q)")
+    stepplotax.set_ylabel("Normalised to max flux bin in reduced energy range")
+    stepplotax.set_ylim(0.01, 1.25)
+
     plt.show()
 
     # # SCP offset plot
@@ -304,6 +327,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     temperature = titan_linearfit_temperature(titanaltitude)
 
     ibs_dataslice = ibsdata['ibsdata'][ibs_lowerenergyslice:ibs_upperenergyslice, 1, ibs_slicenumber]
+    scaled_ibs_dataslice = ibs_dataslice / max(ibs_dataslice)
     ibs_x = ibscalib['ibsearray'][ibs_lowerenergyslice:ibs_upperenergyslice]
 
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
@@ -311,41 +335,44 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     print("anode", anode)
     els_dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
                                els_lowerenergyslice:els_upperenergyslice, anode, 0])
+    scaled_els_dataslice = els_dataslice / max(els_dataslice)
     # print("removed_dataslice", removed_dataslice,type(removed_dataslice),type(removed_dataslice[0]))
 
     # dataslice = elsdata['data'][lowerenergyslice:upperenergyslice, anode, slicenumber]
     # print("dataslice", dataslice,type(dataslice),type(dataslice[0]))
     print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude", titanaltitude)
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
-    out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = IBS_ELS_gaussian(ibs_x, ibs_dataslice,
-                                                                              els_x, els_dataslice,
-                                                                              cassini_speed,
-                                                                              lpvalue, temperature)
+    # out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice,
+    #                                                                           els_x, scaled_els_dataslice,
+    #                                                                           cassini_speed,
+    #                                                                           lpvalue, temperature)
+
+    IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue, temperature)
 
     # print(out.fit_report(min_correl=0.7))
     # comps = out.eval_components(x=x)
 
-    stepplotfig, stepplotax = plt.subplots()
-    stepplotax.step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], els_dataslice, where='post',
-                    label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
-    stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
-                    label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
-
-    stepplotax.errorbar(els_x, els_dataslice, yerr=[np.sqrt(i) for i in els_dataslice], color='k', fmt='none')
-    stepplotax.errorbar(ibs_x, ibs_dataslice, yerr=[np.sqrt(i) for i in ibs_dataslice], color='r', fmt='none')
-    stepplotax.set_xlim(1, 30)
-    # stepplotax.set_ylim(min(dataslice), max(dataslice))
-    stepplotax.set_yscale("log")
-    stepplotax.set_ylabel("Counts [/s]", fontsize=20)
-    stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
-    stepplotax.tick_params(axis='both', which='major', labelsize=15)
-    stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    stepplotax.minorticks_on()
-    stepplotax.set_title(
-        "Histogram of " + elsdata['flyby'].upper() + " CAPS data from ~" + elsdata['times_utc_strings'][
-            els_slicenumber],
-        fontsize=32)
+    # stepplotfig, stepplotax = plt.subplots()
+    # stepplotax.step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], els_dataslice, where='post',
+    #                 label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
+    # stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
+    #                 label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
+    #
+    # stepplotax.errorbar(els_x, els_dataslice, yerr=[np.sqrt(i) for i in els_dataslice], color='k', fmt='none')
+    # stepplotax.errorbar(ibs_x, ibs_dataslice, yerr=[np.sqrt(i) for i in ibs_dataslice], color='r', fmt='none')
+    # stepplotax.set_xlim(1, 30)
+    # # stepplotax.set_ylim(min(dataslice), max(dataslice))
+    # stepplotax.set_yscale("log")
+    # stepplotax.set_ylabel("Counts [/s]", fontsize=20)
+    # stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
+    # stepplotax.tick_params(axis='both', which='major', labelsize=15)
+    # stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+    # stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+    # stepplotax.minorticks_on()
+    # stepplotax.set_title(
+    #     "Histogram of " + elsdata['flyby'].upper() + " CAPS data from ~" + elsdata['times_utc_strings'][
+    #         els_slicenumber],
+    #     fontsize=32)
     # stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
     # stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
     # stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
@@ -358,7 +385,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     # stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=els_stepplotax.transAxes)
     # for mass in els_masses:
     #     stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
-    stepplotax.legend(loc='best')
+    # stepplotax.legend(loc='best')
 
     # return out, lpvalue, ionwindspeed, ionwindspeed_err, scp_mean, scp_err, cassini_speed
 
