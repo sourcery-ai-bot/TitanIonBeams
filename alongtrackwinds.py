@@ -145,7 +145,7 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                               scipy.constants.physical_constants['atomic unit of charge'][0])
     temp_eV.fixed = True
     lp_pot = Parameter("lp_pot", value=lpvalue)
-    ionvelocity = Parameter("ionvelocity", value=0)
+    ionvelocity = Parameter("ionvelocity", value=-500)
 
     # Negative Ion Parameters
     mass26_neg_amp = Parameter("mass26_neg_amp", value=0.5, max=1.5)
@@ -162,16 +162,16 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass28_amp = Parameter("mass28_amp", value=0.75, max=1.5)
     mass41_amp = Parameter("mass41_amp", value=0.75, max=1.5)
     mass53_amp = Parameter("mass53_amp", value=0.75, max=1.5)
-    mass66_amp = Parameter("mass66_amp", value=0.6, max=1.5)
-    mass78_amp = Parameter("mass78_amp", value=0.5, max=1.5)
-    mass91_amp = Parameter("mass91_amp", value=0.5, max=1.5)
+    mass66_amp = Parameter("mass66_amp", value=0.7, max=1.5)
+    mass78_amp = Parameter("mass78_amp", value=0.4, max=1.5)
+    mass91_amp = Parameter("mass91_amp", value=0.4, max=1.5)
 
-    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.1, max=1)
-    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.1, max=1)
-    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.1, max=1)
-    mass66_sig = Parameter("mass66_sig", value=0.5, min=0.1, max=0.8)
-    mass78_sig = Parameter("mass78_sig", value=0.7, min=0.1, max=1)
-    mass91_sig = Parameter("mass91_sig", value=0.7, min=0.1, max=1)
+    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.2, max=0.8)
+    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.2, max=0.8)
+    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.2, max=0.8)
+    mass66_sig = Parameter("mass66_sig", value=0.5, min=0.2, max=0.7)
+    mass78_sig = Parameter("mass78_sig", value=0.6, min=0.2, max=0.7)
+    mass91_sig = Parameter("mass91_sig", value=0.6, min=0.2, max=0.7)
 
     model = Model({
         y_1: (mass26_neg_amp * exp(
@@ -228,24 +228,6 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
         print("mass" + str(i), "%2.2f" % posionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_sig'],
               "%2.2f" % fit_result.params['mass' + str(i) + '_amp'])
 
-    #
-    # for j in [28, 41, 53, 66, 78, 91]:
-    #     posionenergies.append((0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
-    #
-    # print("Negative Ions")
-    # for i in [26, 50, 74, 117]:
-    # print("26amu energy", (0.5 * (26 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
-    # print("50amu energy", (0.5 * (50 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
-    # print("74amu energy", (0.5 * (74 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
-    # print("117amu energy", (0.5 * (117 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) + fit_result.params['lp_pot'] + temp_eV.value))
-    #
-    # print("28amu energy", (0.5 * (28 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-    # print("41amu energy", (0.5 * (41 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-    # print("53amu energy", (0.5 * (53 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-    # print("66amu energy", (0.5 * (66 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-    # print("78amu energy", (0.5 * (78 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-    # print("91amu energy", (0.5 * (91 * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) - fit_result.params['lp_pot'] + temp_eV.value))
-
     stepplotfig, stepplotax = plt.subplots()
     stepplotax.plot(els_x, y[0], color='C0')
     stepplotax.step(els_x, els_dataslice, where='mid', color='k')
@@ -259,35 +241,6 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
 
     plt.show()
 
-    # # SCP offset plot
-    # effectivescplist, effectivescplist_errors = [], []
-    # for masscounter, mass in enumerate(masses):
-    #     tempprefix = "mass" + str(mass) + '_'
-    #     effectivescplist.append(out.params[tempprefix + "effectivescp"].value)
-    #     # effectivescplist_errors.append(out.params[tempprefix + "effectivescp"].stderr)
-    # print("effectivescp", effectivescplist)
-    # z, cov = np.polyfit(x=np.array(masses), y=np.array(effectivescplist), deg=1, cov=True)
-    # ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
-    # ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
-    # # print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
-    #
-    # fig, ax = plt.subplots()
-    # p = np.poly1d(z)
-    # ax.errorbar(masses, np.array(effectivescplist), fmt='.')  # ,yerr=effectivescplist_errors)
-    # ax.plot(masses, p(masses))
-    #
-    # # SCP calculation
-    # scpvalues = []
-    # for masscounter, mass in enumerate(masses):
-    #     scpvalues.append((effectivescplist[masscounter] - ((mass * AMU * cassini_speed * ionwindspeed) / e)) / charge)
-    # print("scplist", scpvalues)
-    # scp_mean = np.mean(scpvalues)
-    # scp_err = np.std(scpvalues)
-    #
-    # # print(ibsdata['flyby'], " IBS-derived SCP = %2.2f ± %2.2f V" % (scp_mean, scp_err))
-    #
-    # print(out.fit_report(min_correl=0.7))
-    #
     # return out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err
 
 
