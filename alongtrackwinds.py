@@ -157,10 +157,10 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass74_neg_amp = Parameter("mass74_neg_amp", value=1, min=0.1,max=1.5)
     mass117_neg_amp = Parameter("mass117_neg_amp", value=1, min=0.1,max=1.5)
 
-    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=1.8)
-    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=1.8)
-    mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9, min=0.1, max=2)
-    mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2, min=0.1, max=2)
+    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.3, min=0.2, max=0.7)
+    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.62, min=0.4, max=1)
+    mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9, min=0.7, max=1.5)
+    mass117_neg_sig = Parameter("mass117_neg_sig", value=1.5, min=0.8, max=1.8)
 
     # Positive Ion Parameters
     mass28_amp = Parameter("mass28_amp", value=1, max=1.5)
@@ -215,6 +215,8 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
     fit_result = fit.execute()
     print(fit_result)
+    tend = time.time()
+    print("Fit Run Time", tend - tstart)
 
     y = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
 
@@ -266,7 +268,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     lpdata = read_LP_V1(elsdata['flyby'])
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
-    # print("interp lpvalue", lpvalue)
+    print("interp lpvalue", lpvalue)
     els_initwindspeed = ELS_initvalues_dict[elsdata['flyby']][1]
     ibs_initwindspeed = IBS_initvalues_dict[ibsdata['flyby']][1]
 
@@ -285,13 +287,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
 
     ibs_dataslice = ibsdata['ibsdata'][ibs_lowerenergyslice:ibs_upperenergyslice, 1, ibs_slicenumber]
     ibs_x = ibscalib['ibsearray'][ibs_lowerenergyslice:ibs_upperenergyslice]
-
     scaled_ibs_dataslice = ibs_dataslice / max(ibs_dataslice)
-    ibs_z, cov = np.polyfit(x=ibs_x, y=scaled_ibs_dataslice , deg=1, cov=True)
-    print("ibs grad",ibs_z[0])
-    ibs_p = np.poly1d(ibs_z)
-    levelled_ibs_dataslice = scaled_ibs_dataslice / ibs_p(ibs_x)
-    rescaled_ibs_dataslice = levelled_ibs_dataslice  / max(levelled_ibs_dataslice)
 
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
@@ -300,38 +296,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
                                els_lowerenergyslice:els_upperenergyslice, anode, 0])
     print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude", titanaltitude)
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
-
     scaled_els_dataslice = els_dataslice / max(els_dataslice)
-    els_z, cov = np.polyfit(x=els_x, y=scaled_els_dataslice, deg=1, cov=True)
-    print("els grad",els_z[0])
-    els_p = np.poly1d(els_z)
-    levelled_els_dataslice = scaled_els_dataslice / els_p(els_x)
-    rescaled_els_dataslice = levelled_els_dataslice / max(levelled_els_dataslice)
-
-
-    fig, axes = plt.subplots(2)
-    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], scaled_els_dataslice, where='post',
-                     label="Scaled")
-    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], levelled_els_dataslice, where='post',
-                     label="Levelled")
-    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], rescaled_els_dataslice, where='post',
-                     label="Rescaled")
-    axes[0].plot(els_x, els_p(els_x))
-    axes[0].set_title("ELS data")
-    axes[0].set_ylabel("Arbitrary")
-    axes[0].legend()
-
-    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], scaled_ibs_dataslice, where='post',
-                     label="Scaled")
-    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], levelled_ibs_dataslice, where='post',
-                     label="Levelled")
-    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], rescaled_ibs_dataslice, where='post',
-                     label="Rescaled")
-    axes[1].plot(ibs_x,ibs_p(ibs_x))
-    axes[1].set_title("IBS data")
-    axes[1].set_xlabel("Energy (eV/q)")
-    axes[1].set_ylabel("Arbitrary")
-    axes[1].legend()
 
     IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue, temperature)
 
@@ -420,9 +385,8 @@ def single_slice_test(flyby, slicenumber):
 
 
 # multiple_alongtrackwinds_flybys(['t17'])
-single_slice_test(flyby="t16", slicenumber=4)
+single_slice_test(flyby="t16", slicenumber=6)
 
-tend = time.time()
-print("Script Run Time", tend - tstart)
+
 
 plt.show()
