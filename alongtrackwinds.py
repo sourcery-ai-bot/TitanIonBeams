@@ -153,8 +153,8 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass74_neg_amp = Parameter("mass74_neg_amp", value=0.5, max=1.5)
     mass117_neg_amp = Parameter("mass117_neg_amp", value=0.5, max=1.5)
 
-    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=2)
-    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=2)
+    mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=1.8)
+    mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=1.8)
     mass74_neg_sig = Parameter("mass74_neg_sig", value=0.9, min=0.1, max=2)
     mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2, min=0.1, max=2)
 
@@ -166,43 +166,43 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass78_amp = Parameter("mass78_amp", value=0.4, max=1.5)
     mass91_amp = Parameter("mass91_amp", value=0.4, max=1.5)
 
-    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.2, max=0.8)
-    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.2, max=0.8)
+    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.2, max=0.7)
+    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.2, max=0.7)
     mass53_sig = Parameter("mass53_sig", value=0.5, min=0.2, max=0.8)
-    mass66_sig = Parameter("mass66_sig", value=0.5, min=0.2, max=0.7)
-    mass78_sig = Parameter("mass78_sig", value=0.6, min=0.2, max=0.7)
-    mass91_sig = Parameter("mass91_sig", value=0.6, min=0.2, max=0.7)
+    mass66_sig = Parameter("mass66_sig", value=0.5, min=0.2, max=0.6)
+    mass78_sig = Parameter("mass78_sig", value=0.5, min=0.2, max=0.7)
+    mass91_sig = Parameter("mass91_sig", value=0.5, min=0.2, max=0.7)
 
     model = Model({
         y_1: (mass26_neg_amp * exp(
-            -(x_1 - (0.5 * (26 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+            -(x_1 - (13 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                     2. * mass26_neg_sig ** 2))) +
              (mass50_neg_amp * exp(
-                 -(x_1 - (0.5 * (50 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                 -(x_1 - (25 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                          2. * mass50_neg_sig ** 2))) +
              (mass74_neg_amp * exp(
-                 -(x_1 - (0.5 * (74 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                 -(x_1 - (37 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                          2. * mass74_neg_sig ** 2))) +
-             (mass117_neg_amp * exp(-(x_1 - (
-                     0.5 * (117 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+             (mass117_neg_amp * exp(
+                 -(x_1 - (58.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                                             2. * mass117_neg_sig ** 2))),
         y_2: (mass28_amp * exp(
-            -(x_2 - (0.5 * (28 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+            -(x_2 - (14 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                     2. * mass28_sig ** 2))) +
              (mass41_amp * exp(
-                 -(x_2 - (0.5 * (41 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (20.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass41_sig ** 2))) +
              (mass53_amp * exp(
-                 -(x_2 - (0.5 * (53 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (26.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass53_sig ** 2))) +
              (mass66_amp * exp(
-                 -(x_2 - (0.5 * (66 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (33 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass66_sig ** 2))) +
              (mass78_amp * exp(
-                 -(x_2 - (0.5 * (78 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (39 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass78_sig ** 2))) +
              (mass91_amp * exp(
-                 -(x_2 - (0.5 * (91 * AMU_e) * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (45.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass91_sig ** 2)))
     })
 
@@ -283,22 +283,24 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     scaled_ibs_dataslice = ibs_dataslice / max(ibs_dataslice)
     ibs_x = ibscalib['ibsearray'][ibs_lowerenergyslice:ibs_upperenergyslice]
 
+
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
     els_dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
                                els_lowerenergyslice:els_upperenergyslice, anode, 0])
     scaled_els_dataslice = els_dataslice / max(els_dataslice)
-    # print("removed_dataslice", removed_dataslice,type(removed_dataslice),type(removed_dataslice[0]))
-
-    # dataslice = elsdata['data'][lowerenergyslice:upperenergyslice, anode, slicenumber]
-    # print("dataslice", dataslice,type(dataslice),type(dataslice[0]))
     print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude", titanaltitude)
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
-    # out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err = IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice,
-    #                                                                           els_x, scaled_els_dataslice,
-    #                                                                           cassini_speed,
-    #                                                                           lpvalue, temperature)
+
+
+    fig, axes = plt.subplots(2)
+    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], scaled_els_dataslice, where='post',
+                     label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
+
+
+    # stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
+    #                 label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
 
     IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue, temperature)
 
@@ -425,6 +427,6 @@ def single_slice_test(flyby, slicenumber):
 
 
 # multiple_alongtrackwinds_flybys(['t17'])
-single_slice_test(flyby="t17", slicenumber=4)
+single_slice_test(flyby="t16", slicenumber=4)
 
 plt.show()
