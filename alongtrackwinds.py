@@ -24,8 +24,12 @@ from lmfit import Minimizer
 from symfit import parameters, variables, Fit, Model, Parameter, exp
 from symfit.distributions import Gaussian
 
+from sklearn.preprocessing import MinMaxScaler
+
 import datetime
 from util import *
+
+tstart = time.time()
 
 # Loading Kernels
 if spice.ktotal('spk') == 0:
@@ -148,10 +152,10 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     ionvelocity = Parameter("ionvelocity", value=-500)
 
     # Negative Ion Parameters
-    mass26_neg_amp = Parameter("mass26_neg_amp", value=0.5, max=1.5)
-    mass50_neg_amp = Parameter("mass50_neg_amp", value=0.5, max=1.5)
-    mass74_neg_amp = Parameter("mass74_neg_amp", value=0.5, max=1.5)
-    mass117_neg_amp = Parameter("mass117_neg_amp", value=0.5, max=1.5)
+    mass26_neg_amp = Parameter("mass26_neg_amp", value=1, min=0.1, max=1.5)
+    mass50_neg_amp = Parameter("mass50_neg_amp", value=1, min=0.1,max=1.5)
+    mass74_neg_amp = Parameter("mass74_neg_amp", value=1, min=0.1,max=1.5)
+    mass117_neg_amp = Parameter("mass117_neg_amp", value=1, min=0.1,max=1.5)
 
     mass26_neg_sig = Parameter("mass26_neg_sig", value=0.5, min=0.1, max=1.8)
     mass50_neg_sig = Parameter("mass50_neg_sig", value=0.8, min=0.1, max=1.8)
@@ -159,16 +163,16 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     mass117_neg_sig = Parameter("mass117_neg_sig", value=1.2, min=0.1, max=2)
 
     # Positive Ion Parameters
-    mass28_amp = Parameter("mass28_amp", value=0.75, max=1.5)
-    mass41_amp = Parameter("mass41_amp", value=0.75, max=1.5)
-    mass53_amp = Parameter("mass53_amp", value=0.75, max=1.5)
-    mass66_amp = Parameter("mass66_amp", value=0.7, max=1.5)
-    mass78_amp = Parameter("mass78_amp", value=0.4, max=1.5)
-    mass91_amp = Parameter("mass91_amp", value=0.4, max=1.5)
+    mass28_amp = Parameter("mass28_amp", value=1, max=1.5)
+    mass41_amp = Parameter("mass41_amp", value=1, max=1.5)
+    mass53_amp = Parameter("mass53_amp", value=1, max=1.5)
+    mass66_amp = Parameter("mass66_amp", value=1, max=1.5)
+    mass78_amp = Parameter("mass78_amp", value=1, max=1.5)
+    mass91_amp = Parameter("mass91_amp", value=1, max=1.5)
 
-    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.2, max=0.7)
-    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.2, max=0.7)
-    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.2, max=0.8)
+    mass28_sig = Parameter("mass28_sig", value=0.4, min=0.2, max=0.6)
+    mass41_sig = Parameter("mass41_sig", value=0.5, min=0.2, max=0.6)
+    mass53_sig = Parameter("mass53_sig", value=0.5, min=0.2, max=0.6)
     mass66_sig = Parameter("mass66_sig", value=0.5, min=0.2, max=0.6)
     mass78_sig = Parameter("mass78_sig", value=0.5, min=0.2, max=0.7)
     mass91_sig = Parameter("mass91_sig", value=0.5, min=0.2, max=0.7)
@@ -280,67 +284,56 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     temperature = titan_linearfit_temperature(titanaltitude)
 
     ibs_dataslice = ibsdata['ibsdata'][ibs_lowerenergyslice:ibs_upperenergyslice, 1, ibs_slicenumber]
-    scaled_ibs_dataslice = ibs_dataslice / max(ibs_dataslice)
     ibs_x = ibscalib['ibsearray'][ibs_lowerenergyslice:ibs_upperenergyslice]
 
+    scaled_ibs_dataslice = ibs_dataslice / max(ibs_dataslice)
+    ibs_z, cov = np.polyfit(x=ibs_x, y=scaled_ibs_dataslice , deg=1, cov=True)
+    print("ibs grad",ibs_z[0])
+    ibs_p = np.poly1d(ibs_z)
+    levelled_ibs_dataslice = scaled_ibs_dataslice / ibs_p(ibs_x)
+    rescaled_ibs_dataslice = levelled_ibs_dataslice  / max(levelled_ibs_dataslice)
 
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
     els_dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
                                els_lowerenergyslice:els_upperenergyslice, anode, 0])
-    scaled_els_dataslice = els_dataslice / max(els_dataslice)
     print(elsdata['flyby'], "Cassini velocity", cassini_speed, "Altitude", titanaltitude)
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
+
+    scaled_els_dataslice = els_dataslice / max(els_dataslice)
+    els_z, cov = np.polyfit(x=els_x, y=scaled_els_dataslice, deg=1, cov=True)
+    print("els grad",els_z[0])
+    els_p = np.poly1d(els_z)
+    levelled_els_dataslice = scaled_els_dataslice / els_p(els_x)
+    rescaled_els_dataslice = levelled_els_dataslice / max(levelled_els_dataslice)
 
 
     fig, axes = plt.subplots(2)
     axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], scaled_els_dataslice, where='post',
-                     label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
+                     label="Scaled")
+    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], levelled_els_dataslice, where='post',
+                     label="Levelled")
+    axes[0].step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], rescaled_els_dataslice, where='post',
+                     label="Rescaled")
+    axes[0].plot(els_x, els_p(els_x))
+    axes[0].set_title("ELS data")
+    axes[0].set_ylabel("Arbitrary")
+    axes[0].legend()
 
-
-    # stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
-    #                 label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
+    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], scaled_ibs_dataslice, where='post',
+                     label="Scaled")
+    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], levelled_ibs_dataslice, where='post',
+                     label="Levelled")
+    axes[1].step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], rescaled_ibs_dataslice, where='post',
+                     label="Rescaled")
+    axes[1].plot(ibs_x,ibs_p(ibs_x))
+    axes[1].set_title("IBS data")
+    axes[1].set_xlabel("Energy (eV/q)")
+    axes[1].set_ylabel("Arbitrary")
+    axes[1].legend()
 
     IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue, temperature)
-
-    # print(out.fit_report(min_correl=0.7))
-    # comps = out.eval_components(x=x)
-
-    # stepplotfig, stepplotax = plt.subplots()
-    # stepplotax.step(elscalib['polyearray'][els_lowerenergyslice:els_upperenergyslice], els_dataslice, where='post',
-    #                 label="ELS " + elsdata['times_utc_strings'][els_slicenumber], color='k')
-    # stepplotax.step(ibscalib['ibspolyearray'][ibs_lowerenergyslice:ibs_upperenergyslice], ibs_dataslice, where='post',
-    #                 label="IBSS " + ibsdata['times_utc_strings'][ibs_slicenumber], color='r')
-    #
-    # stepplotax.errorbar(els_x, els_dataslice, yerr=[np.sqrt(i) for i in els_dataslice], color='k', fmt='none')
-    # stepplotax.errorbar(ibs_x, ibs_dataslice, yerr=[np.sqrt(i) for i in ibs_dataslice], color='r', fmt='none')
-    # stepplotax.set_xlim(1, 30)
-    # # stepplotax.set_ylim(min(dataslice), max(dataslice))
-    # stepplotax.set_yscale("log")
-    # stepplotax.set_ylabel("Counts [/s]", fontsize=20)
-    # stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
-    # stepplotax.tick_params(axis='both', which='major', labelsize=15)
-    # stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    # stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    # stepplotax.minorticks_on()
-    # stepplotax.set_title(
-    #     "Histogram of " + elsdata['flyby'].upper() + " CAPS data from ~" + elsdata['times_utc_strings'][
-    #         els_slicenumber],
-    #     fontsize=32)
-    # stepplotax.plot(x, out.init_fit, 'b-', label='init fit')
-    # stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
-    # stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err),
-    #                     transform=stepplotax.transAxes)
-    # stepplotax.text(0.8, .05,
-    #                     "ELS-derived SC Potential = %2.2f ± %2.2f V" % (scp_mean, scp_err),
-    #                     transform=stepplotax.transAxes)
-    # stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=els_stepplotax.transAxes)
-    # stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=els_stepplotax.transAxes)
-    # stepplotax.text(0.8, .14, "Reduced $\chi^{2}$ = %.2E" % out.redchi, transform=els_stepplotax.transAxes)
-    # for mass in els_masses:
-    #     stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
-    # stepplotax.legend(loc='best')
 
     # return out, lpvalue, ionwindspeed, ionwindspeed_err, scp_mean, scp_err, cassini_speed
 
@@ -428,5 +421,8 @@ def single_slice_test(flyby, slicenumber):
 
 # multiple_alongtrackwinds_flybys(['t17'])
 single_slice_test(flyby="t16", slicenumber=4)
+
+tend = time.time()
+print("Script Run Time", tend - tstart)
 
 plt.show()
