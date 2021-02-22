@@ -127,13 +127,6 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
 def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, lpvalue, temperature):
     x_1, x_2, y_1, y_2 = variables('x_1, x_2, y_1, y_2')
 
-    # Constants
-    # k = Parameter("k", value=scipy.constants.physical_constants['Boltzmann constant'][0])
-    # k.fixed = True
-    # AMU = Parameter("AMU", value=scipy.constants.physical_constants['atomic mass constant'][0])
-    # AMU.fixed = True
-    # e = Parameter("e", scipy.constants.physical_constants['atomic unit of charge'][0])
-    # e.fixed = True
     k_e = Parameter("k_e", value=scipy.constants.physical_constants['Boltzmann constant'][0] /
                                  scipy.constants.physical_constants['atomic unit of charge'][0])
     k_e.fixed = True
@@ -148,14 +141,14 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                         value=(8 * scipy.constants.physical_constants['Boltzmann constant'][0] * temperature) /
                               scipy.constants.physical_constants['atomic unit of charge'][0])
     temp_eV.fixed = True
-    lp_pot = Parameter("lp_pot", value=lpvalue)
-    ionvelocity = Parameter("ionvelocity", value=-500)
+    lp_pot = Parameter("lp_pot", value=lpvalue-0.4)
+    ionvelocity = Parameter("ionvelocity", value=-250)
 
     # Negative Ion Parameters
     mass26_neg_amp = Parameter("mass26_neg_amp", value=1, min=0.1, max=1.5)
-    mass50_neg_amp = Parameter("mass50_neg_amp", value=1, min=0.1,max=1.5)
-    mass74_neg_amp = Parameter("mass74_neg_amp", value=1, min=0.1,max=1.5)
-    mass117_neg_amp = Parameter("mass117_neg_amp", value=1, min=0.1,max=1.5)
+    mass50_neg_amp = Parameter("mass50_neg_amp", value=1, min=0.1, max=1.5)
+    mass74_neg_amp = Parameter("mass74_neg_amp", value=1, min=0.1, max=1.5)
+    mass117_neg_amp = Parameter("mass117_neg_amp", value=1, min=0.1, max=1.5)
 
     mass26_neg_sig = Parameter("mass26_neg_sig", value=0.3, min=0.2, max=0.7)
     mass50_neg_sig = Parameter("mass50_neg_sig", value=0.62, min=0.4, max=1)
@@ -189,7 +182,7 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                          2. * mass74_neg_sig ** 2))) +
              (mass117_neg_amp * exp(
                  -(x_1 - (58.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
-                                            2. * mass117_neg_sig ** 2))),
+                         2. * mass117_neg_sig ** 2))),
         y_2: (mass28_amp * exp(
             -(x_2 - (14 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                     2. * mass28_sig ** 2))) +
@@ -234,20 +227,7 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
         print("mass" + str(i), "%2.2f" % posionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_sig'],
               "%2.2f" % fit_result.params['mass' + str(i) + '_amp'])
 
-    stepplotfig, stepplotax = plt.subplots()
-    stepplotax.plot(els_x, y[0], color='C0')
-    stepplotax.step(els_x, els_dataslice, where='mid', color='k')
-
-    stepplotax.plot(ibs_x, y[1], color='C1')
-    stepplotax.step(ibs_x, ibs_dataslice, where='mid', color='r')
-    stepplotax.set_yscale("log")
-    stepplotax.set_xlabel("Energy (ev/q)")
-    stepplotax.set_ylabel("Normalised to max flux bin in reduced energy range")
-    stepplotax.set_ylim(0.01, 1.25)
-
-    plt.show()
-
-    # return out, ionwindspeed, ionwindspeed_err, scp_mean, scp_err
+    return fit_result, y, ionvelocity, lp_pot
 
 
 def titan_linearfit_temperature(altitude):
@@ -298,9 +278,31 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
     scaled_els_dataslice = els_dataslice / max(els_dataslice)
 
-    IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue, temperature)
+    fit_result, y, ionvelocity, lp_pot = IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue,
+                                     temperature)
 
-    # return out, lpvalue, ionwindspeed, ionwindspeed_err, scp_mean, scp_err, cassini_speed
+    stepplotfig, (elsax, ibsax) = plt.subplots(2, sharex='all', sharey='all')
+    elsax.plot(els_x, y[0], color='r', label="ELS fit")
+    elsax.step(els_x, scaled_els_dataslice, where='mid', color='k', label="ELS data")
+    elsax.set_ylim(0.01, 1.25)
+    elsax.set_yscale("log")
+    elsax.set_ylabel("Normalised to max flux bin \n in reduced energy range", fontsize=15)
+    elsax.set_title("ELS data from " + elsdata['flyby'] + " " + str(tempdatetime), fontsize=24)
+    elsax.legend()
+    elsax.text(10, 0.015,"Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(ionvelocity),
+               fit_result.stdev(ionvelocity)))
+    elsax.text(10, 0.02, "CAPS S/C potential = %2.2f ± %2.2f V" % (
+    fit_result.value(lp_pot), fit_result.stdev(lp_pot)))
+    elsax.text(10, 0.025, "LP S/C potential = %2.2f V" % lpvalue)
+
+    ibsax.plot(ibs_x, y[1], color='r', label="IBS fit")
+    ibsax.step(ibs_x, scaled_ibs_dataslice, where='mid', color='k', label="IBS data")
+    ibsax.set_xlabel("Energy (ev/q)", fontsize=20)
+    ibsax.set_ylabel("Normalised to max flux bin \n in reduced energy range", fontsize=15)
+    ibsax.set_title("IBS data from " + elsdata['flyby'] + " " + str(tempdatetime), fontsize=24)
+    ibsax.legend()
+
+    return fit_result, lpvalue, ionvelocity, lp_pot, cassini_speed
 
 
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
@@ -310,8 +312,7 @@ windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 def multiple_alongtrackwinds_flybys(usedflybys):
     times = []
-    els_fits, ibs_fits, lpvalues, ibs_ionwindspeeds, ibs_ionwindspeeds_err, ibs_scps, ibs_scps_err, cassini_speeds = [], [], [], [], [], [], [], []
-    els_fits, els_ionwindspeeds, els_ionwindspeeds_err, els_scps, els_scps_err = [], [], [], [], []
+    fit_results, lpvalues, ionwindspeeds, ionwindspeeds_errors, scps, scps_errors, cassini_speeds = [], [], [], [], [], [], []
     for flyby in usedflybys:
         tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
         times = times + list(tempdf['Positive Peak Time'])
@@ -320,50 +321,35 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
         generate_aligned_ibsdata(ibsdata, elsdata, flyby)
         for (i, j) in zip(tempdf['Positive Peak Time'], tempdf['Altitude']):
-            ibs_fit, lpvalue, ibs_ionwindspeed, ibs_ionwindspeed_err, ibs_scp_mean, ibs_scp_err, cassini_speed = IBS_fluxfitting(
-                ibsdata,
-                i, j)
-            els_fit, lpvalue, els_ionwindspeed, els_ionwindspeed_err, els_scp_mean, els_scp_err, cassini_speed = ELS_fluxfitting(
-                elsdata,
-                i, j)
+            fit_result, lpvalue, ionwind_param, scp_pot_param, cassini_speed = ELS_IBS_fluxfitting(elsdata, ibsdata,
+                                                               i,j)
+            fit_results.append(fit_result)
+            ionwindspeeds.append(fit_result.value(ionwind_param))
+            ionwindspeeds_errors.append(fit_result.stdev(ionwind_param))
+            scps.append(fit_result.value(scp_pot_param))
+            scps_errors.append(fit_result.stdev(scp_pot_param))
             lpvalues.append(lpvalue)
             cassini_speeds.append(cassini_speed)
 
-            ibs_fits.append(ibs_fit)
-            ibs_ionwindspeeds.append(ibs_ionwindspeed)
-            ibs_ionwindspeeds_err.append(ibs_ionwindspeed_err)
-            ibs_scps.append(ibs_scp_mean)
-            ibs_scps_err.append(ibs_scp_err)
-
-            els_fits.append(els_fit)
-            els_ionwindspeeds.append(els_ionwindspeed)
-            els_ionwindspeeds_err.append(els_ionwindspeed_err)
-            els_scps.append(els_scp_mean)
-            els_scps_err.append(els_scp_err)
-
     outputdf = pd.DataFrame()
     outputdf['Positive Peak Time'] = times
-    outputdf['IBS Alongtrack velocity'] = ibs_ionwindspeeds
+    outputdf['Alongtrack velocity'] = ionwindspeeds
     # outputdf['IBS residuals'] = ibs_residuals
-    outputdf['IBS spacecraft potentials'] = ibs_scps
+    outputdf['CAPS spacecraft potentials'] = scps
     outputdf['Actual spacecraft velocity'] = cassini_speeds
     outputdf.to_csv("testalongtrackvelocity.csv")
-    print(outputdf['Positive Peak Time'])
+    #print(outputdf['Positive Peak Time'])
 
     fig5, axes = plt.subplots(2)
-    axes[0].errorbar(tempdf['Positive Peak Time'], ibs_ionwindspeeds, yerr=np.array(ibs_ionwindspeeds_err),
+    axes[0].errorbar(tempdf['Positive Peak Time'], ionwindspeeds, yerr=np.array(ionwindspeeds_errors),
                      label="IBS - Ion Wind Speeds", linestyle='--', capsize=5)
-    axes[0].errorbar(tempdf['Positive Peak Time'], els_ionwindspeeds, yerr=np.array(els_ionwindspeeds_err),
-                     label="ELS - Ion Wind Speeds", linestyle='--', capsize=5)
     axes[0].set_ylabel("Ion Wind Speed (m/s)")
     # for counter, x in enumerate(ibs_fits):
     #     axes[0].text(tempdf['Positive Peak Time'].iloc[counter], ibs_ionwindspeeds[counter], "Chi-Sqr =  %.1E" % x.chisqr)
     axes[0].legend()
 
-    axes[1].errorbar(tempdf['Positive Peak Time'], ibs_scps, yerr=np.array(ibs_scps_err), color='C1',
+    axes[1].errorbar(tempdf['Positive Peak Time'], scps, yerr=np.array(scps_errors), color='C1',
                      label="S/C potential, IBS derived", capsize=5)
-    axes[1].errorbar(tempdf['Positive Peak Time'], els_scps, yerr=np.array(els_scps_err), color='C2',
-                     label="S/C potential, ELS derived", capsize=5)
     axes[1].plot(tempdf['Positive Peak Time'], lpvalues, color='k', label="S/C potential, LP derived")
     axes[1].set_ylabel("S/C Potential (V)")
     axes[1].set_xlabel("Time")
@@ -384,9 +370,7 @@ def single_slice_test(flyby, slicenumber):
                                  tempdf['Altitude'].iloc[slicenumber])
 
 
-# multiple_alongtrackwinds_flybys(['t17'])
-single_slice_test(flyby="t16", slicenumber=6)
-
-
+#multiple_alongtrackwinds_flybys(['t16'])
+single_slice_test(flyby="t16", slicenumber=4)
 
 plt.show()
