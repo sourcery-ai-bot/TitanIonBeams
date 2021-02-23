@@ -141,8 +141,10 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                         value=(8 * scipy.constants.physical_constants['Boltzmann constant'][0] * temperature) /
                               scipy.constants.physical_constants['atomic unit of charge'][0])
     temp_eV.fixed = True
-    lp_pot = Parameter("lp_pot", value=lpvalue-0.4)
-    ionvelocity = Parameter("ionvelocity", value=-250)
+    lp_pot = Parameter("lp_pot", value=lpvalue-0.5, max=lpvalue, min=-2.5)
+
+    pos_ionvelocity = Parameter("pos_ionvelocity", value=-400)
+    neg_ionvelocity = Parameter("neg_ionvelocity", value=-400)
 
     # Negative Ion Parameters
     mass26_neg_amp = Parameter("mass26_neg_amp", value=1, min=0.1, max=1.5)
@@ -172,34 +174,34 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
 
     model = Model({
         y_1: (mass26_neg_amp * exp(
-            -(x_1 - (13 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+            -(x_1 - (13 * AMU_e * ((sc_velocity + neg_ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                     2. * mass26_neg_sig ** 2))) +
              (mass50_neg_amp * exp(
-                 -(x_1 - (25 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                 -(x_1 - (25 * AMU_e * ((sc_velocity + neg_ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                          2. * mass50_neg_sig ** 2))) +
              (mass74_neg_amp * exp(
-                 -(x_1 - (37 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                 -(x_1 - (37 * AMU_e * ((sc_velocity + neg_ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                          2. * mass74_neg_sig ** 2))) +
              (mass117_neg_amp * exp(
-                 -(x_1 - (58.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
+                 -(x_1 - (58.5 * AMU_e * ((sc_velocity + neg_ionvelocity) ** 2) + lp_pot + temp_eV)) ** 2 / (
                          2. * mass117_neg_sig ** 2))),
         y_2: (mass28_amp * exp(
-            -(x_2 - (14 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+            -(x_2 - (14 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                     2. * mass28_sig ** 2))) +
              (mass41_amp * exp(
-                 -(x_2 - (20.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (20.5 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass41_sig ** 2))) +
              (mass53_amp * exp(
-                 -(x_2 - (26.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (26.5 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass53_sig ** 2))) +
              (mass66_amp * exp(
-                 -(x_2 - (33 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (33 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass66_sig ** 2))) +
              (mass78_amp * exp(
-                 -(x_2 - (39 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (39 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass78_sig ** 2))) +
              (mass91_amp * exp(
-                 -(x_2 - (45.5 * AMU_e * ((sc_velocity + ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
+                 -(x_2 - (45.5 * AMU_e * ((sc_velocity + pos_ionvelocity) ** 2) - lp_pot + temp_eV)) ** 2 / (
                          2. * mass91_sig ** 2)))
     })
 
@@ -215,19 +217,19 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
 
     print("Negative Ions")
     for i in [26, 50, 74, 117]:
-        negionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) +
+        negionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['neg_ionvelocity']) ** 2) +
                         fit_result.params['lp_pot'] + temp_eV.value)
         print("mass" + str(i), "%2.2f" % negionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_neg_sig'],
               "%2.2f" % fit_result.params['mass' + str(i) + '_neg_amp'])
 
     print("Positive Ions")
     for i in [28, 41, 53, 66, 78, 91]:
-        posionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['ionvelocity']) ** 2) -
+        posionenergy = (0.5 * (i * AMU_e.value) * ((sc_velocity.value + fit_result.params['pos_ionvelocity']) ** 2) -
                         fit_result.params['lp_pot'] + temp_eV.value)
         print("mass" + str(i), "%2.2f" % posionenergy, "%2.2f" % fit_result.params['mass' + str(i) + '_sig'],
               "%2.2f" % fit_result.params['mass' + str(i) + '_amp'])
 
-    return fit_result, y, ionvelocity, lp_pot
+    return fit_result, y, neg_ionvelocity, pos_ionvelocity, lp_pot
 
 
 def titan_linearfit_temperature(altitude):
@@ -278,7 +280,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     els_x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
     scaled_els_dataslice = els_dataslice / max(els_dataslice)
 
-    fit_result, y, ionvelocity, lp_pot = IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue,
+    fit_result, y, neg_ionvelocity, pos_ionvelocity, lp_pot = IBS_ELS_gaussian(ibs_x, scaled_ibs_dataslice, els_x, scaled_els_dataslice, cassini_speed, lpvalue,
                                      temperature)
 
     stepplotfig, (elsax, ibsax) = plt.subplots(2, sharex='all', sharey='all')
@@ -289,8 +291,10 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     elsax.set_ylabel("Normalised to max flux bin \n in reduced energy range", fontsize=15)
     elsax.set_title("ELS data from " + elsdata['flyby'] + " " + str(tempdatetime), fontsize=24)
     elsax.legend()
-    elsax.text(10, 0.015,"Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(ionvelocity),
-               fit_result.stdev(ionvelocity)))
+    elsax.text(10, 0.01,"Neg Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(neg_ionvelocity),
+               fit_result.stdev(neg_ionvelocity)))
+    elsax.text(10, 0.015,"Pos Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(pos_ionvelocity),
+               fit_result.stdev(neg_ionvelocity)))
     elsax.text(10, 0.02, "CAPS S/C potential = %2.2f ± %2.2f V" % (
     fit_result.value(lp_pot), fit_result.stdev(lp_pot)))
     elsax.text(10, 0.025, "LP S/C potential = %2.2f V" % lpvalue)
@@ -302,7 +306,7 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     ibsax.set_title("IBS data from " + elsdata['flyby'] + " " + str(tempdatetime), fontsize=24)
     ibsax.legend()
 
-    return fit_result, lpvalue, ionvelocity, lp_pot, cassini_speed
+    return fit_result, lpvalue, neg_ionvelocity, lp_pot, cassini_speed
 
 
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
