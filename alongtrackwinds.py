@@ -22,7 +22,7 @@ from lmfit import Parameters
 from lmfit import Minimizer
 
 from symfit.core.objectives import HessianObjective
-from symfit.core.minimizers import LBFGSB
+from symfit.core.minimizers import LBFGSB, BasinHopping
 from symfit.core.support import keywordonly
 from symfit import parameters, variables, Fit, Model, Parameter, exp
 from symfit.distributions import Gaussian
@@ -153,13 +153,14 @@ class LeastSquaresPercentageObjective(HessianObjective):
 
                 sigma = self.sigma_data[self.model.sigmas[dep_var]]
                 #print((dep_var_value - dep_data), (dep_var_value - dep_data) / dep_data)
-                chi2[index] += np.sum(abs((dep_var_value - dep_data) / dep_data) / abs(sigma))
+                chi2[index] += np.sum(((dep_var_value - dep_data) / dep_data) ** 2 / sigma ** 2)
                 #chi2[index] += np.sum((dep_var_value - dep_data) ** 2 / sigma ** 2)
                 #if len(dep_var_value) == 17:
                     # print("normal",((dep_var_value - dep_data) ** 2 / sigma ** 2))
                     # print("Percent",((dep_var_value - dep_data) / dep_data) ** 2 / sigma ** 2)
         chi2 = np.sum(chi2) if flatten_components else chi2
         return chi2 / 2
+
 
     def eval_jacobian(self, ordered_parameters=[], **parameters):
         """
@@ -184,7 +185,7 @@ class LeastSquaresPercentageObjective(HessianObjective):
             sigma_var = self.model.sigmas[var]
             if y is not None:
                 sigma = self.sigma_data[sigma_var]
-                pre_sum = jac_comp * ((y - f) / sigma ** 2)[np.newaxis, ...]
+                pre_sum = jac_comp * (((y - f)/y)/ sigma ** 2)[np.newaxis, ...]
                 axes = tuple(range(1, len(pre_sum.shape)))
                 result -= np.sum(pre_sum, axis=axes, keepdims=False)
         return np.atleast_1d(np.squeeze(np.array(result)))
@@ -216,7 +217,7 @@ class LeastSquaresPercentageObjective(HessianObjective):
             sigma_var = self.model.sigmas[var]
             if y is not None:
                 sigma = self.sigma_data[sigma_var]
-                p1 = hess_comp * ((y - f) / sigma ** 2)[np.newaxis, np.newaxis, ...]
+                p1 = hess_comp * (((y - f)/y)/ sigma ** 2)[np.newaxis, np.newaxis, ...]
                 # Outer product
                 p2 = np.einsum('i...,j...->ij...', jac_comp, jac_comp)
                 p2 = p2 / sigma[np.newaxis, np.newaxis, ...] ** 2
@@ -245,7 +246,7 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
     temp_eV.fixed = True
     lp_pot = Parameter("lp_pot", value=lpvalue - 0.5, max=lpvalue, min=-2.5)
 
-    ionvelocity = Parameter("ionvelocity", value=-347)
+    ionvelocity = Parameter("ionvelocity", value=-200)
 
     # Negative Ion Parameters
     mass26_neg_amp = Parameter("mass26_neg_amp", value=0.5)
@@ -306,12 +307,11 @@ def IBS_ELS_gaussian(ibs_x, ibs_dataslice, els_x, els_dataslice, cassini_speed, 
                          2. * mass91_sig ** 2)))
     })
 
-    # init_y  = model(x_1=els_x, x_2=ibs_x, **fit_result.params)
-    # print(els_dataslice, ibs_dataslice)
-    minimize_options = {"options":{"disp": True}}
-    fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice, objective=LeastSquaresPercentageObjective)
 
-    fit_result = fit.execute(**minimize_options)
+    #minimize_options = {"options":{"maxcor":20,"maxls":40,"disp": True}}
+    fit = Fit(model, x_1=els_x, x_2=ibs_x, y_1=els_dataslice, y_2=ibs_dataslice)
+
+    fit_result = fit.execute()
     print(fit_result)
     tend = time.time()
     print("Fit Run Time", tend - tstart)
@@ -397,10 +397,10 @@ def ELS_IBS_fluxfitting(elsdata, ibsdata, tempdatetime, titanaltitude, ibs_masse
     elsax.set_ylabel("Normalised to max flux bin \n in reduced energy range", fontsize=15)
     elsax.set_title("ELS data from " + elsdata['flyby'] + " " + str(tempdatetime), fontsize=24)
     elsax.legend()
-    elsax.text(10, 0.015, "Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(ionvelocity),
-                                                                fit_result.stdev(ionvelocity)))
-    elsax.text(10, 0.02, "CAPS S/C potential = %2.2f ± %2.2f V" % (
-        fit_result.value(lp_pot), fit_result.stdev(lp_pot)))
+    # elsax.text(10, 0.015, "Ion velocity = %2.2f ± %2.2f m/s" % (fit_result.value(ionvelocity),
+    #                                                             fit_result.stdev(ionvelocity)))
+    # elsax.text(10, 0.02, "CAPS S/C potential = %2.2f ± %2.2f V" % (
+    #     fit_result.value(lp_pot), fit_result.stdev(lp_pot)))
     elsax.text(10, 0.025, "LP S/C potential = %2.2f V" % lpvalue)
 
     ibsax.plot(ibs_x, y[1], color='r', label="IBS fit")
