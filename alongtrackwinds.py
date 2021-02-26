@@ -233,6 +233,12 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
 
     return out, lpvalue
 
+def ELS_maxflux_anode(elsdata, starttime, endtime):
+    startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
+    dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)
+    anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
+    maxflux_anode = np.argmax(anodesums)
+    return maxflux_anode
 
 def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3, els_masses = [26, 50, 74, 117]):
     slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
@@ -245,6 +251,10 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     windspeed = -150
     temperature = titan_linearfit_temperature(titanaltitude)
 
+    els_lowerenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][0] - lpvalue,
+                                            ELS_energybound_dict[elsdata['flyby']][0] - lpvalue)[0]
+    els_upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1] - lpvalue,
+                                            ELS_energybound_dict[elsdata['flyby']][1] - lpvalue)[0]
     x = elscalib['earray']
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
