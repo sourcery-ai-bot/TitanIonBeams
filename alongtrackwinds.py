@@ -62,10 +62,10 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass78_": {"sigma": 0.7, "amplitude": []}, \
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
-ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.5, "amplitude": [5]},
-                        "mass50_": {"sigma": 0.8, "amplitude": [4]},
-                        "mass74_": {"sigma": 0.4, "amplitude": [3]},
-                        "mass117_": {"sigma": 0.6, "amplitude": [3]}}
+ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.3, "amplitude": [5]},
+                        "mass50_": {"sigma": 0.4, "amplitude": [4]},
+                        "mass74_": {"sigma": 0.5, "amplitude": [3]},
+                        "mass117_": {"sigma": 0.7, "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17.1], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
@@ -252,7 +252,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     stepplotax_els.step(x, dataslice, where='mid', label=elsdata['flyby'], color='k')
     stepplotax_els.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax_els.set_yscale("log")
-    stepplotax_els.set_xlim(3, 20)
+    stepplotax_els.set_xlim(1, 25)
     stepplotax_els.set_ylim(min(dataslice),max(dataslice))
     stepplotax_els.set_ylabel("Counts (/s)", fontsize=20)
     stepplotax_els.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
@@ -272,9 +272,9 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
                              FWHM=ELS_FWHM)
 
     stepplotax_els.plot(x, out.best_fit, 'r-', label='best fit')
-    stepplotax_els.text(0.5, 0, "Ion wind = %2.2f" % out.params['ionvelocity'], transform=stepplotax_els.transAxes)
-    stepplotax_els.text(0.5, .02, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax_els.transAxes)
-    stepplotax_els.text(0.5, .06, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, 0.05, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr), transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .07, "SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr), transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .09, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
 
     comps = out.eval_components(x=x)
     for mass in els_masses:
