@@ -246,7 +246,12 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     temperature = titan_linearfit_temperature(titanaltitude)
 
     x = elscalib['earray']
-    dataslice = elsdata['data'][:, anode - 1, slicenumber]
+    anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
+                              tempdatetime + datetime.timedelta(seconds=10))
+    print("anode", anode)
+    dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
+                               els_lowerenergyslice:els_upperenergyslice, anode, 0])
+
 
     stepplotfig_els, stepplotax_els = plt.subplots()
     stepplotax_els.step(x, dataslice, where='mid', label=elsdata['flyby'], color='k')
