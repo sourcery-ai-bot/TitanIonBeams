@@ -62,6 +62,11 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass78_": {"sigma": 0.7, "amplitude": []}, \
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
+ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.4, "amplitude": []},
+                        "mass50_": {"sigma": 0.5, "amplitude": []},
+                        "mass74_": {"sigma": 0.5, "amplitude": []},
+                        "mass117_": {"sigma": 0.6, "amplitude": []}}
+
 IBS_energybound_dict = {"t16": [4, 17.1], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
                         "t27": [4.5, 18.25],
@@ -223,11 +228,8 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     return out, lpvalue
 
 
-def ELS_fluxfitting(elsdata, time, seconds, anode, lpvalue=-1.3):
-    for counter, i in enumerate(elsdata['times_utc_strings']):
-        if i >= time:
-            slicenumber = counter
-            break
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3, els_masses = [26, 50, 74, 117]):
+    slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
 
     temputc = str(titan_flybydates[elsdata['flyby']][0]) + '-' + str(titan_flybydates[elsdata['flyby']][1]) + '-' + str(
         titan_flybydates[elsdata['flyby']][2]) + 'T' + elsdata['times_utc_strings'][slicenumber]
@@ -256,7 +258,7 @@ def ELS_fluxfitting(elsdata, time, seconds, anode, lpvalue=-1.3):
         fontsize=32)
     # stepplotax.plot(elscalib['earray'],smoothedcounts_full,color='k')
 
-    els_masses = [26, 50, 74, 117]
+
     x = elscalib['earray']
     out = total_fluxgaussian(x, dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
                              charge=-1,
@@ -329,7 +331,7 @@ def single_slice_test(flyby, slicenumber):
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
     ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
-    els_ionwindspeed = ELS_fluxfitting(ibsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
+    els_ionwindspeed = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
 
 single_slice_test("t16",slicenumber=2)
