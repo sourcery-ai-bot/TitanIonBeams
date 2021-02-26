@@ -65,7 +65,8 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": [0.3,0.4,0.6], "amplitude": []},
 ELS_fluxfitting_dict = {"mass26_": {"sigma": [0.2,0.4,0.6], "amplitude": [5]},
                         "mass50_": {"sigma": [0.3,0.5,0.8], "amplitude": [4]},
                         "mass74_": {"sigma": [0.5,0.7,1.3], "amplitude": [3]},
-                        "mass117_": {"sigma": [0.5,0.7,1.7], "amplitude": [3]}}
+                        "mass98_": {"sigma": [0.6, 0.8, 1.6], "amplitude": [3]},
+                        "mass117_": {"sigma": [0.6,0.9,1.7], "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
@@ -100,7 +101,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars = Parameters()
     eval_pars = Parameters()
 
-    pars.add('scp', value=LPvalue, min=LPvalue-1, max=LPvalue + 0.5)
+    pars.add('scp', value=LPvalue, min=LPvalue-1.5, max=LPvalue + 0.5)
     pars.add('temp_eV', value=8*k*temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('ionvelocity', value=0, min=-400, max=400)
@@ -230,11 +231,13 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     stepplotax.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
                     transform=stepplotax.transAxes)
     stepplotax.text(0.8, .05,
-                    "IBS-derived SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                    "IBS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
                     transform=stepplotax.transAxes)
-    stepplotax.text(0.8, .08, "LP-derived SC Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
+    stepplotax.text(0.8, .08, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=stepplotax.transAxes)
     stepplotax.text(0.8, .11, "Temp = %2.2f" % temperature, transform=stepplotax.transAxes)
     stepplotax.text(0.8, .14, "Chi-square = %.2E" % out.chisqr, transform=stepplotax.transAxes)
+    stepplotax.text(0.8, .17, "My GOF = %.2f %%" % np.mean((abs(out.best_fit - dataslice) / dataslice) * 100),
+                        transform=stepplotax.transAxes)
     for mass in ibs_masses:
         stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
     stepplotax.legend(loc='best')
@@ -248,13 +251,14 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     maxflux_anode = np.argmax(anodesums)
     return maxflux_anode
 
-def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3, els_masses = [26, 50, 74, 117]):
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses = [26, 50, 74, 117]):
+    et = spice.datetime2et(tempdatetime)
+    state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
-
-    temputc = str(titan_flybydates[elsdata['flyby']][0]) + '-' + str(titan_flybydates[elsdata['flyby']][1]) + '-' + str(
-        titan_flybydates[elsdata['flyby']][2]) + 'T' + elsdata['times_utc_strings'][els_slicenumber]
-    tempphase = cassini_phase(temputc)
-    cassini_speed = np.sqrt((tempphase[3]) ** 2 + (tempphase[4]) ** 2 + (tempphase[5]) ** 2) * 1e3
+    lpdata = read_LP_V1(elsdata['flyby'])
+    lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
+    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
 
     windspeed = 0
     temperature = titan_linearfit_temperature(titanaltitude)
@@ -272,7 +276,12 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
 
 
     stepplotfig_els, stepplotax_els = plt.subplots()
-    stepplotax_els.step(x, dataslice, where='mid', label=elsdata['flyby'], color='k')
+    for i in range(3):
+        dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber-1+i, els_slicenumber + i, datatype="data")[
+                               els_lowerenergyslice:els_upperenergyslice, anode, 0])
+        stepplotax_els.scatter(x, dataslice)
+    dataslice = np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
+                           els_lowerenergyslice:els_upperenergyslice, anode, 0])
     stepplotax_els.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax_els.set_yscale("log")
     stepplotax_els.set_xlim(1, 25)
@@ -300,9 +309,12 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
         out.params['ionvelocity'].stderr = abs(out.params['ionvelocity'])
     if out.params['scp'].stderr is None:
         out.params['scp'].stderr = abs(out.params['scp'])
-    stepplotax_els.text(0.8, 0.05, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr), transform=stepplotax_els.transAxes)
-    stepplotax_els.text(0.8, .07, "SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr), transform=stepplotax_els.transAxes)
-    stepplotax_els.text(0.8, .09, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, 0.02, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr), transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .05, "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr), transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .08, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .11, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .14, "Chi-square = %.2E" % out.chisqr, transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.8, .17, "My GOF = %.2f %%" % np.mean((abs(out.best_fit-dataslice)/dataslice)*100), transform=stepplotax_els.transAxes)
 
     comps = out.eval_components(x=x)
     for mass in els_masses:
