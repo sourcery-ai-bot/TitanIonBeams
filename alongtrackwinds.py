@@ -184,7 +184,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     upperenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue,
                                         IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue)[0]
 
-    windspeed = 0
+    windspeed = -150
     temperature = titan_linearfit_temperature(titanaltitude)
 
     dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
@@ -243,7 +243,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     cassini_speed = np.sqrt((tempphase[3]) ** 2 + (tempphase[4]) ** 2 + (tempphase[5]) ** 2) * 1e3
 
     windspeed = -150
-    temperature = 150
+    temperature = titan_linearfit_temperature(titanaltitude)
 
     x = elscalib['earray']
     dataslice = elsdata['data'][:, anode - 1, slicenumber]
@@ -272,6 +272,10 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
                              FWHM=ELS_FWHM)
 
     stepplotax_els.plot(x, out.best_fit, 'r-', label='best fit')
+    if out.params['ionvelocity'].stderr is None:
+        out.params['ionvelocity'].stderr = out.params['ionvelocity']
+    if out.params['scp'].stderr is None:
+        out.params['scp'].stderr = out.params['scp']
     stepplotax_els.text(0.8, 0.05, "Ion wind = %2.2f ± %2.2f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr), transform=stepplotax_els.transAxes)
     stepplotax_els.text(0.8, .07, "SC Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr), transform=stepplotax_els.transAxes)
     stepplotax_els.text(0.8, .09, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
