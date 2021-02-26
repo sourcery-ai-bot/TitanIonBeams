@@ -62,10 +62,10 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
                         "mass78_": {"sigma": 0.7, "amplitude": []}, \
                         "mass91_": {"sigma": 0.8, "amplitude": []}}
 
-ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.4, "amplitude": []},
-                        "mass50_": {"sigma": 0.5, "amplitude": []},
-                        "mass74_": {"sigma": 0.5, "amplitude": []},
-                        "mass117_": {"sigma": 0.6, "amplitude": []}}
+ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.5, "amplitude": [5]},
+                        "mass50_": {"sigma": 0.8, "amplitude": [4]},
+                        "mass74_": {"sigma": 0.9, "amplitude": [3]},
+                        "mass117_": {"sigma": 1.2, "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17.1], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
