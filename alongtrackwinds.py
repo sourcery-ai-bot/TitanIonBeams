@@ -64,8 +64,8 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": 0.4, "amplitude": []},
 
 ELS_fluxfitting_dict = {"mass26_": {"sigma": 0.5, "amplitude": [5]},
                         "mass50_": {"sigma": 0.8, "amplitude": [4]},
-                        "mass74_": {"sigma": 0.9, "amplitude": [3]},
-                        "mass117_": {"sigma": 1.2, "amplitude": [3]}}
+                        "mass74_": {"sigma": 0.4, "amplitude": [3]},
+                        "mass117_": {"sigma": 0.6, "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17.1], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
@@ -111,6 +111,14 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         tempprefix = "mass" + str(mass) + '_'
         gaussmodels.append(GaussianModel(prefix=tempprefix))
         pars.add(tempprefix, value=mass, vary=False)
+        if charge == 1:
+            sigmaval = IBS_fluxfitting_dict[tempprefix]['sigma']
+            #ampval = IBS_fluxfitting_dict[tempprefix]['amplitude'][0]
+        elif charge == -1:
+            # sigmaval = ELS_fluxfitting_dict[tempprefix]['sigma']
+            sigmaval = 0.1 * (mass / 5.64)
+            ampval = ELS_fluxfitting_dict[tempprefix]['amplitude'][0]
+
         # effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*windspeed' #Windspeed defined positive if going in same direction as Cassini
         # pars.add(tempprefix + "effectivescp", expr=effectivescpexpr)
         pars.update(gaussmodels[-1].make_params())
@@ -123,8 +131,6 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
             value=peakflux(mass, cassini_speed, 0, LPvalue + 0.25, temperature, charge=charge), expr=peakfluxexpr)
         # min=temppeakflux - 2, max=temppeakflux + 2)
 
-
-        sigmaval = IBS_fluxfitting_dict[tempprefix]['sigma']
         pars[tempprefix + 'sigma'].set(value=sigmaval, min=0.5 * sigmaval, max=2 * sigmaval)
         pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (1 + (0.1 * masscounter)), min=min(yvalues))
 
@@ -239,46 +245,42 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     windspeed = -150
     temperature = 150
 
+    x = elscalib['earray']
     dataslice = elsdata['data'][:, anode - 1, slicenumber]
 
-    stepplotfig, stepplotax = plt.subplots()
-    stepplotax.step(elscalib['polyearray'][:-1], dataslice, where='post', label=elsdata['flyby'], color='k')
-    stepplotax.errorbar(elscalib['earray'], dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
-    stepplotax.set_xlim(0, 20)
-    stepplotax.set_ylim(bottom=1e6)
-    stepplotax.set_yscale("log")
-    stepplotax.set_ylabel("DEF [$m^{-2} s^{1} str^{-1} eV^{-1}$]", fontsize=20)
-    stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
-    stepplotax.tick_params(axis='both', which='major', labelsize=15)
-    stepplotax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    stepplotax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    stepplotax.minorticks_on()
-    stepplotax.set_title(
+    stepplotfig_els, stepplotax_els = plt.subplots()
+    stepplotax_els.step(x, dataslice, where='mid', label=elsdata['flyby'], color='k')
+    stepplotax_els.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+    stepplotax_els.set_yscale("log")
+    stepplotax_els.set_xlim(3, 20)
+    stepplotax_els.set_ylim(min(dataslice),max(dataslice))
+    stepplotax_els.set_ylabel("Counts (/s)", fontsize=20)
+    stepplotax_els.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
+    stepplotax_els.tick_params(axis='both', which='major', labelsize=15)
+    stepplotax_els.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+    stepplotax_els.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+    stepplotax_els.minorticks_on()
+    stepplotax_els.set_title(
         "Histogram of " + elsdata['flyby'].upper() + " els data from " + elsdata['times_utc_strings'][slicenumber],
         fontsize=32)
     # stepplotax.plot(elscalib['earray'],smoothedcounts_full,color='k')
 
 
-    x = elscalib['earray']
+
     out = total_fluxgaussian(x, dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
                              charge=-1,
                              FWHM=ELS_FWHM)
 
-    stepplotax.plot(x, out.best_fit, 'r-', label='best fit')
-    stepplotax.text(0, 0, "Ion wind = %2.2f" % out.params['flowspeed'], transform=stepplotax.transAxes)
-    stepplotax.text(0, .05, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax.transAxes)
-    stepplotax.text(0, .10, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
+    stepplotax_els.plot(x, out.best_fit, 'r-', label='best fit')
+    stepplotax_els.text(0.5, 0, "Ion wind = %2.2f" % out.params['ionvelocity'], transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.5, .02, "SC Potential = %2.2f" % out.params['scp'], transform=stepplotax_els.transAxes)
+    stepplotax_els.text(0.5, .06, "Temp = %2.2f" % temperature, transform=stepplotax_els.transAxes)
 
     comps = out.eval_components(x=x)
     for mass in els_masses:
-        stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+        stepplotax_els.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
 
-    stepplotax.legend(loc='best')
-
-
-windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
-
+    stepplotax_els.legend(loc='best')
 
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
