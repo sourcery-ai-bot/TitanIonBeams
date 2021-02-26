@@ -62,10 +62,10 @@ IBS_fluxfitting_dict = {"mass28_": {"sigma": [0.3,0.4,0.6], "amplitude": []},
                         "mass78_": {"sigma": [0.5,0.7,0.8], "amplitude": []}, \
                         "mass91_": {"sigma": [0.6,0.8,0.9], "amplitude": []}}
 
-ELS_fluxfitting_dict = {"mass26_": {"sigma": [0.2,0.4,0.5], "amplitude": [5]},
-                        "mass50_": {"sigma": [0.3,0.5,0.7], "amplitude": [4]},
-                        "mass74_": {"sigma": [0.5,0.7,1.2], "amplitude": [3]},
-                        "mass117_": {"sigma": [0.5,0.7,1.6], "amplitude": [3]}}
+ELS_fluxfitting_dict = {"mass26_": {"sigma": [0.2,0.4,0.6], "amplitude": [5]},
+                        "mass50_": {"sigma": [0.3,0.5,0.8], "amplitude": [4]},
+                        "mass74_": {"sigma": [0.5,0.7,1.3], "amplitude": [3]},
+                        "mass117_": {"sigma": [0.5,0.7,1.7], "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
@@ -140,7 +140,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         # min=temppeakflux - 2, max=temppeakflux + 2)
 
         pars[tempprefix + 'sigma'].set(value=sigmavals[1], min=sigmavals[0], max=sigmavals[2])
-        pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (1 + (0.1 * masscounter)), min=min(yvalues))
+        pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (1 + sigmavals[1]), min=min(yvalues))
 
     for counter, model in enumerate(gaussmodels):
         if counter == 0:
@@ -210,7 +210,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
                     label=ibsdata['flyby'], color='k')
     stepplotax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax.set_xlim(3, 19)
-    stepplotax.set_ylim(min(dataslice),max(dataslice))
+    stepplotax.set_ylim(0.9*min(dataslice),1.1*max(dataslice))
     stepplotax.set_yscale("log")
     stepplotax.set_ylabel("DEF [$m^{-2} s^{1} str^{-1} eV^{-1}$]", fontsize=20)
     stepplotax.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
@@ -276,7 +276,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, anode=4, lpvalue=-1.3,
     stepplotax_els.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
     stepplotax_els.set_yscale("log")
     stepplotax_els.set_xlim(1, 25)
-    stepplotax_els.set_ylim(min(dataslice),max(dataslice))
+    stepplotax_els.set_ylim(0.9*min(dataslice),1.1*max(dataslice))
     stepplotax_els.set_ylabel("Counts (/s)", fontsize=20)
     stepplotax_els.set_xlabel("Energy (Pre-correction) [eV/q]", fontsize=20)
     stepplotax_els.tick_params(axis='both', which='major', labelsize=15)
@@ -361,7 +361,7 @@ def single_slice_test(flyby, slicenumber):
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
     ibs_ionwindspeed = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
-    els_ionwindspeed = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
+    els_ionwindspeed = ELS_fluxfitting(elsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
 
 single_slice_test("t16",slicenumber=3)
