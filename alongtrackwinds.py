@@ -357,41 +357,74 @@ windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 def multiple_alongtrackwinds_flybys(usedflybys):
-    times = []
+
     for flyby in usedflybys:
-        els_fits, ibs_fits, lpvalues = [], [], []
         tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
         elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
         generate_mass_bins(elsdata, flyby, "els")
         ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
         generate_aligned_ibsdata(ibsdata, elsdata, flyby)
-        for (i, j) in zip(tempdf['Positive Peak Time'], tempdf['Altitude']):
-            ibs_fit, lpvalue = IBS_fluxfitting(ibsdata, i, j)
-            ibs_fits.append(ibs_fit)
-            lpvalues.append(lpvalue)
+        ibs_outputs, ibs_datetimes, ibs_GOFvalues, lpvalues = [], [] ,[] ,[]
+        els_outputs, els_datetimes, els_GOFvalues = [], [], []
+        lptimes = list(tempdf['Positive Peak Time'])
+        for (i, j, k) in zip(tempdf['Positive Peak Time'], tempdf['Negative Peak Time'], tempdf['Altitude']):
+            ibs_output_inner, ibs_datetime_inner, ibs_GOFvalue_inner, lpvalue = IBS_fluxfitting(ibsdata,i,k)
+            els_output_inner, els_datetime_inner, els_GOFvalue_inner, temp = ELS_fluxfitting(elsdata,j,k)
+            ibs_outputs += ibs_output_inner
+            ibs_datetimes += ibs_datetime_inner
+            ibs_GOFvalues += ibs_GOFvalue_inner
+            print(lpvalue,lpvalues)
+            lpvalues += [lpvalue]
+            els_outputs += els_output_inner
+            els_datetimes += els_datetime_inner
+            els_GOFvalues += els_GOFvalue_inner
 
-    testoutputdf = pd.DataFrame()
-    testoutputdf['Bulk Time'] = tempdf['Bulk Time']
-    testoutputdf['IBS Alongtrack velocity'] = [i.params['windspeed'] for i in ibs_fits]
-    # testoutputdf['IBS residuals'] = ibs_residuals
-    testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
-    testoutputdf.to_csv("testalongtrackvelocity.csv")
+    #Data Tidying
+    tidied_ibs_outputs, tidied_ibs_datetimes, tidied_ibs_GOFvalues = [], [], []
+    tidied_els_outputs, tidied_els_datetimes, tidied_els_GOFvalues = [], [], []
+    for i, out in enumerate(ibs_outputs):
+        if out.params['ionvelocity'].stderr != np.inf and out.params['scp'].stderr != np.inf:
+            tidied_ibs_outputs.append(ibs_outputs[i])
+            tidied_ibs_datetimes.append(ibs_datetimes[i])
+            tidied_ibs_GOFvalues.append(ibs_GOFvalues[i])
+    for i, els_GOF in enumerate(els_GOFvalues):
+        if els_GOF < 500: # Important value, justification?
+            tidied_els_outputs.append(els_outputs[i])
+            tidied_els_datetimes.append(els_datetimes[i])
+            tidied_els_GOFvalues.append(els_GOFvalues[i])
+
+    # testoutputdf = pd.DataFrame()
+    # testoutputdf['Bulk Time'] = tempdf['Bulk Time']
+    # testoutputdf['IBS Alongtrack velocity'] = [i.params['windspeed'] for i in ibs_fits]
+    # # testoutputdf['IBS residuals'] = ibs_residuals
+    # testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
+    # testoutputdf.to_csv("testalongtrackvelocity.csv")
     #
-    fig5, ax5 = plt.subplots()
-    ax5.set_title(str(usedflybys))
-    ax5.errorbar(tempdf['Positive Peak Time'], [i.params['windspeed'] for i in ibs_fits], yerr=[i.params['windspeed'].stderr for i in ibs_fits], color='C0',
-                 label="Ion Wind Speeds",linestyle='--')
-    ax5.set_xlabel("Time")
-    ax5.set_ylabel("Ion Wind Speed (m/s)")
-    ax5_1 = ax5.twinx()
-    ax5_1.errorbar(tempdf['Positive Peak Time'], [i.params['scp'] for i in ibs_fits], yerr=[i.params['scp'].stderr for i in ibs_fits], color='C1', label="S/C potential, IBS derived")
-    ax5_1.plot(tempdf['Positive Peak Time'],lpvalues, color='C2', label="S/C potential, LP derived")
-    ax5_1.set_ylabel("S/C Potential (V)")
-    for counter,x in enumerate(ibs_fits):
-        ax5.text(tempdf['Positive Peak Time'].iloc[counter], x.params['windspeed'], "Chi-Sqr =  %.1E\nCorr = %.2f " % (x.chisqr,x.params['windspeed'].correl['scp']))
-    fig5.legend()
+    fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3)
+    fig5.suptitle(usedflybys[0])
+    #print([i.params['ionvelocity'].value for i in ibs_outputs])
+    windaxes.scatter(tidied_ibs_datetimes, [i.params['ionvelocity'].value for i in tidied_ibs_outputs], label="IBS - Ion Wind Speeds")
+    windaxes.scatter(tidied_els_datetimes, [i.params['ionvelocity'].value for i in tidied_els_outputs], label="ELS - Ion Wind Speeds",marker='x')
+    windaxes.legend()
+    windaxes.set_ylabel("Derived Ion Velocity")
 
-    return testoutputdf
+    print(lptimes, lpvalues)
+    print(len(lptimes), len(lpvalues))
+    potaxes.scatter(tidied_ibs_datetimes, [i.params['scp'].value for i in tidied_ibs_outputs], label="IBS - Derived S/C Potential")
+    potaxes.scatter(tidied_els_datetimes, [i.params['scp'].value for i in tidied_els_outputs], label="ELS - Derived S/C Potential",marker='x')
+    potaxes.plot(lptimes,lpvalues,label="LP derived S/C potential")
+    potaxes.legend()
+    potaxes.set_ylabel("Derived S/C Potential")
+
+    GOFaxes.scatter(tidied_ibs_datetimes, tidied_ibs_GOFvalues, label="IBS - GOF",color='C0')
+    #GOFaxes.legend()
+    GOFaxes.set_ylabel("Goodness of Fit - IBS")
+    GOFaxes.set_xlabel("Time")
+
+    GOFaxes_els = GOFaxes.twinx()
+    GOFaxes_els.scatter(tidied_els_datetimes, tidied_els_GOFvalues, label="ELS - GOF",color='C1',marker='x')
+    #GOFaxes_els.legend()
+    GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
 
 def single_slice_test(flyby, slicenumber):
     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
@@ -407,8 +440,8 @@ def single_slice_test(flyby, slicenumber):
     els_outputs, els_datetimes, els_GOFvalues, lpvalue = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
                                        tempdf['Altitude'].iloc[slicenumber])
 
-    fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3)
 
+    fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3)
     windaxes.scatter(ibs_datetimes, [i.params['ionvelocity'].value for i in ibs_outputs], label="IBS - Ion Wind Speeds",)
     windaxes.scatter(els_datetimes, [i.params['ionvelocity'].value for i in els_outputs], label="ELS - Ion Wind Speeds",marker='x')
     windaxes.legend()
@@ -432,7 +465,8 @@ def single_slice_test(flyby, slicenumber):
 
 
 
-single_slice_test("t16",slicenumber=2)
+#single_slice_test("t16",slicenumber=2)
+multiple_alongtrackwinds_flybys(["t16"])
 
 
 plt.show()
