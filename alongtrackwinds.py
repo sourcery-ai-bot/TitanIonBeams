@@ -68,19 +68,26 @@ ELS_fluxfitting_dict = {"mass26_": {"sigma": [0.2, 0.4, 0.7], "amplitude": [5]},
                         "mass50_": {"sigma": [0.5, 0.6, 0.9], "amplitude": [4]},
                         "mass74_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
                         "mass98_": {"sigma": [0.6, 0.8, 1.6], "amplitude": [3]},
-                        "mass117_": {"sigma": [0.6, 0.9, 1.7], "amplitude": [3]}}
+                        "mass117_": {"sigma": [0.8, 0.9, 1.7], "amplitude": [3]}}
 
 IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
                         "t27": [4.5, 18.25],
                         "t28": [4.5, 18.25], "t29": [4.5, 18.25],
                         "t30": [4.5, 18.25], "t32": [4.5, 18.25],
-                        "t42": [4.5, 19.5], "t46": [3.75, 17.5], "t47": [4.5, 18.25]}
+                        "t42": [4.5, 19.5], "t46": [4, 17], "t47": [4.5, 18.25]}
 
-ELS_energybound_dict = {"t16": [1, 12], "t17": [1, 12],
+ELS_energybound_dict = {"t16": [1, 12], "t17": [1.5, 30],
                         "t20": [1, 30], "t21": [1, 30], "t25": [1, 30], "t26": [1.5,30], "t27": [1, 30], "t28": [1, 30], "t29": [1, 30],
                         "t30": [1, 30], "t32": [1, 30],
-                        "t42": [1, 35], "t46": [1, 35], "t47": [1, 35]}
+                        "t42": [2.3, 30], "t46": [2.3, 28], "t47": [1, 35]}
+
+IBS_init_ionvelocity_dict = {"t16": 0, "t17": 0,
+                        "t20": 0, "t21": 0, "t25": 0, "t26": 0,
+                        "t27": 0,
+                        "t28": 0, "t29": 0,
+                        "t30": 0, "t32": 0,
+                        "t42": 0, "t46": -350, "t47": 0}
 
 
 def energy2mass(energyarray, spacecraftvelocity, ionvelocity, spacecraftpotential, iontemperature=150, charge=1):
@@ -101,12 +108,12 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     eval_pars = Parameters()
 
     if charge == 1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=LPvalue + 0.3)
     elif charge == -1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=LPvalue + 0.3)
     pars.add('temp_eV', value=8 * k * temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
-    pars.add('ionvelocity', value=0, min=-500, max=500)
+    pars.add('ionvelocity', value=windspeed, min=-500, max=500)
     # pars['scp'].vary = False
     pars['spacecraftvelocity'].vary = False
     pars['temp_eV'].vary = False
@@ -179,22 +186,21 @@ def titan_linearfit_temperature(altitude):
 
 
 # [28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
-def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53, 66, 78, 91]):
+def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 53, 66, 78, 91]):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
-    lpdata = read_LP_V1(ibsdata['flyby'])
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
     print("interp lpvalue", lpvalue)
 
-    lowerenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][0] - lpvalue,
-                                        IBS_energybound_dict[ibsdata['flyby']][0] - lpvalue)[0]
-    upperenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue,
-                                        IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue)[0]
+    lowerenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][0],
+                                        IBS_energybound_dict[ibsdata['flyby']][0])[0]
+    upperenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][1],
+                                        IBS_energybound_dict[ibsdata['flyby']][1])[0]
 
-    windspeed = 0
+    windspeed = IBS_init_ionvelocity_dict[ibsdata['flyby']]
     temperature = titan_linearfit_temperature(titanaltitude)
 
     dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
@@ -271,12 +277,11 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74, 98, 117]):
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117]):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
     els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
-    lpdata = read_LP_V1(elsdata['flyby'])
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
 
@@ -287,25 +292,35 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74
                                             ELS_energybound_dict[elsdata['flyby']][0])[0]
     els_upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1],
                                             ELS_energybound_dict[elsdata['flyby']][1])[0]
-    x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
+    #x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
 
     dataslices = []
+    x_lists = []
     useddatetimes = []
     length = 5
     slicenumbershift = int(length / 2)
     for i in range(length):
-        dataslices.append(np.float32(ELS_backgroundremoval(elsdata, els_slicenumber - slicenumbershift + i,
+        tempdataslice = list(np.float32(ELS_backgroundremoval(elsdata, els_slicenumber - slicenumbershift + i,
                                                            els_slicenumber - slicenumbershift + 1 + i, datatype="data")[
                                      els_lowerenergyslice:els_upperenergyslice, anode, 0]))
+        tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
+        zerocutoff = 0
+        while tempdataslice[0] < 0:
+            tempdataslice.pop(0)
+            tempx.pop(0)
+
         useddatetimes.append(elsdata['times_utc'][els_slicenumber - 2 + i])
-        dataslices[-1][dataslices[-1] <= 0] = 1
+        x_lists.append(tempx)
+        tempdataslice = np.array(tempdataslice)
+        tempdataslice[tempdataslice <= 0] = 1
+        dataslices.append(np.array(tempdataslice))
 
     stepplotfig_els, stepplotaxes_els = plt.subplots(len(dataslices), sharex='all')
     stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
-    for i, (ax, data) in enumerate(zip(stepplotaxes_els, dataslices)):
+    for i, (ax, x, data) in enumerate(zip(stepplotaxes_els, x_lists, dataslices)):
         ax.step(x, data, where='mid')
         ax.errorbar(x, data, yerr=[np.sqrt(i) for i in data], color='k', fmt='none')
         ax.set_yscale("log")
@@ -321,8 +336,8 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, els_masses=[26, 50, 74
 
     outputs = []
     GOFvalues = []
-    for dataslice in dataslices:
-        outputs.append(total_fluxgaussian(x, dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
+    for x, dataslice in zip(x_lists, dataslices):
+        outputs.append(total_fluxgaussian(np.array(x), dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
                                           charge=-1,
                                           FWHM=ELS_FWHM))
         if outputs[-1].params['ionvelocity'].stderr is None:
@@ -358,6 +373,7 @@ windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 
 def multiple_alongtrackwinds_flybys(usedflybys):
+    outputdf = pd.DataFrame()
     for flyby in usedflybys:
         tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
         elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
@@ -367,9 +383,10 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         ibs_outputs, ibs_datetimes, ibs_GOFvalues, lpvalues = [], [], [], []
         els_outputs, els_datetimes, els_GOFvalues = [], [], []
         lptimes = list(tempdf['Positive Peak Time'])
+        lpdata = read_LP_V1(flyby)
         for (i, j, k) in zip(tempdf['Positive Peak Time'], tempdf['Negative Peak Time'], tempdf['Altitude']):
-            ibs_output_inner, ibs_datetime_inner, ibs_GOFvalue_inner, lpvalue = IBS_fluxfitting(ibsdata, i, k)
-            els_output_inner, els_datetime_inner, els_GOFvalue_inner, temp = ELS_fluxfitting(elsdata, j, k)
+            ibs_output_inner, ibs_datetime_inner, ibs_GOFvalue_inner, lpvalue = IBS_fluxfitting(ibsdata, i, k,lpdata=lpdata)
+            els_output_inner, els_datetime_inner, els_GOFvalue_inner, temp = ELS_fluxfitting(elsdata, j, k,lpdata=lpdata)
             ibs_outputs += [ibs_output_inner]
             ibs_datetimes += [ibs_datetime_inner]
             ibs_GOFvalues += [ibs_GOFvalue_inner]
@@ -378,127 +395,170 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             els_datetimes += [els_datetime_inner]
             els_GOFvalues += [els_GOFvalue_inner]
 
-    # Data Tidying
-    tidied_ibs_outputs, tidied_ibs_datetimes, tidied_ibs_GOFvalues = [], [], []
-    tidied_els_outputs, tidied_els_datetimes, tidied_els_GOFvalues = [], [], []
-    for i, sweep in enumerate(ibs_outputs):
-        tidied_ibs_outputs.append([])
-        tidied_ibs_datetimes.append([])
-        tidied_ibs_GOFvalues.append([])
-        for j, out in enumerate(sweep):
-            if (not math.isnan(out.params['ionvelocity'].stderr)) and (not math.isnan(out.params['scp'].stderr)):
-                # print(out.params['ionvelocity'].stderr,out.params['scp'].stderr)
-                # print(tidied_ibs_outputs,sweep)
-                tidied_ibs_outputs[-1].append(ibs_outputs[i][j])
-                tidied_ibs_datetimes[-1].append(ibs_datetimes[i][j])
-                tidied_ibs_GOFvalues[-1].append(ibs_GOFvalues[i][j])
-    for i, (els_GOF_sweep, els_out_sweep) in enumerate(zip(els_GOFvalues, els_outputs)):
-        tidied_els_outputs.append([])
-        tidied_els_datetimes.append([])
-        tidied_els_GOFvalues.append([])
-        for j, (els_GOF, els_out) in enumerate(zip(els_GOF_sweep, els_out_sweep)):
-            # if els_GOF < 200 and (not math.isnan(els_out.params['ionvelocity'].stderr)) and els_out.params[
-            #     'ionvelocity'].stderr < 250 and (
-            #         not math.isnan(els_out.params['scp'].stderr)) and els_out.params[
-            #     'scp'].stderr < 2.5:  # Important value, justification?
-            if els_GOF < 50:
-                tidied_els_outputs[-1].append(els_outputs[i][j])
-                tidied_els_datetimes[-1].append(els_datetimes[i][j])
-                tidied_els_GOFvalues[-1].append(els_GOFvalues[i][j])
+        # Data Tidying
+        tidied_ibs_outputs, tidied_ibs_datetimes, tidied_ibs_GOFvalues = [], [], []
+        tidied_els_outputs, tidied_els_datetimes, tidied_els_GOFvalues = [], [], []
+        for i, (ibs_GOF_sweep, ibs_out_sweep) in enumerate(zip(ibs_GOFvalues, ibs_outputs)):
+            tidied_ibs_outputs.append([])
+            tidied_ibs_datetimes.append([])
+            tidied_ibs_GOFvalues.append([])
+            for j, (ibs_GOF, ibs_out) in enumerate(zip(ibs_GOF_sweep, ibs_out_sweep)):
+                #if (not math.isnan(out.params['ionvelocity'].stderr)) and (not math.isnan(out.params['scp'].stderr)):
+                if ibs_GOF < 20:
+                    # print(out.params['ionvelocity'].stderr,out.params['scp'].stderr)
+                    # print(tidied_ibs_outputs,sweep)
+                    tidied_ibs_outputs[-1].append(ibs_outputs[i][j])
+                    tidied_ibs_datetimes[-1].append(ibs_datetimes[i][j])
+                    tidied_ibs_GOFvalues[-1].append(ibs_GOFvalues[i][j])
+        for i, (els_GOF_sweep, els_out_sweep) in enumerate(zip(els_GOFvalues, els_outputs)):
+            tidied_els_outputs.append([])
+            tidied_els_datetimes.append([])
+            tidied_els_GOFvalues.append([])
+            for j, (els_GOF, els_out) in enumerate(zip(els_GOF_sweep, els_out_sweep)):
+                # if els_GOF < 200 and (not math.isnan(els_out.params['ionvelocity'].stderr)) and els_out.params[
+                #     'ionvelocity'].stderr < 250 and (
+                #         not math.isnan(els_out.params['scp'].stderr)) and els_out.params[
+                #     'scp'].stderr < 2.5:  # Important value, justification?
+                if els_GOF < 40:
+                    tidied_els_outputs[-1].append(els_outputs[i][j])
+                    tidied_els_datetimes[-1].append(els_datetimes[i][j])
+                    tidied_els_GOFvalues[-1].append(els_GOFvalues[i][j])
 
-    # Calculating average ionvelocity/scp per sweep
-    tidied_ibs_ionvelocities, tidied_ibs_scp = [], []
-    tidied_els_ionvelocities, tidied_els_scp = [], []
-    for i in tidied_ibs_outputs:
-        tempibs_velocities = []
-        tempibs_scp = []
-        for j in i:
-            tempibs_velocities.append(j.params['ionvelocity'].value)
-            tempibs_scp.append(j.params['scp'].value)
-        tidied_ibs_ionvelocities.append(np.mean(tempibs_velocities))
-        tidied_ibs_scp.append(np.mean(tempibs_scp))
-        print(tempibs_velocities, tempibs_scp)
-    for i in tidied_els_outputs:
-        tempels_velocities = []
-        tempels_scp = []
-        for j in i:
-            tempels_velocities.append(j.params['ionvelocity'].value)
-            tempels_scp.append(j.params['scp'].value)
-        tidied_els_ionvelocities.append(np.mean(tempels_velocities))
-        tidied_els_scp.append(np.mean(tempels_scp))
-        print(tempels_velocities, tempels_scp)
-    print(tidied_ibs_scp, tidied_els_scp)
-    # Flattening arrays for plotting
-    tidied_ibs_outputs_flat = [item for sublist in tidied_ibs_outputs for item in sublist]
-    tidied_ibs_datetimes_flat = [item for sublist in tidied_ibs_datetimes for item in sublist]
-    tidied_ibs_GOFvalues_flat = [item for sublist in tidied_ibs_GOFvalues for item in sublist]
+        # Calculating average ionvelocity/scp per sweep
+        tidied_ibs_ionvelocities, tidied_ibs_ionvelocities_stddev, tidied_ibs_scp, tidied_ibs_scp_stddev = [], [], [],[]
+        tidied_els_ionvelocities, tidied_els_ionvelocities_stddev, tidied_els_scp, tidied_els_scp_stddev = [], [], [],[]
+        for i in tidied_ibs_outputs:
+            tempibs_velocities = []
+            tempibs_scp = []
+            for j in i:
+                tempibs_velocities.append(j.params['ionvelocity'].value)
+                tempibs_scp.append(j.params['scp'].value)
+            tidied_ibs_ionvelocities.append(np.mean(tempibs_velocities))
+            tidied_ibs_scp.append(np.mean(tempibs_scp))
+            if len(tempibs_velocities) > 1:
+                tidied_ibs_ionvelocities_stddev.append(np.std(tempibs_velocities))
+            elif len(tempibs_velocities) == 1:
+                tidied_ibs_ionvelocities_stddev.append(abs(tempibs_velocities[0]))
+            else:
+                tidied_ibs_ionvelocities_stddev.append(np.nan)
+            if len(tempibs_scp) > 1:
+                tidied_ibs_scp_stddev.append(np.std(tempibs_scp))
+            elif len(tempibs_scp) == 1:
+                tidied_ibs_scp_stddev.append(abs(tempibs_scp[0]))
+            else:
+                tidied_ibs_scp_stddev.append(np.nan)
+            #print(tempibs_velocities, tempibs_scp)
+        for i in tidied_els_outputs:
+            tempels_velocities = []
+            tempels_scp = []
+            for j in i:
+                tempels_velocities.append(j.params['ionvelocity'].value)
+                tempels_scp.append(j.params['scp'].value)
+            tidied_els_ionvelocities.append(np.mean(tempels_velocities))
+            tidied_els_scp.append(np.mean(tempels_scp))
+            if len(tempels_velocities) > 1:
+                tidied_els_ionvelocities_stddev.append(np.std(tempels_velocities))
+            elif len(tempels_velocities) == 1:
+                tidied_els_ionvelocities_stddev.append(abs(tempels_velocities[0]))
+            else:
+                tidied_els_ionvelocities_stddev.append(np.nan)
+            if len(tempels_scp) > 1:
+                tidied_els_scp_stddev.append(np.std(tempels_scp))
+            elif len(tempels_scp) == 1:
+                tidied_els_scp_stddev.append(abs(tempels_scp[0]))
+            else:
+                tidied_els_scp_stddev.append(np.nan)
+            #print(tempels_velocities, tempels_scp)
+        #print(tidied_ibs_scp, tidied_els_scp)
+        # Flattening arrays for plotting
+        tidied_ibs_outputs_flat = [item for sublist in tidied_ibs_outputs for item in sublist]
+        tidied_ibs_datetimes_flat = [item for sublist in tidied_ibs_datetimes for item in sublist]
+        tidied_ibs_GOFvalues_flat = [item for sublist in tidied_ibs_GOFvalues for item in sublist]
 
-    tidied_els_outputs_flat = [item for sublist in tidied_els_outputs for item in sublist]
-    tidied_els_datetimes_flat = [item for sublist in tidied_els_datetimes for item in sublist]
-    tidied_els_GOFvalues_flat = [item for sublist in tidied_els_GOFvalues for item in sublist]
-    print("not flat", tidied_ibs_outputs)
+        tidied_els_outputs_flat = [item for sublist in tidied_els_outputs for item in sublist]
+        tidied_els_datetimes_flat = [item for sublist in tidied_els_datetimes for item in sublist]
+        tidied_els_GOFvalues_flat = [item for sublist in tidied_els_GOFvalues for item in sublist]
+        print("not flat", tidied_ibs_outputs)
 
-    print("flat", tidied_ibs_outputs_flat)
-    # testoutputdf = pd.DataFrame()
-    # testoutputdf['Bulk Time'] = tempdf['Bulk Time']
-    # testoutputdf['IBS Alongtrack velocity'] = [i.params['windspeed'] for i in ibs_fits]
-    # # testoutputdf['IBS residuals'] = ibs_residuals
-    # testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
-    # testoutputdf.to_csv("testalongtrackvelocity.csv")
+        print("flat", tidied_ibs_outputs_flat)
+        # testoutputdf = pd.DataFrame()
+        # testoutputdf['Bulk Time'] = tempdf['Bulk Time']
+        # testoutputdf['IBS Alongtrack velocity'] = [i.params['windspeed'] for i in ibs_fits]
+        # # testoutputdf['IBS residuals'] = ibs_residuals
+        # testoutputdf['IBS spacecraft potentials'] = [i.params['scp'] for i in ibs_fits]
+        # testoutputdf.to_csv("testalongtrackvelocity.csv")
+        print(tempdf['Positive Peak Time'], tidied_ibs_ionvelocities, tidied_ibs_ionvelocities_stddev)
+        print(len(tempdf['Positive Peak Time']), len(tidied_ibs_ionvelocities), len(tidied_ibs_ionvelocities_stddev))
 
-    fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3, sharex='all')
-    fig5.suptitle(usedflybys[0])
-    windaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_ibs_outputs_flat],
-                      yerr=[i.params['ionvelocity'].stderr for i in tidied_ibs_outputs_flat],
-                      label="IBS - Ion Wind Speeds", marker='.', ls='none', color='C0')
-    # windaxes.errorbar(tidied_els_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_els_outputs_flat],
-    #                   yerr=[i.params['ionvelocity'].stderr for i in tidied_els_outputs_flat],
-    #                  label="ELS - Ion Wind Speeds",
-    #                  marker='x', ls='none',  color='C1')
-    windaxes.plot(tidied_els_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_els_outputs_flat],
-                     label="ELS - Ion Wind Speeds",
-                     marker='x', ls='none',  color='C1')
-    windaxes.plot(tempdf['Positive Peak Time'], tidied_ibs_ionvelocities, color='C0')
-    windaxes.plot(tempdf['Negative Peak Time'], tidied_els_ionvelocities, color='C1')
-    windaxes.legend()
-    windaxes.set_ylabel("Derived Ion Velocity")
-    windaxes.hlines([-500, 500], min(tidied_ibs_datetimes_flat), max(tidied_ibs_datetimes_flat), color='k')
-    # windaxes.set_ylim(-525, 525)
+        if len(usedflybys)==1:
+            fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3, sharex='all')
+            fig5.suptitle(usedflybys[0])
+            # windaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_ibs_outputs_flat],
+            #                   yerr=[i.params['ionvelocity'].stderr for i in tidied_ibs_outputs_flat],
+            #                   label="IBS - Ion Wind Speeds", marker='.', ls='none', color='C0')
+            # windaxes.errorbar(tidied_els_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_els_outputs_flat],
+            #                   yerr=[i.params['ionvelocity'].stderr for i in tidied_els_outputs_flat],
+            #                  label="ELS - Ion Wind Speeds",
+            #                  marker='x', ls='none',  color='C1')
+            windaxes.plot(tidied_ibs_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_ibs_outputs_flat],
+                              label="IBS - Ion Wind Speeds", marker='.', ls='none', color='C0')
+            windaxes.plot(tidied_els_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_els_outputs_flat],
+                             label="ELS - Ion Wind Speeds",
+                             marker='x', ls='none',  color='C1')
+            windaxes.errorbar(tempdf['Positive Peak Time'], tidied_ibs_ionvelocities, yerr=tidied_ibs_ionvelocities_stddev, color='C0')
+            windaxes.errorbar(tempdf['Negative Peak Time'], tidied_els_ionvelocities, yerr=tidied_els_ionvelocities_stddev, color='C1')
+            windaxes.legend()
+            windaxes.set_ylabel("Derived Ion Velocity")
+            windaxes.hlines([-500, 500], min(tidied_ibs_datetimes_flat), max(tidied_ibs_datetimes_flat), color='k')
+            # windaxes.set_ylim(-525, 525)
 
-    potaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['scp'].value for i in tidied_ibs_outputs_flat],
-                     yerr=[i.params['scp'].stderr for i in tidied_ibs_outputs_flat],
-                     label="IBS - Derived S/C Potential", marker='.', ls='none', color='C0')
-    # potaxes.errorbar(tidied_els_datetimes_flat, [i.params['scp'].value for i in tidied_els_outputs_flat],
-    #                 yerr=[i.params['scp'].stderr for i in tidied_els_outputs_flat],
-    #                 label="ELS - Derived S/C Potential",
-    #                 marker='x', ls='none',  color='C1')
-    potaxes.plot(tidied_els_datetimes_flat, [i.params['scp'].value for i in tidied_els_outputs_flat],
-                    label="ELS - Derived S/C Potential",
-                    marker='x', ls='none',  color='C1')
-    potaxes.plot(lptimes, lpvalues, label="LP derived S/C potential", color='C8')
-    potaxes.plot(tempdf['Positive Peak Time'], tidied_ibs_scp, color='C0')
-    potaxes.plot(tempdf['Negative Peak Time'], tidied_els_scp, color='C1')
-    potaxes.legend()
-    potaxes.set_ylabel("Derived S/C Potential")
-    #potaxes.plot(lptimes, np.array(lpvalues) - 0.25, color='k')
-    #potaxes.plot(lptimes, np.array(lpvalues) + 0.25, color='k')
-    potaxes.hlines([np.mean(lpvalues) - 2, 0], min(tidied_ibs_datetimes_flat),
-                   max(tidied_ibs_datetimes_flat), color='k')
-    potaxes.set_ylim(np.mean(lpvalues) - 2.1, 0.1)
+            # potaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['scp'].value for i in tidied_ibs_outputs_flat],
+            #                  yerr=[i.params['scp'].stderr for i in tidied_ibs_outputs_flat],
+            #                  label="IBS - Derived S/C Potential", marker='.', ls='none', color='C0')
+            # potaxes.errorbar(tidied_els_datetimes_flat, [i.params['scp'].value for i in tidied_els_outputs_flat],
+            #                 yerr=[i.params['scp'].stderr for i in tidied_els_outputs_flat],
+            #                 label="ELS - Derived S/C Potential",
+            #                 marker='x', ls='none',  color='C1')
+            potaxes.plot(tidied_ibs_datetimes_flat, [i.params['scp'].value for i in tidied_ibs_outputs_flat],
+                             label="IBS - Derived S/C Potential", marker='.', ls='none', color='C0')
+            potaxes.plot(tidied_els_datetimes_flat, [i.params['scp'].value for i in tidied_els_outputs_flat],
+                            label="ELS - Derived S/C Potential",
+                            marker='x', ls='none',  color='C1')
+            potaxes.plot(lptimes, lpvalues, label="LP derived S/C potential", color='C8')
+            potaxes.errorbar(tempdf['Positive Peak Time'], tidied_ibs_scp, yerr=tidied_ibs_scp_stddev, color='C0')
+            potaxes.errorbar(tempdf['Negative Peak Time'], tidied_els_scp, yerr=tidied_els_scp_stddev, color='C1')
+            potaxes.legend()
+            potaxes.set_ylabel("Derived S/C Potential")
+            # potaxes.plot(lptimes, np.array(lpvalues) - 0.5, color='k')
+            # potaxes.plot(lptimes, np.array(lpvalues) + 0.5, color='k')
+            potaxes.hlines([np.mean(lpvalues) - 2, 0], min(tidied_ibs_datetimes_flat),
+                           max(tidied_ibs_datetimes_flat), color='k')
+            potaxes.set_ylim(np.mean(lpvalues) - 2.1, 0.1)
 
-    GOFaxes.scatter(tidied_ibs_datetimes_flat, tidied_ibs_GOFvalues_flat, label="IBS - GOF", color='C0')
-    GOFaxes.set_ylabel("Goodness of Fit - IBS")
-    GOFaxes.set_xlabel("Time")
+            GOFaxes.scatter(tidied_ibs_datetimes_flat, tidied_ibs_GOFvalues_flat, label="IBS - GOF", color='C0')
+            GOFaxes.set_ylabel("Goodness of Fit - IBS")
+            GOFaxes.set_xlabel("Time")
 
-    GOFaxes_els = GOFaxes.twinx()
-    GOFaxes_els.scatter(tidied_els_datetimes_flat, tidied_els_GOFvalues_flat, label="ELS - GOF", color='C1', marker='x')
-    GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
+            GOFaxes_els = GOFaxes.twinx()
+            GOFaxes_els.scatter(tidied_els_datetimes_flat, tidied_els_GOFvalues_flat, label="ELS - GOF", color='C1', marker='x')
+            GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
 
-    # print(tempdf['Positive Peak Time'])
-    # elsstartslice = CAPS_slicenumber(elsdata,tempdf['Positive Peak Time'].iloc[0])
-    # elsendslice = CAPS_slicenumber(elsdata,tempdf['Positive Peak Time'].iloc[-1])
-    # actaxes.plot(elsdata['times_utc'][elsstartslice:elsendslice],elsdata['actuator'][elsstartslice:elsendslice])
-    # actaxes.set_ylabel("Actuator position")
+        # print(tempdf['Positive Peak Time'])
+        # elsstartslice = CAPS_slicenumber(elsdata,tempdf['Positive Peak Time'].iloc[0])
+        # elsendslice = CAPS_slicenumber(elsdata,tempdf['Positive Peak Time'].iloc[-1])
+        # actaxes.plot(elsdata['times_utc'][elsstartslice:elsendslice],elsdata['actuator'][elsstartslice:elsendslice])
+        # actaxes.set_ylabel("Actuator position")
+        else:
+            tempoutputdf = pd.DataFrame()
+            tempoutputdf['Positive Peak Time'] = tempdf['Positive Peak Time']
+            tempoutputdf['Negative Peak Time'] = tempdf['Negative Peak Time']
+            tempoutputdf['IBS alongtrack velocity'] = tidied_ibs_ionvelocities
+            tempoutputdf['IBS spacecraft potentials'] = tidied_ibs_scp
+            tempoutputdf['ELS alongtrack velocity'] = tidied_els_ionvelocities
+            tempoutputdf['ELS spacecraft potentials'] = tidied_els_scp
+            print(tempoutputdf)
+            outputdf = outputdf.join(tempoutputdf)
+    outputdf.to_csv("alongtrackvelocity.csv")
 
 def single_slice_test(flyby, slicenumber):
     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
@@ -509,12 +569,13 @@ def single_slice_test(flyby, slicenumber):
 
     print("Altitude", tempdf['Altitude'].iloc[slicenumber])
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
+    lpdata = read_LP_V1(flyby)
     ibs_outputs, ibs_datetimes, ibs_GOFvalues, lpvalue = IBS_fluxfitting(ibsdata,
                                                                          tempdf['Positive Peak Time'].iloc[slicenumber],
-                                                                         tempdf['Altitude'].iloc[slicenumber])
+                                                                         tempdf['Altitude'].iloc[slicenumber],lpdata=lpdata)
     els_outputs, els_datetimes, els_GOFvalues, lpvalue = ELS_fluxfitting(elsdata,
                                                                          tempdf['Negative Peak Time'].iloc[slicenumber],
-                                                                         tempdf['Altitude'].iloc[slicenumber])
+                                                                         tempdf['Altitude'].iloc[slicenumber],lpdata=lpdata)
 
     fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3)
     windaxes.scatter(ibs_datetimes, [i.params['ionvelocity'].value for i in ibs_outputs],
@@ -541,7 +602,7 @@ def single_slice_test(flyby, slicenumber):
     GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
 
 
-# single_slice_test("t16",slicenumber=2)
-multiple_alongtrackwinds_flybys(["t28"])
+#single_slice_test("t42",slicenumber=4)
+multiple_alongtrackwinds_flybys(["t20"])
 
 plt.show()
