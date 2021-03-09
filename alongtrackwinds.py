@@ -77,7 +77,7 @@ IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
                         "t30": [4.5, 18.25], "t32": [4.5, 18.25],
                         "t42": [4.5, 19.5], "t46": [4, 17], "t47": [4.5, 18.25]}
 
-ELS_energybound_dict = {"t16": [1, 12], "t17": [1.5, 30],
+ELS_energybound_dict = {"t16": [1, 30], "t17": [1.5, 30],
                         "t20": [1, 30], "t21": [1, 30], "t25": [1, 30], "t26": [1.5,30], "t27": [1, 30], "t28": [1, 30], "t29": [1, 30],
                         "t30": [1, 30], "t32": [1, 30],
                         "t42": [2.3, 30], "t46": [2.3, 28], "t47": [1, 35]}
@@ -108,9 +108,9 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     eval_pars = Parameters()
 
     if charge == 1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=LPvalue + 0.3)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2.5, max=0)
     elif charge == -1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=LPvalue + 0.3)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2.5, max=0)
     pars.add('temp_eV', value=8 * k * temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('ionvelocity', value=windspeed, min=-500, max=500)
@@ -186,7 +186,7 @@ def titan_linearfit_temperature(altitude):
 
 
 # [28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
-def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 53, 66, 78, 91]):
+def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 53, 66, 78, 91],numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -219,21 +219,22 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
         dataslices.append(ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber - slicenumbershift + i])
         useddatetimes.append(ibsdata['times_utc'][slicenumber - slicenumbershift + i])
 
-    stepplotfig_ibs, stepplotaxes_ibs = plt.subplots(len(dataslices), sharex='all')
-    stepplotfig_ibs.suptitle("Histogram of " + ibsdata['flyby'].upper() + " IBS data", fontsize=32)
-    for i, (ax, data) in enumerate(zip(stepplotaxes_ibs, dataslices)):
-        ax.step(x, data, where='mid')
-        ax.errorbar(x, data, yerr=[np.sqrt(i) for i in data], color='k', fmt='none')
-        ax.set_yscale("log")
-        ax.set_xlim(1, 25)
-        ax.set_ylim(0.9 * min(data), 1.1 * max(data))
-        ax.set_ylabel("Counts [/s]", fontsize=16)
-        ax.tick_params(axis='both', which='major', labelsize=15)
-        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-        ax.minorticks_on()
-        ax.set_title(ibsdata['times_utc_strings'][slicenumber - slicenumbershift + i])
-    stepplotaxes_ibs[-1].set_xlabel("Energy [eV/q]", fontsize=14)
+    if numofflybys == 1:
+        stepplotfig_ibs, stepplotaxes_ibs = plt.subplots(len(dataslices), sharex='all')
+        stepplotfig_ibs.suptitle("Histogram of " + ibsdata['flyby'].upper() + " IBS data", fontsize=32)
+        for i, (ax, data) in enumerate(zip(stepplotaxes_ibs, dataslices)):
+            ax.step(x, data, where='mid')
+            ax.errorbar(x, data, yerr=[np.sqrt(i) for i in data], color='k', fmt='none')
+            ax.set_yscale("log")
+            ax.set_xlim(1, 25)
+            ax.set_ylim(0.9 * min(data), 1.1 * max(data))
+            ax.set_ylabel("Counts [/s]", fontsize=16)
+            ax.tick_params(axis='both', which='major', labelsize=15)
+            ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+            ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+            ax.minorticks_on()
+            ax.set_title(ibsdata['times_utc_strings'][slicenumber - slicenumbershift + i])
+        stepplotaxes_ibs[-1].set_xlabel("Energy [eV/q]", fontsize=14)
 
     outputs = []
     GOFvalues = []
@@ -250,18 +251,19 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
     # print(out.fit_report(min_correl=0.7))jiop
     # comps = out.eval_components(x=x)
 
-    for (ax, out, data, GOF) in zip(stepplotaxes_ibs, outputs, dataslices, GOFvalues):
-        ax.plot(x, out.best_fit, 'r-', label='best fit')
-        ax.text(0.8, 0.02,
-                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
-                transform=ax.transAxes)
-        ax.text(0.8, .12, "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                transform=ax.transAxes)
-        # ax.text(0.8, .22, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
-        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
-        # ax.text(0.8, .32, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
-        ax.text(0.8, .22, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
-    stepplotaxes_ibs[0].text(0.8, 0.28, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+    if numofflybys == 1:
+        for (ax, out, data, GOF) in zip(stepplotaxes_ibs, outputs, dataslices, GOFvalues):
+            ax.plot(x, out.best_fit, 'r-', label='best fit')
+            ax.text(0.8, 0.02,
+                    "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                    transform=ax.transAxes)
+            ax.text(0.8, .12, "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                    transform=ax.transAxes)
+            # ax.text(0.8, .22, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+            # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+            # ax.text(0.8, .32, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
+            ax.text(0.8, .22, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
+        stepplotaxes_ibs[0].text(0.8, 0.28, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
     # for mass in ibs_masses:
     #     stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
     # stepplotax.legend(loc='best')
@@ -277,7 +279,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117]):
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117],numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -318,21 +320,22 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26
         tempdataslice[tempdataslice <= 0] = 1
         dataslices.append(np.array(tempdataslice))
 
-    stepplotfig_els, stepplotaxes_els = plt.subplots(len(dataslices), sharex='all')
-    stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
-    for i, (ax, x, data) in enumerate(zip(stepplotaxes_els, x_lists, dataslices)):
-        ax.step(x, data, where='mid')
-        ax.errorbar(x, data, yerr=[np.sqrt(i) for i in data], color='k', fmt='none')
-        ax.set_yscale("log")
-        #ax.set_xlim(1, 25)
-        ax.set_ylim(0.9 * min(data), 1.1 * max(data))
-        ax.set_ylabel("Counts [/s]", fontsize=16)
-        ax.tick_params(axis='both', which='major', labelsize=15)
-        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-        ax.minorticks_on()
-        ax.set_title(elsdata['times_utc_strings'][els_slicenumber - slicenumbershift + i])
-    stepplotaxes_els[-1].set_xlabel("Energy [eV/q]", fontsize=14)
+    if numofflybys == 1:
+        stepplotfig_els, stepplotaxes_els = plt.subplots(len(dataslices), sharex='all')
+        stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
+        for i, (ax, x, data) in enumerate(zip(stepplotaxes_els, x_lists, dataslices)):
+            ax.step(x, data, where='mid')
+            ax.errorbar(x, data, yerr=[np.sqrt(i) for i in data], color='k', fmt='none')
+            ax.set_yscale("log")
+            #ax.set_xlim(1, 25)
+            ax.set_ylim(0.9 * min(data), 1.1 * max(data))
+            ax.set_ylabel("Counts [/s]", fontsize=16)
+            ax.tick_params(axis='both', which='major', labelsize=15)
+            ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+            ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+            ax.minorticks_on()
+            ax.set_title(elsdata['times_utc_strings'][els_slicenumber - slicenumbershift + i])
+        stepplotaxes_els[-1].set_xlabel("Energy [eV/q]", fontsize=14)
 
     outputs = []
     GOFvalues = []
@@ -348,18 +351,18 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26
 
     # for out in outputs:
     #     print(out.params['ionvelocity'], out.params['scp'])
-
-    for (ax, out, data, GOF) in zip(stepplotaxes_els, outputs, dataslices, GOFvalues):
-        ax.plot(x, out.best_fit, 'r-', label='best fit')
-        ax.text(0.8, 0.02,
-                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
-                transform=ax.transAxes)
-        ax.text(0.8, .12, "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                transform=ax.transAxes)
-        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
-        ax.text(0.8, .22, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
-        ax.text(0.8, .32, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
-    stepplotaxes_els[0].text(0.8, .32, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+    if numofflybys == 1:
+        for (ax, out, data, GOF) in zip(stepplotaxes_els, outputs, dataslices, GOFvalues):
+            ax.plot(x, out.best_fit, 'r-', label='best fit')
+            ax.text(0.8, 0.02,
+                    "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                    transform=ax.transAxes)
+            ax.text(0.8, .12, "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                    transform=ax.transAxes)
+            # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+            ax.text(0.8, .22, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
+            ax.text(0.8, .32, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
+        stepplotaxes_els[0].text(0.8, .32, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
     # comps = out.eval_components(x=x)
     # for mass in els_masses:
     #     stepplotax_els.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
@@ -385,8 +388,8 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         lptimes = list(tempdf['Positive Peak Time'])
         lpdata = read_LP_V1(flyby)
         for (i, j, k) in zip(tempdf['Positive Peak Time'], tempdf['Negative Peak Time'], tempdf['Altitude']):
-            ibs_output_inner, ibs_datetime_inner, ibs_GOFvalue_inner, lpvalue = IBS_fluxfitting(ibsdata, i, k,lpdata=lpdata)
-            els_output_inner, els_datetime_inner, els_GOFvalue_inner, temp = ELS_fluxfitting(elsdata, j, k,lpdata=lpdata)
+            ibs_output_inner, ibs_datetime_inner, ibs_GOFvalue_inner, lpvalue = IBS_fluxfitting(ibsdata, i, k,lpdata=lpdata,numofflybys=len(usedflybys))
+            els_output_inner, els_datetime_inner, els_GOFvalue_inner, temp = ELS_fluxfitting(elsdata, j, k,lpdata=lpdata,numofflybys=len(usedflybys))
             ibs_outputs += [ibs_output_inner]
             ibs_datetimes += [ibs_datetime_inner]
             ibs_GOFvalues += [ibs_GOFvalue_inner]
@@ -419,7 +422,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
                 #     'ionvelocity'].stderr < 250 and (
                 #         not math.isnan(els_out.params['scp'].stderr)) and els_out.params[
                 #     'scp'].stderr < 2.5:  # Important value, justification?
-                if els_GOF < 40:
+                if els_GOF < 50:
                     tidied_els_outputs[-1].append(els_outputs[i][j])
                     tidied_els_datetimes[-1].append(els_datetimes[i][j])
                     tidied_els_GOFvalues[-1].append(els_GOFvalues[i][j])
@@ -550,6 +553,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         # actaxes.set_ylabel("Actuator position")
         else:
             tempoutputdf = pd.DataFrame()
+            tempoutputdf['Flyby'] = tempdf['Flyby']
             tempoutputdf['Positive Peak Time'] = tempdf['Positive Peak Time']
             tempoutputdf['Negative Peak Time'] = tempdf['Negative Peak Time']
             tempoutputdf['IBS alongtrack velocity'] = tidied_ibs_ionvelocities
@@ -557,8 +561,9 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             tempoutputdf['ELS alongtrack velocity'] = tidied_els_ionvelocities
             tempoutputdf['ELS spacecraft potentials'] = tidied_els_scp
             print(tempoutputdf)
-            outputdf = outputdf.join(tempoutputdf)
-    outputdf.to_csv("alongtrackvelocity.csv")
+            outputdf = pd.concat([outputdf,tempoutputdf])
+    if len(usedflybys) != 1:
+        outputdf.to_csv("alongtrackvelocity_unconstrained.csv")
 
 def single_slice_test(flyby, slicenumber):
     elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
@@ -603,6 +608,7 @@ def single_slice_test(flyby, slicenumber):
 
 
 #single_slice_test("t42",slicenumber=4)
-multiple_alongtrackwinds_flybys(["t20"])
+#multiple_alongtrackwinds_flybys(["t16"])
+multiple_alongtrackwinds_flybys(['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
 
-plt.show()
+#plt.show()

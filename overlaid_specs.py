@@ -263,98 +263,99 @@ flyby_ramanodes = {"t16": [4, 5],
                    "t46": [4, 5],
                    }
 
-flyby = "t16"
-anode1 = flyby_ramanodes[flyby][0]
-anode2 = flyby_ramanodes[flyby][1]
-lowerenergy = 2
-upperenergy = 750
+def main():
+    flyby = "t16"
+    anode1 = flyby_ramanodes[flyby][0]
+    anode2 = flyby_ramanodes[flyby][1]
+    lowerenergy = 2
+    upperenergy = 750
 
-CAPS_df = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-CAPS_df = CAPS_df[CAPS_df['Flyby'] == flyby.lower()]
-CAPS_df['Bulk Time'] = pd.to_datetime(CAPS_df['Bulk Time'])
-CAPS_df['Azimuthal Ram Time'] = pd.to_datetime(CAPS_df['Azimuthal Ram Time'])
-CAPS_df['Positive Peak Time'] = pd.to_datetime(CAPS_df['Positive Peak Time'])
-CAPS_df['Negative Peak Time'] = pd.to_datetime(CAPS_df['Negative Peak Time'])
+    CAPS_df = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+    CAPS_df = CAPS_df[CAPS_df['Flyby'] == flyby.lower()]
+    CAPS_df['Bulk Time'] = pd.to_datetime(CAPS_df['Bulk Time'])
+    CAPS_df['Azimuthal Ram Time'] = pd.to_datetime(CAPS_df['Azimuthal Ram Time'])
+    CAPS_df['Positive Peak Time'] = pd.to_datetime(CAPS_df['Positive Peak Time'])
+    CAPS_df['Negative Peak Time'] = pd.to_datetime(CAPS_df['Negative Peak Time'])
 
-elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
-generate_mass_bins(elsdata, flyby, "els")
-ibsdata = readsav("data/ibs/ibsres_" + filedates_times[flyby][0] + ".dat")
-generate_aligned_ibsdata(ibsdata, elsdata, flyby)
+    elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
+    generate_mass_bins(elsdata, flyby, "els")
+    ibsdata = readsav("data/ibs/ibsres_" + filedates_times[flyby][0] + ".dat")
+    generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 
-starttime = flyby_datetimes[flyby][0]
-endtime = flyby_datetimes[flyby][1]
+    starttime = flyby_datetimes[flyby][0]
+    endtime = flyby_datetimes[flyby][1]
 
-ramtimes = CAPS_ramtimes(elsdata, starttime, endtime)
-maxflux_anodes = []
-for i in ramtimes:
-    maxflux_anodes.append(
-        ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10), i + datetime.timedelta(seconds=10)))
-# print(ramtimes,maxflux_anodes)
+    ramtimes = CAPS_ramtimes(elsdata, starttime, endtime)
+    maxflux_anodes = []
+    for i in ramtimes:
+        maxflux_anodes.append(
+            ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10), i + datetime.timedelta(seconds=10)))
+    # print(ramtimes,maxflux_anodes)
 
-heavypeaktimes, heavypeakenergies = [], []
-for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
-    # print(ramtime, maxflux_anode)
-    print(maxflux_anode, ramtime - datetime.timedelta(seconds=15), ramtime + datetime.timedelta(seconds=15))
-    heavypeaktime, heavypeakenergy = heavy_ion_finder(elsdata, 20, maxflux_anode,
-                                                      ramtime - datetime.timedelta(seconds=15),
-                                                      ramtime + datetime.timedelta(seconds=15))
-    print(heavypeaktime, heavypeakenergy)
-    print("------Next------")
-    heavypeaktimes.append(heavypeaktime)
-    heavypeakenergies.append(heavypeakenergy)
+    heavypeaktimes, heavypeakenergies = [], []
+    for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
+        # print(ramtime, maxflux_anode)
+        print(maxflux_anode, ramtime - datetime.timedelta(seconds=15), ramtime + datetime.timedelta(seconds=15))
+        heavypeaktime, heavypeakenergy = heavy_ion_finder(elsdata, 20, maxflux_anode,
+                                                          ramtime - datetime.timedelta(seconds=15),
+                                                          ramtime + datetime.timedelta(seconds=15))
+        print(heavypeaktime, heavypeakenergy)
+        print("------Next------")
+        heavypeaktimes.append(heavypeaktime)
+        heavypeakenergies.append(heavypeakenergy)
 
-heavypeaktimes_ibs, heavypeakenergies_ibs = [], []
-for ramtime in ramtimes:
-    print("IBS", ramtime)
-    # print(50, maxflux_anode, ramtime - datetime.timedelta(seconds=10), ramtime + datetime.timedelta(seconds=10))
-    heavypeaktime_ibs, heavypeakenergy_ibs = heavy_ion_finder_ibs(ibsdata, 15, ramtime - datetime.timedelta(seconds=20),
-                                                                  ramtime + datetime.timedelta(seconds=20))
-    # print(heavypeaktime_ibs, heavypeakenergy_ibs)
-    print("------Next------")
-    heavypeaktimes_ibs.append(heavypeaktime_ibs)
-    heavypeakenergies_ibs.append(heavypeakenergy_ibs)
+    heavypeaktimes_ibs, heavypeakenergies_ibs = [], []
+    for ramtime in ramtimes:
+        print("IBS", ramtime)
+        # print(50, maxflux_anode, ramtime - datetime.timedelta(seconds=10), ramtime + datetime.timedelta(seconds=10))
+        heavypeaktime_ibs, heavypeakenergy_ibs = heavy_ion_finder_ibs(ibsdata, 15, ramtime - datetime.timedelta(seconds=20),
+                                                                      ramtime + datetime.timedelta(seconds=20))
+        # print(heavypeaktime_ibs, heavypeakenergy_ibs)
+        print("------Next------")
+        heavypeaktimes_ibs.append(heavypeaktime_ibs)
+        heavypeakenergies_ibs.append(heavypeakenergy_ibs)
 
-fig, (elsax, elsax2, ibsax, actax) = plt.subplots(4, figsize=(18, 6), sharex=True)
-ELS_spectrogram(elsdata, anode1, filedates_times[flyby][1], 420, ax=elsax, fig=fig)
-ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 420, ax=elsax2, fig=fig)
-IBS_spectrogram(ibsdata, 2, filedates_times[flyby][1], 420, ax=ibsax, fig=fig)
+    fig, (elsax, elsax2, ibsax, actax) = plt.subplots(4, figsize=(18, 6), sharex=True)
+    ELS_spectrogram(elsdata, anode1, filedates_times[flyby][1], 420, ax=elsax, fig=fig)
+    ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 420, ax=elsax2, fig=fig)
+    IBS_spectrogram(ibsdata, 2, filedates_times[flyby][1], 420, ax=ibsax, fig=fig)
 
-for peaktime, peakenergy, maxflux_anode in zip(heavypeaktimes, heavypeakenergies, maxflux_anodes):
-    if maxflux_anode == (anode1 - 1):
-        elsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-        elsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
-        actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
-    if maxflux_anode == (anode2 - 1):
-        elsax2.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-        elsax2.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
-        actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
+    for peaktime, peakenergy, maxflux_anode in zip(heavypeaktimes, heavypeakenergies, maxflux_anodes):
+        if maxflux_anode == (anode1 - 1):
+            elsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
+            elsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
+            actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
+        if maxflux_anode == (anode2 - 1):
+            elsax2.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
+            elsax2.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
+            actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
 
-for peaktime, peakenergy in zip(heavypeaktimes_ibs, heavypeakenergies_ibs):
-    ibsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-    ibsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dashed")
-    actax.vlines(peaktime, 1, 110, color='m', linestyle="dashed")
+    for peaktime, peakenergy in zip(heavypeaktimes_ibs, heavypeakenergies_ibs):
+        ibsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
+        ibsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dashed")
+        actax.vlines(peaktime, 1, 110, color='m', linestyle="dashed")
 
-actuator_plot(elsdata, filedates_times[flyby][1], 600, ax=actax)
-actax.plot(CAPS_df['Azimuthal Ram Time'], CAPS_df['Azimuthal Ram Angle'], color='k')
-actax.plot(CAPS_df['Negative Peak Time'], CAPS_df['Negative Azimuth Angle'], color='k',linestyle='dotted')
-actax.plot(CAPS_df['Positive Peak Time'], CAPS_df['Positive Azimuth Angle'], color='k',linestyle='dashed')
-actax.plot(CAPS_df['Bulk Time'], CAPS_df['Bulk Azimuth'], color='k', linestyle='dashdot')
+    actuator_plot(elsdata, filedates_times[flyby][1], 600, ax=actax)
+    actax.plot(CAPS_df['Azimuthal Ram Time'], CAPS_df['Azimuthal Ram Angle'], color='k')
+    actax.plot(CAPS_df['Negative Peak Time'], CAPS_df['Negative Azimuth Angle'], color='k',linestyle='dotted')
+    actax.plot(CAPS_df['Positive Peak Time'], CAPS_df['Positive Azimuth Angle'], color='k',linestyle='dashed')
+    actax.plot(CAPS_df['Bulk Time'], CAPS_df['Bulk Azimuth'], color='k', linestyle='dashdot')
 
-elsax.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
-elsax2.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
-ibsax.vlines(CAPS_df['Positive Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dashed")
+    elsax.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
+    elsax2.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
+    ibsax.vlines(CAPS_df['Positive Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dashed")
 
-for ax in (elsax, elsax2):
-    ax.set_ylim(lowerenergy, upperenergy)
+    for ax in (elsax, elsax2):
+        ax.set_ylim(lowerenergy, upperenergy)
 
-ibsax.set_ylim(3,200)
+    ibsax.set_ylim(3,200)
 
-for ax in (elsax, elsax2, ibsax, actax):
-    ax.vlines(CAPS_df['Azimuthal Ram Time'], lowerenergy - 0.5, upperenergy + 50, color='k')
+    for ax in (elsax, elsax2, ibsax, actax):
+        ax.vlines(CAPS_df['Azimuthal Ram Time'], lowerenergy - 0.5, upperenergy + 50, color='k')
 
-actax.set_ylim(70, 105)
-divider2 = make_axes_locatable(actax)
-cax2 = divider2.append_axes("right", size="1.5%", pad=.05)
-cax2.remove()
+    actax.set_ylim(70, 105)
+    divider2 = make_axes_locatable(actax)
+    cax2 = divider2.append_axes("right", size="1.5%", pad=.05)
+    cax2.remove()
 
-plt.show()
+    plt.show()

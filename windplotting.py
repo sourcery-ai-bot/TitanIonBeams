@@ -40,21 +40,21 @@ lonlatax.set_ylabel("Latitude")
 lonfig, lonax = plt.subplots()
 lonax.errorbar(x=windsdf["Longitude"], y=windsdf["Crosstrack velocity"], fmt='o',
                yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   ,windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
 lonax.set_xlabel("Longitude")
 lonax.set_ylabel("Crosstrack velocity [m/s]")
 
 latfig, latax = plt.subplots()
 latax.errorbar(x=windsdf["Latitude"], y=windsdf["Crosstrack velocity"], fmt='o',
                yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   ,windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
 latax.set_xlabel("Latitude")
 latax.set_ylabel("Crosstrack velocity [m/s]")
 
 altfig, altax = plt.subplots()
 altax.errorbar(x=windsdf["Altitude"], y=windsdf["Crosstrack velocity"], fmt='o',
                yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   ,windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
 altax.set_xlabel("Altitude [km]")
 altax.set_ylabel("Crosstrack velocity [m/s]")
 
@@ -88,5 +88,41 @@ plt.subplots_adjust(bottom=0.10)
 
 fig, ax = plt.subplots()
 sns.stripplot(data=windsdf, x="Flyby", y="Crosstrack velocity", hue="Actuation Direction", dodge=False)
+
+# ---Alongtrack stats-----
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+alongtrack_figdist, alongtrack_ax = plt.subplots()
+alongtrack_figdist.suptitle(str(windsdf.Flyby.unique()))
+
+sns.scatterplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", y="IBS spacecraft potentials", ax=alongtrack_ax,
+                color='C0')
+sns.kdeplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", y="IBS spacecraft potentials", ax=alongtrack_ax,
+            levels=5, color='C0')
+sns.scatterplot(data=alongtrack_windsdf, x="ELS alongtrack velocity", y="ELS spacecraft potentials", ax=alongtrack_ax,
+                color='C1')
+sns.kdeplot(data=alongtrack_windsdf, x="ELS alongtrack velocity", y="ELS spacecraft potentials", ax=alongtrack_ax,
+            levels=5, color='C1')
+# sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
+alongtrack_ax.set_xlabel("Alongtrack velocity [m/s]")
+alongtrack_ax.set_ylabel("Derived S/c potential [V]")
+alongtrack_ax.legend()
+
+alongtrack_scp_figdist, (alongtrack_ibs_scp_axdist, alongtrack_els_scp_axdist) = plt.subplots(2)
+alongtrack_scp_figdist.suptitle(str(windsdf.Flyby.unique()))
+sns.histplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", bins=np.arange(-3, 0, 0.15),
+             ax=alongtrack_ibs_scp_axdist, element="step",
+             stat="probability", color='C0')
+sns.histplot(data=alongtrack_windsdf, x="ELS spacecraft potentials", bins=np.arange(-3, 0, 0.15),
+             ax=alongtrack_els_scp_axdist, element="step",
+             stat="probability", color='C1')
+# sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
+figdist.legend()
+
+test_figdist, test_ax = plt.subplots()
+sns.regplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",ax=test_ax)
+
+test_figdist2, test_ax2 = plt.subplots()
+sns.regplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", y="ELS spacecraft potentials",ax=test_ax2)
+
 
 plt.show()
