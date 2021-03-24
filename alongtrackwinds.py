@@ -109,9 +109,9 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     eval_pars = Parameters()
 
     if charge == 1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 0.3, max=LPvalue + 0.3)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
     elif charge == -1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 0.3, max=LPvalue + 0.3)
+        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
     pars.add('temp_eV', value=8 * k * temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('ionvelocity', value=windspeed, min=-500, max=500)
@@ -474,7 +474,7 @@ def single_slice_test(flyby, slicenumber):
 
 
 #single_slice_test("t42", slicenumber=4)
-#multiple_alongtrackwinds_flybys(["t16","t17"])
+#multiple_alongtrackwinds_flybys(["t16"])
 multiple_alongtrackwinds_flybys(
     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
 

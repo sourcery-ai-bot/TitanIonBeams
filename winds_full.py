@@ -170,19 +170,20 @@ def cassini_titan_altlatlon(tempdatetime):
 
     return alt, lat * spice.dpr(), lon * spice.dpr()
 
-def els_alongtrack_velocity(elsdata,tempdatetime):
+
+def els_alongtrack_velocity(elsdata, tempdatetime):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[4]) ** 2 + (state[5]) ** 2 + (state[6]) ** 2) * 1e3
     slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
 
-    plt.plot(elscalib['earray'],elsdata['def'][:,4,slicenumber])
-    print("cassini_speed",cassini_speed)
+    plt.plot(elscalib['earray'], elsdata['def'][:, 4, slicenumber])
+    print("cassini_speed", cassini_speed)
 
-    #return alongtrackvelocity
+    # return alongtrackvelocity
 
 
-#def ibs_alongtrack_velocity(ibsdata,tempdatetime):
+# def ibs_alongtrack_velocity(ibsdata,tempdatetime):
 
 
 filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006",
@@ -215,8 +216,10 @@ data_times_pairs = [
 ]
 
 usedflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
+
+
 # usedflybys = ['t42', 't46']
-#usedflybys = ['t16', 't17', 't29']
+# usedflybys = ['t16', 't17', 't29']
 
 
 def CAPS_winds(data_times_pairs):
@@ -272,7 +275,8 @@ def CAPS_winds(data_times_pairs):
     capsdf["Bulk Deflection from Ram Angle"] = capsdf["Bulk Azimuth"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Negative Deflection from Ram Angle"] = capsdf["Negative Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Positive Deflection from Ram Angle"] = capsdf["Positive Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
-
+    capsdf.drop_duplicates(subset=['Positive Peak Time'], inplace=True)
+    capsdf.drop_duplicates(subset=['Negative Peak Time'], inplace=True)
     return capsdf
 
 
@@ -281,7 +285,6 @@ data["Negative crosstrack velocity"] = np.sin(data["Negative Deflection from Ram
     'Flyby velocity']
 data["Positive crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angle"] * spice.rpd()) * data[
     'Flyby velocity']
-
 
 data["Crosstrack velocity"] = np.sin(data["Bulk Deflection from Ram Angle"] * spice.rpd()) * data['Flyby velocity']
 data["Absolute Crosstrack velocity"] = data["Crosstrack velocity"].abs()

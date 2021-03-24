@@ -16,6 +16,12 @@ matplotlib.rcParams['grid.alpha'] = 0.5
 
 # ---Alongtrack stats-----
 alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+crary_windsdf = pd.read_csv("crarywinds.csv")
+flybyslist = alongtrack_windsdf.Flyby.unique()
+print(flybyslist)
+crary_windsdf = crary_windsdf[crary_windsdf['Flyby'].isin([i.upper() for i in flybyslist])]
+print(crary_windsdf)
+
 alongtrack_figdist, alongtrack_ax = plt.subplots()
 alongtrack_figdist.suptitle(str(alongtrack_windsdf.Flyby.unique()))
 
@@ -40,6 +46,15 @@ sns.histplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", bins=np.ara
 sns.histplot(data=alongtrack_windsdf, x="ELS spacecraft potentials", bins=np.arange(-3, 0, 0.15),
              ax=alongtrack_els_scp_axdist, element="step",
              stat="probability", color='C1')
+
+alongtrack_ionvelocity_figdist, (alongtrack_ibs_ionvelocity_axdist, alongtrack_els_ionvelocity_axdist) = plt.subplots(2)
+alongtrack_ionvelocity_figdist.suptitle(str(alongtrack_windsdf.Flyby.unique()))
+sns.histplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", bins=np.arange(-400, 400, 50),
+             ax=alongtrack_ibs_ionvelocity_axdist, element="step",
+             stat="probability", color='C0')
+sns.histplot(data=alongtrack_windsdf, x="ELS alongtrack velocity", bins=np.arange(-400, 400, 50),
+             ax=alongtrack_els_ionvelocity_axdist, element="step",
+             stat="probability", color='C1')
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
 
 
@@ -60,24 +75,46 @@ sns.regplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", y="ELS space
 
 flyby_potentialfig, flyby_potentialax = plt.subplots()
 sns.pointplot(x="Flyby", y="IBS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C0',ax=flyby_potentialax,capsize=.2)
-sns.pointplot(x="Flyby", y="LP Potentials", data=alongtrack_windsdf,join=False,color='k',ax=flyby_potentialax,capsize=.2)
+sns.pointplot(x="Flyby", y="LP Potentials", data=alongtrack_windsdf,join=False,color='r',ax=flyby_potentialax,capsize=.2)
 sns.pointplot(x="Flyby", y="ELS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C1',ax=flyby_potentialax,capsize=.2)
 flyby_potentialax.set_ylabel("Derived S/C Potential")
 flyby_potentialax.legend(handles=[Line2D([0], [0], marker='o', color='C0', label='IBS',
                           markerfacecolor='C0', markersize=8),
           Line2D([0], [0], marker='o', color='C1', label='ELS',
                           markerfacecolor='C1', markersize=8),
-          Line2D([0], [0], marker='o', color='k', label='LP',
-               markerfacecolor='k', markersize=8)])
+          Line2D([0], [0], marker='o', color='r', label='LP',
+               markerfacecolor='r', markersize=8)])
+maxlp = alongtrack_windsdf.groupby('Flyby', as_index=False)["LP Potentials"].max()
+minlp = alongtrack_windsdf.groupby('Flyby', as_index=False)["LP Potentials"].min()
 
 flyby_velocityfig, flyby_velocityax = plt.subplots()
+sns.pointplot(x="Flyby", y="Ion velocity", data=crary_windsdf,join=False,color='g',ax=flyby_velocityax,capsize=.2)
 sns.pointplot(x="Flyby", y="IBS alongtrack velocity", data=alongtrack_windsdf,join=False,color='C0',ax=flyby_velocityax,capsize=.2)
 sns.pointplot(x="Flyby", y="ELS alongtrack velocity", data=alongtrack_windsdf,join=False,color='C1',ax=flyby_velocityax,capsize=.2)
 flyby_velocityax.set_ylabel("Derived Ion Velocities")
 flyby_velocityax.legend(handles=[Line2D([0], [0], marker='o', color='C0', label='IBS',
                           markerfacecolor='C0', markersize=8),
           Line2D([0], [0], marker='o', color='C1', label='ELS',
-                          markerfacecolor='C1', markersize=8)]
+                          markerfacecolor='C1', markersize=8),
+          Line2D([0], [0], marker='o', color='g', label='Crary+, 2009; IBS',
+                          markerfacecolor='g', markersize=8)]
 )
+
+#----------------Unconstrained----------------
+flyby_potentialax.plot(flybyslist,minlp["LP Potentials"]-2,color='k',linestyle='--')
+flyby_potentialax.plot(flybyslist,[0]*len(flybyslist),color='k',linestyle='--')
+flyby_potentialax.set_title("Derived s/c potential bounds, [LPvalue-2,0] \n Derived ion velocity bounds, [-500,500]")
+flyby_velocityax.plot(flybyslist,[500]*len(flybyslist),color='k',linestyle='--')
+flyby_velocityax.plot(flybyslist,[-500]*len(flybyslist),color='k',linestyle='--')
+flyby_velocityax.set_title("Derived s/c potential bounds, [LPvalue-2,0] \n Derived ion velocity bounds, [-500,500]")
+
+#----------------Constrained----------------
+# flyby_potentialax.plot(flybyslist,minlp["LP Potentials"]-0.3,color='k',linestyle='--')
+# flyby_potentialax.plot(flybyslist,maxlp["LP Potentials"]+0.3,color='k',linestyle='--')
+# flyby_potentialax.set_title("Derived s/c potential bounds, [LPvalue-0.3,LPvalue+0.3] \n Derived ion velocity bounds, [-500,500]")
+# flyby_velocityax.plot(flybyslist,[500]*len(flybyslist),color='k',linestyle='--')
+# flyby_velocityax.plot(flybyslist,[-500]*len(flybyslist),color='k',linestyle='--')
+# flyby_velocityax.set_title("Derived s/c potential bounds, [LPvalue-0.3,LPvalue+0.3] \n Derived ion velocity bounds, [-500,500]")
+
 
 plt.show()
