@@ -39,22 +39,22 @@ lonlatax.set_ylabel("Latitude")
 # -----------------------------------------------
 lonfig, lonax = plt.subplots()
 lonax.errorbar(x=windsdf["Longitude"], y=windsdf["Crosstrack velocity"], fmt='o',
-               yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+               yerr=[windsdf["IBS crosstrack velocity"] - windsdf["Crosstrack velocity"]
+                   , windsdf["Crosstrack velocity"] - windsdf["ELS crosstrack velocity"]])
 lonax.set_xlabel("Longitude")
 lonax.set_ylabel("Crosstrack velocity [m/s]")
 
 latfig, latax = plt.subplots()
 latax.errorbar(x=windsdf["Latitude"], y=windsdf["Crosstrack velocity"], fmt='o',
-               yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+               yerr=[windsdf["IBS crosstrack velocity"] - windsdf["Crosstrack velocity"]
+                   , windsdf["Crosstrack velocity"] - windsdf["ELS crosstrack velocity"]])
 latax.set_xlabel("Latitude")
 latax.set_ylabel("Crosstrack velocity [m/s]")
 
 altfig, altax = plt.subplots()
 altax.errorbar(x=windsdf["Altitude"], y=windsdf["Crosstrack velocity"], fmt='o',
-               yerr=[windsdf["Positive crosstrack velocity"] - windsdf["Crosstrack velocity"]
-                   , windsdf["Crosstrack velocity"] - windsdf["Negative crosstrack velocity"]])
+               yerr=[windsdf["IBS crosstrack velocity"] - windsdf["Crosstrack velocity"]
+                   , windsdf["Crosstrack velocity"] - windsdf["ELS crosstrack velocity"]])
 altax.set_xlabel("Altitude [km]")
 altax.set_ylabel("Crosstrack velocity [m/s]")
 

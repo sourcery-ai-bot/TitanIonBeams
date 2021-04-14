@@ -221,8 +221,10 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
 
 filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
                    "t17": ["07-sep-2006", "20:13:00"],
+                   "t19": ["09-oct-2006", "17:27:00"],
                    "t20": ["25-oct-2006", "15:54:00"],
                    "t21": ["12-dec-2006", "11:38:00"],
+                   "t23": ["13-jan-2007", "08:35:00"],
                    "t25": ["22-feb-2007", "03:08:00"],
                    "t26": ["10-mar-2007", "01:43:00"],
                    "t27": ["26-mar-2007", "00:20:00"],
@@ -236,8 +238,11 @@ filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
 
 flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 40)],
                    "t17": [datetime.datetime(2006, 9, 7, 20, 14, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)],
+                   #"t19": [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)],
+                   "t19": [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 33, 10)],
                    "t20": [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)],
                    "t21": [datetime.datetime(2006, 12, 12, 11, 39, 45), datetime.datetime(2006, 12, 12, 11, 43, 20)],
+                   "t23": [datetime.datetime(2007, 1, 13, 8, 35), datetime.datetime(2007, 1, 13, 8, 42)],
                    "t25": [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)],
                    "t26": [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)],
                    "t27": [datetime.datetime(2007, 3, 26, 0, 21, 30), datetime.datetime(2007, 3, 26, 0, 26)],
@@ -250,8 +255,10 @@ flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datet
                    }
 flyby_ramanodes = {"t16": [4, 5],
                    "t17": [4, 5],
+                   "t19": [4, 5],
                    "t20": [1, 2],
                    "t21": [4, 5],
+                   "t23": [4, 5],
                    "t25": [4, 5],
                    "t26": [4, 5],
                    "t27": [6, 7],
@@ -264,7 +271,7 @@ flyby_ramanodes = {"t16": [4, 5],
                    }
 
 def main():
-    flyby = "t16"
+    flyby = "t23"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     lowerenergy = 2
@@ -294,7 +301,7 @@ def main():
 
     heavypeaktimes, heavypeakenergies = [], []
     for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
-        # print(ramtime, maxflux_anode)
+        #print(ramtime, maxflux_anode)
         print(maxflux_anode, ramtime - datetime.timedelta(seconds=15), ramtime + datetime.timedelta(seconds=15))
         heavypeaktime, heavypeakenergy = heavy_ion_finder(elsdata, 20, maxflux_anode,
                                                           ramtime - datetime.timedelta(seconds=15),
@@ -359,3 +366,6 @@ def main():
     cax2.remove()
 
     plt.show()
+
+main()
+

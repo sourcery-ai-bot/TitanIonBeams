@@ -49,18 +49,18 @@ ELS_FWHM = 0.167
 SNG_FWHM = 0.167
 IBS_FWHM = 0.017
 
-titan_flybyvelocities = {'t16': 6e3, 't17': 6e3,
-                         't20': 6e3, 't21': 5.9e3, 't25': 6.2e3, 't26': 6.2e3, 't27': 6.2e3, 't28': 6.2e3, 't29': 6.2e3,
+titan_flybyvelocities = {'t16': 6e3 ,'t17': 6e3, 't18': 6e3, 't19': 6e3,
+                         't20': 6e3, 't21': 5.9e3, 't23': 6e3,  't25': 6.2e3, 't26': 6.2e3, 't27': 6.2e3, 't28': 6.2e3, 't29': 6.2e3,
                          't30': 6.2e3, 't32': 6.2e3,
                          't40': 6.3e3, 't42': 6.3e3, 't46': 6.3e3, 't47': 6.3e3,
                          't83': 5.9e3}
-titan_CAheight = {'t16': 950, 't17': 1000,
-                  't20': 1029, 't21': 1000, 't25': 1000, 't26': 981, 't27': 1010, 't28': 991, 't29': 981,
+titan_CAheight = {'t16': 950, 't17': 1000, 't18': 960, 't19': 980,
+                  't20': 1029, 't21': 1000, 't23': 1000, 't25': 1000, 't26': 981, 't27': 1010, 't28': 991, 't29': 981,
                   't30': 959, 't32': 965,
                   't46': 1100, 't47': 1023,
                   't83': 990}
-titan_flybydates = {'t16': [2006, 7, 22], 't17': [2006, 9, 7],
-                    't20': [2006, 10, 25], 't21': [2006, 12, 12], 't25': [2007, 2, 22], 't26': [2007, 3, 10],
+titan_flybydates = {'t16': [2006, 7, 22], 't17': [2006, 9, 7], 't18': [2006, 9, 23], 't19': [2006, 10, 9],
+                    't20': [2006, 10, 25], 't21': [2006, 12, 12], 't23': [2007, 1, 13], 't25': [2007, 2, 22], 't26': [2007, 3, 10],
                     't27': [2007, 3, 26], 't28': [2007, 4, 10], 't29': [2007, 4, 26],
                     't30': [2007, 5, 12], 't32': [2007, 6, 13],
                     't40': [2008, 1, 5], 't42': [2008, 3, 25], 't46': [2008, 11, 3], 't47': [2008, 11, 19],
@@ -186,23 +186,27 @@ def els_alongtrack_velocity(elsdata, tempdatetime):
 # def ibs_alongtrack_velocity(ibsdata,tempdatetime):
 
 
-filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006",
-             "t20": "25-oct-2006", "t21": "12-dec-2006", "t25": "22-feb-2007", "t26": "10-mar-2007",
+filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006", "t18": "23-sep-2006", "t19": "09-oct-2006",
+             "t20": "25-oct-2006", "t21": "12-dec-2006", "t23": "13-jan-2007", "t25": "22-feb-2007", "t26": "10-mar-2007",
              "t27": "26-mar-2007",
              "t28": "10-apr-2007", "t29": "26-apr-2007",
              "t30": "12-may-2007", "t32": "13-jun-2007",
              "t42": "25-mar-2008", "t46": "03-nov-2008", "t47": "19-nov-2008"}
 
-flyby_maxbeamtimegap = {"t16": 13, "t17": 13,
-                        "t20": 13, "t21": 13, "t25": 13, "t26": 13, "t27": 13, "t28": 13, "t29": 13,
+flyby_maxbeamtimegap = {"t16": 13, "t17": 13, "t18": 13, "t19": 13,
+                        "t20": 13, "t21": 13, "t23": 13, "t25": 13, "t26": 13, "t27": 13, "t28": 13, "t29": 13,
                         "t30": 13, "t32": 13,
                         "t42": 13, "t46": 40, "t47": 30}
 
 data_times_pairs = [
     ["t16", [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 45)], 20, 15, 30],
     ["t17", [datetime.datetime(2006, 9, 7, 20, 13, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)], 20, 15, 30],
+    #["t18", [datetime.datetime(2006, 9, 23, 20, 13, 30), datetime.datetime(2006, 9, 23, 20, 19, 40)], 20, 15, 30],
+    ["t19", [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)], 20, 15, 30],
+    ["t19", [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 33, 10)], 20, 15, 30],
     ["t20", [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)], 20, 15, 40],
     ["t21", [datetime.datetime(2006, 12, 12, 11, 40, 30), datetime.datetime(2006, 12, 12, 11, 43, 20)], 20, 15, 30],
+    ["t23", [datetime.datetime(2007, 1, 13, 8, 35), datetime.datetime(2007, 1, 13, 8, 42)], 20, 15, 30],
     ["t25", [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)], 20, 15, 30],
     ["t26", [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)], 20, 15, 30],
     ["t27", [datetime.datetime(2007, 3, 26, 0, 21, 30), datetime.datetime(2007, 3, 26, 0, 26)], 20, 15, 30],
@@ -215,7 +219,7 @@ data_times_pairs = [
     ["t47", [datetime.datetime(2008, 11, 19, 15, 53), datetime.datetime(2008, 11, 19, 15, 54)], 14, 15, 50],
 ]
 
-usedflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
+usedflybys = ['t16', 't17', 't19', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 
 
 # usedflybys = ['t42', 't46']
@@ -259,6 +263,8 @@ def CAPS_winds(data_times_pairs):
                 peaks.append(caps_ramdirection_time(elsdata, heavypeaktime_neg))
                 peaks.append(caps_ramdirection_azielv(heavypeaktime_neg)[0])
                 peaks.append(flyby)
+                peaks.append(str(titan_flybydates[flyby][2]) + '/' + str(titan_flybydates[flyby][1]) + '/' + str(
+                    titan_flybydates[flyby][0]))
                 peaks.append(titan_flybyvelocities[flyby])
                 peaks.append(CAPS_actuationtimeslice(ramtime, elsdata)[2])
                 elspeakslist.append(list(peaks))
@@ -267,7 +273,7 @@ def CAPS_winds(data_times_pairs):
     capsdf = pd.DataFrame(elspeakslist, columns=["Negative Peak Time", "Negative Peak Energy", "Negative Azimuth Angle",
                                                  "Positive Peak Time", "Positive Peak Energy", "Positive Azimuth Angle",
                                                  "Azimuthal Ram Time", "Azimuthal Ram Angle",
-                                                 "Flyby", "Flyby velocity", "Actuation Direction"])
+                                                 "Flyby", "FlybyDate", "Flyby velocity", "Actuation Direction"])
 
     capsdf['Bulk Azimuth'] = capsdf[["Negative Azimuth Angle", "Positive Azimuth Angle"]].mean(axis=1)
     capsdf['Bulk Time'] = capsdf["Negative Peak Time"] + (
@@ -277,13 +283,14 @@ def CAPS_winds(data_times_pairs):
     capsdf["Positive Deflection from Ram Angle"] = capsdf["Positive Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
     capsdf.drop_duplicates(subset=['Positive Peak Time'], inplace=True)
     capsdf.drop_duplicates(subset=['Negative Peak Time'], inplace=True)
+
     return capsdf
 
 
 data = CAPS_winds(data_times_pairs)
-data["Negative crosstrack velocity"] = np.sin(data["Negative Deflection from Ram Angle"] * spice.rpd()) * data[
+data["ELS crosstrack velocity"] = np.sin(data["Negative Deflection from Ram Angle"] * spice.rpd()) * data[
     'Flyby velocity']
-data["Positive crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angle"] * spice.rpd()) * data[
+data["IBS crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angle"] * spice.rpd()) * data[
     'Flyby velocity']
 
 data["Crosstrack velocity"] = np.sin(data["Bulk Deflection from Ram Angle"] * spice.rpd()) * data['Flyby velocity']

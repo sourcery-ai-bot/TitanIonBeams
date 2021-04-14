@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 
 plt.rcParams['date.epoch'] = '0000-12-31'
 
-T16ELSdata = readsav("data/els/elsres_22-jul-2006.dat")
-generate_mass_bins(T16ELSdata, "t16", "els")
-ELS_spectrogram(T16ELSdata, [2,3,4,5], "00:20:00", 600)
-
-T16IBSdata = readsav("data/ibs/ibsres_22-jul-2006.dat")
-generate_mass_bins(T16IBSdata, "t16", "ibs")
-IBS_spectrogram(T16IBSdata, [0,1,2], "00:20:00", 600)
+# T16ELSdata = readsav("data/els/elsres_22-jul-2006.dat")
+# generate_mass_bins(T16ELSdata, "t16", "els")
+# ELS_spectrogram(T16ELSdata, [2,3,4,5], "00:20:00", 600)
+#
+# T16IBSdata = readsav("data/ibs/ibsres_22-jul-2006.dat")
+# generate_mass_bins(T16IBSdata, "t16", "ibs")
+# IBS_spectrogram(T16IBSdata, [0,1,2], "00:20:00", 600)
 
 # T17ELSdata = readsav("data/els/elsres_07-sep-2006.dat")
 # generate_mass_bins(T17ELSdata, "t17", "els")
@@ -20,6 +20,22 @@ IBS_spectrogram(T16IBSdata, [0,1,2], "00:20:00", 600)
 # T17IBSdata = readsav("data/ibs/ibsres_07-sep-2006.dat")
 # generate_mass_bins(T17IBSdata, "t17", "ibs")
 # IBS_spectrogram(T17IBSdata, [0,1,2], "20:13:00", 600)
+
+# T18ELSdata = readsav("data/els/elsres_23-sep-2006.dat")
+# generate_mass_bins(T18ELSdata, "t18", "els")
+# ELS_spectrogram(T18ELSdata, [2,3,4,5], "18:55:00", 600)
+#
+# T18IBSdata = readsav("data/ibs/ibsres_23-sep-2006.dat")
+# generate_mass_bins(T18IBSdata, "t18", "ibs")
+# IBS_spectrogram(T18IBSdata, [0,1,2], "18:55:00", 600)
+
+# T19ELSdata = readsav("data/els/elsres_09-oct-2006.dat")
+# generate_mass_bins(T19ELSdata, "t19", "els")
+# ELS_spectrogram(T19ELSdata, [2,3,4,5], "17:26:00", 600)
+#
+# T19IBSdata = readsav("data/ibs/ibsres_09-oct-2006.dat")
+# generate_mass_bins(T19IBSdata, "t19", "ibs")
+# IBS_spectrogram(T19IBSdata, [0,1,2], "17:23:00", 600)
 
 # T20ELSdata = readsav("data/els/elsres_25-oct-2006.dat")
 # generate_mass_bins(T20ELSdata, "t20", "els")
@@ -32,6 +48,14 @@ IBS_spectrogram(T16IBSdata, [0,1,2], "00:20:00", 600)
 # T21IBSdata = readsav("data/ibs/ibsres_12-dec-2006.dat")
 # generate_mass_bins(T21IBSdata, "t21", "ibs")
 # IBS_spectrogram(T21IBSdata, [1], "11:37:00", 600)
+
+T23ELSdata = readsav("data/els/elsres_13-jan-2007.dat")
+generate_mass_bins(T23ELSdata, "t23", "els")
+ELS_spectrogram(T23ELSdata, [3, 4], "08:34:00", 600)
+
+T23IBSdata = readsav("data/ibs/ibsres_13-jan-2007.dat")
+generate_mass_bins(T23IBSdata, "t23", "ibs")
+IBS_spectrogram(T23IBSdata, [1], "08:34:00", 600)
 
 # T25ELSdata = readsav("data/els/elsres_22-feb-2007.dat")
 # generate_mass_bins(T25ELSdata, "t25", "els")
