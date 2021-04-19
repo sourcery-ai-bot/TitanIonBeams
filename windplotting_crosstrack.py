@@ -58,6 +58,26 @@ altax.errorbar(x=windsdf["Altitude"], y=windsdf["Crosstrack velocity"], fmt='o',
 altax.set_xlabel("Altitude [km]")
 altax.set_ylabel("Crosstrack velocity [m/s]")
 
+altfig2, altax2 = plt.subplots()
+sns.scatterplot(data=windsdf, x="Altitude", y="Absolute Crosstrack velocity", ax=altax2)
+altax2.set_xlabel("Altitude [km]")
+altax2.set_ylabel("Absolute Crosstrack velocity [m/s]")
+
+#---------------------------------
+
+crosstrack_fig, crosstrack_ax = plt.subplots()
+reduced_windsdf = windsdf[["IBS crosstrack velocity","ELS crosstrack velocity"]]
+sns.regplot(data=windsdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crosstrack_ax)
+x = np.linspace(-400,400,10)
+crosstrack_ax.plot(x,x,color='k')
+
+#-----------------------------------
+
+crosstrack_dist_fig, (crosstrack_ibsdist_ax, crosstrack_elsdist_ax) = plt.subplots(2)
+
+sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crosstrack_elsdist_ax, kde=True)
+sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crosstrack_ibsdist_ax, kde=True)
+
 # -----------------------------------------------
 
 figdist, axdist = plt.subplots()

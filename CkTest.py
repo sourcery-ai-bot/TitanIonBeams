@@ -405,8 +405,6 @@ def caps_crosstrack_xyz(time, windspeed, anodes=False):
     return newstate
 
 
-
-
 def crosstrack_latlon_plot():
     fig2, ax2 = plt.subplots()
     fig3, ax3 = plt.subplots()
@@ -417,8 +415,8 @@ def crosstrack_latlon_plot():
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
         for i, negwindspeed, poswindspeed in zip(pd.to_datetime(tempdf['Bulk Time']),
-                                                 tempdf["Negative crosstrack velocity"],
-                                                 tempdf["Positive crosstrack velocity"]):
+                                                 tempdf["ELS crosstrack velocity"],
+                                                 tempdf["IBS crosstrack velocity"]):
             print("------------------------------------------------------------------------")
             # print("Windspeed",windspeed)
             temp = caps_crosstrack_latlon(i, negwindspeed, poswindspeed)
@@ -455,27 +453,19 @@ def crosstrack_latlon_plot():
                                                                                                                  magnitudes_pos,
                                                                                                                  flybyslist,
                                                                                                                  flybycolors):
-        # print(lon,lat,dlon,dlat,flybycolor)
-        if windspeed_neg < windspeed_pos:
-            ax2.arrow(lon, lat, dlon_neg * 0.05, dlat_neg * 0.05, color=flybycolor, hatch='-', width=1, label=flyby,
-                      alpha=0.5)
-            ax2.text(lon, lat, '{:.0f} m/s'.format(windspeed_neg))
-            ax3.arrow(lon, lat, dlon_pos * 0.05, dlat_pos * 0.05, color=flybycolor, hatch='|', width=1, label=flyby,
-                      alpha=0.5)
-            ax3.text(lon, lat, '{:.0f} m/s'.format(windspeed_pos))
-        if windspeed_neg > windspeed_pos:
-            ax3.arrow(lon, lat, dlon_neg * 0.05, dlat_neg * 0.05, color=flybycolor, hatch='-', width=1, label=flyby,
-                      alpha=0.5)
-            ax3.text(lon, lat, '{:.0f} m/s'.format(windspeed_neg))
-            ax2.arrow(lon, lat, dlon_pos * 0.05, dlat_pos * 0.05, color=flybycolor, hatch='|', width=1, label=flyby,
-                      alpha=0.5)
-            ax2.text(lon, lat, '{:.0f} m/s'.format(windspeed_pos))
-    # tempquiver = ax2.quiver(lon, lat, dlon, dlat, pivot="middle",color='C'+str(counter),label=flyby)
+
+        ax2.arrow(lon, lat, dlon_neg * 0.05, dlat_neg * 0.05, color=flybycolor, width=1, label=flyby,
+                  alpha=0.5)
+        ax2.text(lon, lat, '{:.0f} m/s'.format(windspeed_neg))
+
+        ax3.arrow(lon, lat, dlon_pos * 0.05, dlat_pos * 0.05, color=flybycolor, width=1, label=flyby,
+                  alpha=0.5)
+        ax3.text(lon, lat, '{:.0f} m/s'.format(windspeed_pos))
 
     ax2.set_xlabel("Longitude")
     ax2.set_ylabel("Latitude")
     ax2.grid()
-    ax2.set_title("Minimum Wind Vectors")
+    ax2.set_title("ELS Wind Vectors")
     handles, labels = ax2.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     ax2.legend(by_label.values(), by_label.keys())
@@ -483,7 +473,7 @@ def crosstrack_latlon_plot():
     ax3.set_xlabel("Longitude")
     ax3.set_ylabel("Latitude")
     ax3.grid()
-    ax3.set_title("Maximum Wind Vectors")
+    ax3.set_title("IBS Wind Vectors")
     handles, labels = ax3.get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     ax3.legend(by_label.values(), by_label.keys())
@@ -504,24 +494,27 @@ def crosstrack_xyz_plot():
     circle2 = plt.Circle((0, 0), 2575.15, color='k', fill=False)
     circle3 = plt.Circle((0, 0), 2575.15, color='k', fill=False)
 
-    figxy, axxy = plt.subplots()
+    figxy, axxy = plt.subplots(figsize=(6.4, 6.4), tight_layout=True)
     axxy.set_xlabel("X")
     axxy.set_ylabel("Y")
     axxy.set_xlim(-3500, 3500)
     axxy.set_ylim(-3500, 3500)
     axxy.add_artist(circle1)
-    figyz, axyz = plt.subplots()
+    axxy.set_box_aspect(1)
+    figyz, axyz = plt.subplots(figsize=(6.4, 6.4), tight_layout=True)
     axyz.set_xlabel("Y")
     axyz.set_ylabel("Z")
     axyz.set_xlim(-3500, 3500)
     axyz.set_ylim(-3500, 3500)
     axyz.add_artist(circle2)
-    figxz, axxz = plt.subplots()
+    axyz.set_box_aspect(1)
+    figxz, axxz = plt.subplots(figsize=(6.4, 6.4), tight_layout=True)
     axxz.set_xlabel("X")
     axxz.set_ylabel("Z")
     axxz.add_artist(circle3)
     axxz.set_xlim(-3500, 3500)
     axxz.set_ylim(-3500, 3500)
+    axxz.set_box_aspect(1)
 
     magnitudes, windspeeds, flybyslist, flybycolors = [], [], [], []
     crosstrack_states = []
@@ -537,9 +530,11 @@ def crosstrack_xyz_plot():
             magnitudes.append(spice.unorm(crosstrack_state_vector[3:])[1])
             flybyslist.append(flyby)
         crosstrack_states = np.array(crosstrack_states)
+        print("crosstrack_states",crosstrack_states)
         # ax.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 2],
         #          crosstrack_states[:, 3], crosstrack_states[:, 4], crosstrack_states[:, 5], label=flyby,
         #         color="C" + str(counter))
+
         axxy.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 3], crosstrack_states[:, 4],
                     label=flyby,
                     color="C" + str(counter))
@@ -563,10 +558,11 @@ def crosstrack_xyz_plot():
     figxy.legend()
     figyz.legend()
     figxz.legend()
-    
-    return axxy
 
-def soldir_from_titan(): #Only use for one flyby
+    return axxy, axxz, axyz
+
+
+def soldir_from_titan():  # Only use for one flyby
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
         i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
@@ -574,16 +570,42 @@ def soldir_from_titan(): #Only use for one flyby
         sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
     return sundir
 
-#flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
+
+def satdir_from_titan():  # Only use for one flyby
+    for counter, flyby in enumerate(flybys):
+        tempdf = windsdf[windsdf['Flyby'] == flyby]
+        i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
+        et = spice.datetime2et(i)
+        satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+    return satdir
+
+
+# flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-flybys = ['t27']
+#flybys = ['t27']
+flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
+              't41', 't42', 't43', 't46'] # midlatitude flybys
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 
-# crosstrack_latlon_plot()
-soldir = soldir_from_titan()
-soldir_unorm = spice.unorm(soldir)[0]*1000
-axxy = crosstrack_xyz_plot()
-print("soldir",spice.unorm(soldir))
-axxy.arrow(0,0,soldir_unorm[0],soldir_unorm[1])
+crosstrack_latlon_plot()
+
+
+# soldir = soldir_from_titan()
+# satdir = satdir_from_titan()
+# soldir_unorm = spice.unorm(soldir)[0] * 1000
+# satdir_unorm = spice.unorm(satdir)[0] * 1000
+#axxy, axxz, axyz = crosstrack_xyz_plot()
+# print("soldir", spice.unorm(soldir))
+# print("satdir", spice.unorm(satdir))
+#
+# axxy.arrow(0, 0, soldir_unorm[0], soldir_unorm[1])
+# axxz.arrow(0, 0, soldir_unorm[0], soldir_unorm[2])
+# axyz.arrow(0, 0, soldir_unorm[1], soldir_unorm[2])
+#
+# axxy.arrow(0, 0, satdir_unorm[0], satdir_unorm[1], color='r')
+# axxz.arrow(0, 0, satdir_unorm[0], satdir_unorm[2], color='r')
+# axyz.arrow(0, 0, satdir_unorm[1], satdir_unorm[2], color='r')
+
+
 plt.show()

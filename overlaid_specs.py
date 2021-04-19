@@ -232,7 +232,11 @@ filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
                    "t29": ["26-apr-2007", "21:29:00"],
                    "t30": ["12-may-2007", "20:06:00"],
                    "t32": "13-jun-2007",
+                   "t39": ["20-dec-2007", "22:54:00"],
+                   "t40": ["05-jan-2008", "21:26:00"],
+                   "t41": ["22-feb-2008", "17:28:00"],
                    "t42": ["25-mar-2008", "14:24:00"],
+                   "t43": ["12-may-2008", "09:58:00"],
                    "t46": ["03-nov-2008", "17:32:00"],
                    "t47": "19-nov-2008"}
 
@@ -250,7 +254,11 @@ flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datet
                    "t29": [datetime.datetime(2007, 4, 26, 21, 29, 30), datetime.datetime(2007, 4, 26, 21, 35, 30)],
                    "t30": [datetime.datetime(2007, 5, 12, 20, 8, 20), datetime.datetime(2007, 5, 12, 20, 11, 45)],
                    "t32": [datetime.datetime(2007, 6, 13, 17, 44), datetime.datetime(2007, 6, 13, 17, 48)],
+                   "t39": [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)],
+                   "t40": [datetime.datetime(2008, 1, 5, 21, 27, 20), datetime.datetime(2008, 1, 5, 21, 33, 30)],
+                   "t41": [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)],
                    "t42": [datetime.datetime(2008, 3, 25, 14, 25), datetime.datetime(2008, 3, 25, 14, 30, 20)],
+                   "t43": [datetime.datetime(2008, 5, 12, 9, 59), datetime.datetime(2008, 5, 12, 10, 5)],
                    "t46": [datetime.datetime(2008, 11, 3, 17, 33), datetime.datetime(2008, 11, 3, 17, 36, 30)]
                    }
 flyby_ramanodes = {"t16": [4, 5],
@@ -266,12 +274,16 @@ flyby_ramanodes = {"t16": [4, 5],
                    "t29": [4, 5],
                    "t30": [4, 5],
                    "t32": [4, 5],
+                   "t39": [4, 5],
+                   "t40": [4, 5],
+                   "t41": [4, 5],
                    "t42": [4, 5],
+                   "t43": [4, 5],
                    "t46": [4, 5],
                    }
 
 def main():
-    flyby = "t23"
+    flyby = "t43"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     lowerenergy = 2

@@ -51,10 +51,10 @@ alongtrack_ionvelocity_figdist, (alongtrack_ibs_ionvelocity_axdist, alongtrack_e
 alongtrack_ionvelocity_figdist.suptitle(str(alongtrack_windsdf.Flyby.unique()))
 sns.histplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", bins=np.arange(-400, 400, 50),
              ax=alongtrack_ibs_ionvelocity_axdist, element="step",
-             stat="probability", color='C0')
+             stat="probability", color='C0',kde=True)
 sns.histplot(data=alongtrack_windsdf, x="ELS alongtrack velocity", bins=np.arange(-400, 400, 50),
              ax=alongtrack_els_ionvelocity_axdist, element="step",
-             stat="probability", color='C1')
+             stat="probability", color='C1',kde=True)
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
 
 

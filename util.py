@@ -9,22 +9,26 @@ from cassinipy.caps.util import *
 from cassinipy.misc import *
 from cassinipy.spice import *
 
-titan_flybyvelocities = {'t16': 6e3 ,'t17': 6e3, 't18': 6e3, 't19': 6e3,
-                         't20': 6e3, 't21': 5.9e3, 't23': 6e3,  't25': 6.2e3, 't26': 6.2e3, 't27': 6.2e3, 't28': 6.2e3, 't29': 6.2e3,
-                         't30': 6.2e3, 't32': 6.2e3,
-                         't40': 6.3e3, 't42': 6.3e3, 't46': 6.3e3, 't47': 6.3e3,
+titan_flybyvelocities = {'t16': 6e3, 't17': 6e3, 't18': 6e3, 't19': 6e3,
+                         't20': 6e3, 't21': 5.9e3, 't23': 6e3, 't25': 6.2e3, 't26': 6.2e3, 't27': 6.2e3, 't28': 6.2e3,
+                         't29': 6.2e3,
+                         't30': 6.2e3, 't32': 6.2e3, 't39': 6.3e3,
+                         't40': 6.3e3, 't41': 6.3e3, 't42': 6.3e3, 't43': 6.3e3, 't46': 6.3e3, 't47': 6.3e3,
                          't83': 5.9e3}
 titan_CAheight = {'t16': 950, 't17': 1000, 't18': 960, 't19': 980,
                   't20': 1029, 't21': 1000, 't23': 1000, 't25': 1000, 't26': 981, 't27': 1010, 't28': 991, 't29': 981,
-                  't30': 959, 't32': 965,
-                  't46': 1100, 't47': 1023,
+                  't30': 959, 't32': 965, 't39': 970,
+                  't40': 1010, 't41': 1000, 't42': 1000, 't43': 1000, 't46': 1100, 't47': 1023,
                   't83': 990}
 titan_flybydates = {'t16': [2006, 7, 22], 't17': [2006, 9, 7], 't18': [2006, 9, 23], 't19': [2006, 10, 9],
-                    't20': [2006, 10, 25], 't21': [2006, 12, 12], 't23': [2007, 1, 13], 't25': [2007, 2, 22], 't26': [2007, 3, 10],
+                    't20': [2006, 10, 25], 't21': [2006, 12, 12], 't23': [2007, 1, 13], 't25': [2007, 2, 22],
+                    't26': [2007, 3, 10],
                     't27': [2007, 3, 26], 't28': [2007, 4, 10], 't29': [2007, 4, 26],
-                    't30': [2007, 5, 12], 't32': [2007, 6, 13],
-                    't40': [2008, 1, 5], 't42': [2008, 3, 25], 't46': [2008, 11, 3], 't47': [2008, 11, 19],
+                    't30': [2007, 5, 12], 't32': [2007, 6, 13], 't39': [2007, 12, 20],
+                    't40': [2008, 1, 5], 't41': [2008, 2, 22], 't42': [2008, 3, 25], 't43': [2008, 5, 12],
+                    't46': [2008, 11, 3], 't47': [2008, 11, 19],
                     't83': [2012, 5, 22]}
+
 
 def read_LP_V1(flyby):
     '''
@@ -146,6 +150,7 @@ def generate_mass_bins(data, flyby, instrument):
     t1 = time.time()
     print(data['flyby'], data['instrument'], "Bin Generation Time", t1 - t0)
 
+
 def generate_aligned_ibsdata(ibsdata, elsdata, flyby):
     t0 = time.time()
     ibsdata['flyby'] = flyby
@@ -154,7 +159,6 @@ def generate_aligned_ibsdata(ibsdata, elsdata, flyby):
     ibsdata['instrument'] == 'ibs'
     elstimearray = 'secofday'
     ibstimearray = 'ibssecofday'
-
 
     acycle_times = [[], []]
     acycle_times_ibs = [[], []]
@@ -179,10 +183,10 @@ def generate_aligned_ibsdata(ibsdata, elsdata, flyby):
         if i not in acycle_times[0]:
             differences.append(differences[-1])
         else:
-            counter = acycle_times[0].index(i,int(bigcounter/2))
+            counter = acycle_times[0].index(i, int(bigcounter / 2))
             differences.append(j - acycle_times[1][counter])
     differences_interp = np.interp(ibsdata['ibssecofday'], acycle_times_ibs[1], differences)
-    adjusted_times = ibsdata['ibssecofday']-differences_interp
+    adjusted_times = ibsdata['ibssecofday'] - differences_interp
 
     v = titan_flybyvelocities[flyby]
     ibsdata['flybyvelocity'] = titan_flybyvelocities[flyby]
@@ -197,6 +201,7 @@ def generate_aligned_ibsdata(ibsdata, elsdata, flyby):
 
     t1 = time.time()
     print(ibsdata['flyby'], ibsdata['instrument'], "Bin Generation Time", t1 - t0)
+
 
 def conversion_factor(flyby, ionvelocity, utc=''):
     if utc == '':

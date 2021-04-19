@@ -50,12 +50,14 @@ e_mass_eV = scipy.constants.physical_constants['electron mass energy equivalent 
 c = scipy.constants.physical_constants['speed of light in vacuum'][0]
 k = scipy.constants.physical_constants['Boltzmann constant'][0]
 
-filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006",
-             "t20": "25-oct-2006", "t21": "12-dec-2006", "t25": "22-feb-2007", "t26": "10-mar-2007",
+filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006", "t18": "23-sep-2006", "t19": "09-oct-2006",
+             "t20": "25-oct-2006", "t21": "12-dec-2006", "t23": "13-jan-2007", "t25": "22-feb-2007",
+             "t26": "10-mar-2007",
              "t27": "26-mar-2007",
-             "t28": "10-apr-2007", "t29": "26-apr-2007",
+             "t28": "10-apr-2007", "t29": "26-apr-2007", "t39": "20-dec-2007",
              "t30": "12-may-2007", "t32": "13-jun-2007",
-             "t42": "25-mar-2008", "t46": "03-nov-2008", "t47": "19-nov-2008"}
+             "t40": "05-jan-2008", "t41": "22-feb-2008", "t42": "25-mar-2008", "t43": "12-may-2008",
+             "t46": "03-nov-2008", "t47": "19-nov-2008"}
 
 IBS_fluxfitting_dict = {"mass28_": {"sigma": [0.3, 0.4, 0.6], "amplitude": []},
                         "mass40_": {"sigma": [0.3, 0.6, 0.7], "amplitude": []},
@@ -70,20 +72,20 @@ ELS_fluxfitting_dict = {"mass26_": {"sigma": [0.2, 0.4, 0.7], "amplitude": [5]},
                         "mass98_": {"sigma": [0.6, 0.8, 1.6], "amplitude": [3]},
                         "mass117_": {"sigma": [0.8, 0.9, 1.7], "amplitude": [3]}}
 
-IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
+IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25], "t19": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t25": [4.25, 18.25], "t26": [4.35, 18.25],
                         "t27": [4.5, 18.25],
                         "t28": [4.5, 18.25], "t29": [4.5, 18.25],
                         "t30": [4.5, 18.25], "t32": [4.5, 18.25],
                         "t42": [4.5, 19.5], "t46": [4, 17], "t47": [4.5, 18.25]}
 
-ELS_energybound_dict = {"t16": [1, 30], "t17": [1.5, 30],
+ELS_energybound_dict = {"t16": [1, 30], "t17": [1.5, 30], "t19": [1.5, 30],
                         "t20": [1, 30], "t21": [1, 30], "t25": [1, 30], "t26": [1.5, 30], "t27": [1, 30],
                         "t28": [1, 30], "t29": [1, 30],
                         "t30": [1, 30], "t32": [1, 30],
                         "t42": [2.3, 30], "t46": [2.3, 28], "t47": [1, 35]}
 
-IBS_init_ionvelocity_dict = {"t16": 0, "t17": 0,
+IBS_init_ionvelocity_dict = {"t16": 0, "t17": 0, "t19": 0,
                              "t20": 0, "t21": 0, "t25": 0, "t26": 0,
                              "t27": 0,
                              "t28": 0, "t29": 0,
@@ -211,7 +213,13 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
     upperenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue,
                                         IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue)[0]
 
-    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
+    #print("old x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice])
+    #print("new x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035 )
+    #x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
+    #x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035
+    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.073
+
+
     dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
 
     if numofflybys == 1:
@@ -473,7 +481,7 @@ def single_slice_test(flyby, slicenumber):
                                                 lpdata=lpdata)
 
 
-#single_slice_test("t42", slicenumber=4)
+#single_slice_test("t16", slicenumber=4)
 #multiple_alongtrackwinds_flybys(["t16"])
 multiple_alongtrackwinds_flybys(
     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
