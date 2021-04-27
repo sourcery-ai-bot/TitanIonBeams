@@ -15,7 +15,7 @@ matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
 
 # ---Alongtrack stats-----
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_1.073energy.csv", index_col=0, parse_dates=True)
 crary_windsdf = pd.read_csv("crarywinds.csv")
 flybyslist = alongtrack_windsdf.Flyby.unique()
 print(flybyslist)
@@ -42,24 +42,28 @@ alongtrack_scp_figdist, (alongtrack_ibs_scp_axdist, alongtrack_els_scp_axdist) =
 alongtrack_scp_figdist.suptitle(str(alongtrack_windsdf.Flyby.unique()))
 sns.histplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", bins=np.arange(-3, 0, 0.15),
              ax=alongtrack_ibs_scp_axdist, element="step",
-             stat="probability", color='C0')
+             color='C0')
 sns.histplot(data=alongtrack_windsdf, x="ELS spacecraft potentials", bins=np.arange(-3, 0, 0.15),
              ax=alongtrack_els_scp_axdist, element="step",
-             stat="probability", color='C1')
+             color='C1')
 
 alongtrack_ionvelocity_figdist, (alongtrack_ibs_ionvelocity_axdist, alongtrack_els_ionvelocity_axdist) = plt.subplots(2)
 alongtrack_ionvelocity_figdist.suptitle(str(alongtrack_windsdf.Flyby.unique()))
 sns.histplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", bins=np.arange(-400, 400, 50),
              ax=alongtrack_ibs_ionvelocity_axdist, element="step",
-             stat="probability", color='C0',kde=True)
+             color='C0',kde=True)
 sns.histplot(data=alongtrack_windsdf, x="ELS alongtrack velocity", bins=np.arange(-400, 400, 50),
              ax=alongtrack_els_ionvelocity_axdist, element="step",
-             stat="probability", color='C1',kde=True)
+             color='C1',kde=True)
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
+alongtrack_ibs_ionvelocity_axdist.set_xlim(-450,450)
+alongtrack_els_ionvelocity_axdist.set_xlim(-450,450)
 
 
 ibs_regfig, ibs_regax = plt.subplots()
 sns.regplot(data=alongtrack_windsdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",ax=ibs_regax)
+ibs_regax.set_xlim(-400,400)
+ibs_regax.set_ylim(-400,400)
 print(stats.pearsonr(alongtrack_windsdf["IBS alongtrack velocity"], alongtrack_windsdf["ELS alongtrack velocity"]))
 
 # testfig, testax = plt.subplots()

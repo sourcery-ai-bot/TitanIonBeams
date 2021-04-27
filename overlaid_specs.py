@@ -283,7 +283,7 @@ flyby_ramanodes = {"t16": [4, 5],
                    }
 
 def main():
-    flyby = "t17"
+    flyby = "t29"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     lowerenergy = 2

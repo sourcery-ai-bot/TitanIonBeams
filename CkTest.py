@@ -117,6 +117,7 @@ def caps_crosstrack(tempdatetime, windspeed):
     cmat_t = spice.xpose(cmat)
     crossvec_titan = spice.mxv(cmat_t, crossvec)  # Transform back to IAU Titan Frame
 
+    print("vsep titan frame - old method", spice.vsep(ramdir, crossvec_titan) * spice.dpr())
     # print("crossvec", crossvec)
     # print("crossvec_titan", crossvec_titan, spice.unorm(crossvec_titan))
     # print("vsep titan frame", spice.vsep(ramdir, crossvec_titan) * spice.dpr())
@@ -197,26 +198,40 @@ def cassini_titan_test(flyby, anodes=False):
     angularseparations = []
     beamanodes = []
     spiceplanenormals = []
+    pos_alongtrack, neg_alongtrack = [], []
+    full_wind_vectors = []
+    full_wind_vectors_lonlatalts = []
 
-    windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+    alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+    crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+    windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
+    windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
+
     tempdf = windsdf[windsdf['Flyby'] == flyby]
-    for tempdatetime, negwindspeed, poswindspeed in zip(pd.to_datetime(tempdf['Bulk Time']),
-                                                        tempdf["Negative crosstrack velocity"],
-                                                        tempdf["Positive crosstrack velocity"]):
+    for tempdatetime, negwindspeed_crosstrack, poswindspeed_crosstrack, negwindspeed_alongtrack, poswindspeed_alongtrack in zip(pd.to_datetime(tempdf['Bulk Time']),
+                                                        tempdf["ELS crosstrack velocity"],
+                                                        tempdf["IBS crosstrack velocity"],
+                                                        tempdf["ELS alongtrack velocity"],
+                                                        tempdf["IBS alongtrack velocity"]
+                                                      ):
         print("---------")
         print(tempdatetime)
         times.append(tempdatetime)
         beamanodes.append(np.mean(ELS_ramanodes(tempdatetime)) + 1)
-        states.append(cassini_phase(tempdatetime.strftime('%Y-%m-%dT%H:%M:%S')))
+        state = cassini_phase(tempdatetime.strftime('%Y-%m-%dT%H:%M:%S'))
+        states.append(state)
+
+        pos_alongtrack.append(spice.vhat(states[-1][3:6]) * poswindspeed_alongtrack)
+        neg_alongtrack.append(spice.vhat(states[-1][3:6]) * negwindspeed_alongtrack)
         # print(states[-1])
         lon, lat, alt = spice.recpgr("TITAN", states[-1][:3], spice.bodvrd("TITAN", 'RADII', 3)[1][0], 1.44e-4)
         lons.append(lon * spice.dpr())
         lats.append(lat * spice.dpr())
         alts.append(alt)
         # vecs.append(cassini_act_2_titan(tempdatetime))
-        crossvec = caps_crosstrack(tempdatetime, np.mean([negwindspeed, poswindspeed]))
-        print("crossvec", crossvec)
-        testspicenormal, anode1, anode8 = caps_crosstrack_spice(tempdatetime, np.mean([negwindspeed, poswindspeed]))
+        crossvec = caps_crosstrack(tempdatetime, np.mean([negwindspeed_crosstrack, poswindspeed_crosstrack]))
+
+        testspicenormal, anode1, anode8 = caps_crosstrack_spice(tempdatetime, np.mean([negwindspeed_crosstrack, poswindspeed_crosstrack]))
         anodes1.append(anode1)
         anodes8.append(anode8)
         spiceplanenormals.append(testspicenormal)
@@ -234,6 +249,18 @@ def cassini_titan_test(flyby, anodes=False):
         crossvecs.append(crossvec)
         crossvecs_lonlatalts.append(crossvec_lonlatalt)
         crossvecs_lonlatalts_spicenormal.append(crossvec_lonlatalt_spicenormal)
+
+        alongtrack_vec_normal = spice.vhat(state[3:6])
+        print("crossvec", testspicenormal)
+        print("alongvec", alongtrack_vec_normal)
+        print("sanity check vsep", spice.vsep(testspicenormal, alongtrack_vec_normal) * spice.dpr())
+        full_wind_vec = np.mean([testspicenormal,alongtrack_vec_normal],axis=0)
+        print("Full wind vec", full_wind_vec)
+        full_wind_vectors.append(full_wind_vec)
+
+        full_wind_lonlatalt = spice.mxv(jacobian, spice.vhat(full_wind_vec))
+        full_wind_vectors_lonlatalts.append(full_wind_lonlatalt)
+
         # print("Time", tempdatetime)
         # print("position", states[-1][:3])
         # print("velocity", spice.vhat(states[-1][3:]))
@@ -288,6 +315,12 @@ def cassini_titan_test(flyby, anodes=False):
         v1.append(i[4])
         w1.append(i[5])
 
+    u4, v4, w4 = [], [], []
+    for i in full_wind_vectors:
+        u4.append(i[0])
+        v4.append(i[1])
+        w4.append(i[2])
+
     fig = plt.figure()
 
     u = np.linspace(0, 2 * np.pi, 50)
@@ -313,9 +346,10 @@ def cassini_titan_test(flyby, anodes=False):
             ax.quiver(X, Y, Z, i[0], i[1], i[2], length=30, color='C1')
             ax.quiver(X, Y, Z, j[0], j[1], j[2], length=30, color='C2')
 
-    ax.quiver(x, y, z, u2, v2, w2, length=30, color='m')
-    ax.quiver(x, y, z, u1, v1, w1, length=5, color='k')
-    ax.quiver(x, y, z, u3, v3, w3, length=30, color='r')
+    #ax.quiver(x, y, z, u2, v2, w2, length=30, color='m') # Old method
+    ax.quiver(x, y, z, u1, v1, w1, length=5, color='k') #Ram Direction
+    ax.quiver(x, y, z, u3, v3, w3, length=30, color='r') #Crosstrack from spice normal
+    ax.quiver(x, y, z, u4, v4, w4, length=30, color='b') #Full wind vector normal
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
@@ -333,10 +367,16 @@ def cassini_titan_test(flyby, anodes=False):
         dlat_spicenormal.append(i[1])
         dlon_spicenormal.append(i[0])
 
+    dlat_fullwind, dlon_fullwind = [], []
+    for i in full_wind_vectors_lonlatalts:
+        dlat_fullwind.append(i[1])
+        dlon_fullwind.append(i[0])
+
     fig2, ax2 = plt.subplots()
     ax2.plot(lons, lats)
-    ax2.quiver(lons, lats, dlon, dlat)
+    #ax2.quiver(lons, lats, dlon, dlat) Old method
     ax2.quiver(lons, lats, dlon_spicenormal, dlat_spicenormal, color='r')
+    ax2.quiver(lons, lats, dlon_fullwind, dlat_fullwind, color='b')
     ax2.set_xlabel("Longitude")
     ax2.set_ylabel("Latitude")
     ax2.grid()
@@ -401,6 +441,13 @@ def caps_crosstrack_xyz(time, windspeed, anodes=False):
     state = cassini_phase(time.strftime('%Y-%m-%dT%H:%M:%S'))
     crossvec, temp1, temp2 = caps_crosstrack_spice(time, windspeed)
     newstate = list(state[:3]) + list(crossvec * abs(windspeed))
+
+    return newstate
+
+def caps_alongtrack_xyz(time, windspeed, anodes=False):
+    state = cassini_phase(time.strftime('%Y-%m-%dT%H:%M:%S'))
+
+    newstate = list(state[:3]) + list(spice.vhat(state[3:6]) * abs(windspeed))
 
     return newstate
 
@@ -517,33 +564,89 @@ def crosstrack_xyz_plot():
     axxz.set_box_aspect(1)
 
     magnitudes, windspeeds, flybyslist, flybycolors = [], [], [], []
+    negwindspeed_crosstracks, poswindspeed_crosstracks, negwindspeed_alongtracks, poswindspeed_alongtracks = [],[],[],[]
     crosstrack_states = []
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
         crosstrack_states = []
-        for i, windspeed in zip(pd.to_datetime(tempdf['Bulk Time']), tempdf["Crosstrack velocity"]):
-            print("------------------------------------------------------------------------")
-            # print("Windspeed",windspeed)
-            crosstrack_state_vector = caps_crosstrack_xyz(i, windspeed)
-            crosstrack_states.append(crosstrack_state_vector)
-            windspeeds.append(windspeed)
-            magnitudes.append(spice.unorm(crosstrack_state_vector[3:])[1])
-            flybyslist.append(flyby)
-        crosstrack_states = np.array(crosstrack_states)
-        print("crosstrack_states",crosstrack_states)
-        # ax.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 2],
-        #          crosstrack_states[:, 3], crosstrack_states[:, 4], crosstrack_states[:, 5], label=flyby,
-        #         color="C" + str(counter))
+        for timecounter, time in enumerate(pd.to_datetime(tempdf['Bulk Time'])):
+            for windtype in ["ELS crosstrack velocity","IBS crosstrack velocity","ELS alongtrack velocity","IBS alongtrack velocity"]:
+                print("------------------------------------------------------------------------")
+                windspeed = tempdf[windtype].iloc[timecounter]
+                print("windspeed",windtype, windspeed)
+                # print("Windspeed",windspeed)
+                if "crosstrack" in windtype:
+                    crosstrack_state = caps_crosstrack_xyz(time, windspeed)
+                    print(windtype,crosstrack_state)
+                    if "ELS" in windtype:
+                        negwindspeed_crosstracks.append(crosstrack_state)
+                    if "IBS" in windtype:
+                        poswindspeed_crosstracks.append(crosstrack_state)
+                else:
+                    alongtrack_state = caps_alongtrack_xyz(time, windspeed)
+                    print(windtype, alongtrack_state)
+                    if "ELS" in windtype:
+                        negwindspeed_alongtracks.append(alongtrack_state)
+                    if "IBS" in windtype:
+                        poswindspeed_alongtracks.append(alongtrack_state)
 
-        axxy.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 3], crosstrack_states[:, 4],
+                flybyslist.append(flyby)
+
+        negwindspeed_crosstracks = np.array(negwindspeed_crosstracks )
+        poswindspeed_crosstracks = np.array(poswindspeed_crosstracks)
+        negwindspeed_alongtracks = np.array(negwindspeed_alongtracks)
+        poswindspeed_alongtracks = np.array(poswindspeed_alongtracks)
+
+        print(negwindspeed_crosstracks[:, 0],negwindspeed_alongtracks[:, 0])
+        print(negwindspeed_crosstracks[:, 3], negwindspeed_alongtracks[:, 3])
+
+        axxy.quiver(negwindspeed_crosstracks[:, 0], negwindspeed_crosstracks[:, 1], negwindspeed_crosstracks[:, 3], negwindspeed_crosstracks[:, 4],
                     label=flyby,
-                    color="C" + str(counter))
-        axyz.quiver(crosstrack_states[:, 1], crosstrack_states[:, 2], crosstrack_states[:, 4], crosstrack_states[:, 5],
+                    color="C0",alpha=0.5)
+        axxy.quiver(poswindspeed_crosstracks[:, 0], poswindspeed_crosstracks[:, 1], poswindspeed_crosstracks[:, 3], poswindspeed_crosstracks[:, 4],
                     label=flyby,
-                    color="C" + str(counter))
-        axxz.quiver(crosstrack_states[:, 0], crosstrack_states[:, 2], crosstrack_states[:, 3], crosstrack_states[:, 5],
+                    color="C1",alpha=0.5)
+        axxy.quiver(negwindspeed_alongtracks[:, 0], negwindspeed_alongtracks[:, 1], negwindspeed_alongtracks[:, 3], negwindspeed_alongtracks[:, 4],
                     label=flyby,
-                    color="C" + str(counter))
+                    color="C0",alpha=0.5)
+        axxy.quiver(poswindspeed_alongtracks[:, 0], poswindspeed_alongtracks[:, 1], poswindspeed_alongtracks[:, 3], poswindspeed_alongtracks[:, 4],
+                    label=flyby,
+                    color="C1",alpha=0.5)
+
+        axyz.quiver(negwindspeed_crosstracks[:, 1], negwindspeed_crosstracks[:, 2], negwindspeed_crosstracks[:, 4], negwindspeed_crosstracks[:, 5],
+                    label=flyby,
+                    color="C0",alpha=0.5)
+        axyz.quiver(poswindspeed_crosstracks[:, 1], poswindspeed_crosstracks[:, 2], poswindspeed_crosstracks[:, 4], poswindspeed_crosstracks[:, 5],
+                    label=flyby,
+                    color="C1",alpha=0.5)
+        axyz.quiver(negwindspeed_alongtracks[:, 1], negwindspeed_alongtracks[:, 2], negwindspeed_alongtracks[:, 4], negwindspeed_alongtracks[:, 5],
+                    label=flyby,
+                    color="C0",alpha=0.5)
+        axyz.quiver(poswindspeed_alongtracks[:, 1], poswindspeed_alongtracks[:, 2], poswindspeed_alongtracks[:, 4], poswindspeed_alongtracks[:, 5],
+                    label=flyby,
+                    color="C1",alpha=0.5)
+        
+        axxz.quiver(negwindspeed_crosstracks[:, 0], negwindspeed_crosstracks[:, 2], negwindspeed_crosstracks[:, 3], negwindspeed_crosstracks[:, 5],
+                    label=flyby,
+                    color="C0",alpha=0.5)
+        axxz.quiver(poswindspeed_crosstracks[:, 0], poswindspeed_crosstracks[:, 2], poswindspeed_crosstracks[:, 3], poswindspeed_crosstracks[:, 5],
+                    label=flyby,
+                    color="C1",alpha=0.5)
+        axxz.quiver(negwindspeed_alongtracks[:, 0], negwindspeed_alongtracks[:, 2], negwindspeed_alongtracks[:, 3], negwindspeed_alongtracks[:, 5],
+                    label=flyby,
+                    color="C0",alpha=0.5)
+        axxz.quiver(poswindspeed_alongtracks[:, 0], poswindspeed_alongtracks[:, 2], poswindspeed_alongtracks[:, 3], poswindspeed_alongtracks[:, 5],
+                    label=flyby,
+                    color="C1",alpha=0.5)
+
+
+
+        # axyz.quiver(crosstrack_states[:, 1], crosstrack_states[:, 2], crosstrack_states[:, 4], crosstrack_states[:, 5],
+        #             label=flyby,
+        #             color="C" + str(counter))
+        # axxz.quiver(crosstrack_states[:, 0], crosstrack_states[:, 2], crosstrack_states[:, 3], crosstrack_states[:, 5],
+        #             label=flyby,
+        #             color="C" + str(counter))
     print(windspeeds, magnitudes)
     crosstrack_states = np.array(crosstrack_states)
     print(crosstrack_states.shape)
@@ -583,29 +686,36 @@ def satdir_from_titan():  # Only use for one flyby
 # flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-#flybys = ['t27']
-flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
-              't41', 't42', 't43', 't46'] # midlatitude flybys
-windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+flybys = ['t27']
+# flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
+#               't41', 't42', 't43', 't46'] # midlatitude flybys
 
-crosstrack_latlon_plot()
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
+windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 
+#crosstrack_latlon_plot()
+#crosstrack_xyz_plot():
 
-# soldir = soldir_from_titan()
-# satdir = satdir_from_titan()
-# soldir_unorm = spice.unorm(soldir)[0] * 1000
-# satdir_unorm = spice.unorm(satdir)[0] * 1000
-#axxy, axxz, axyz = crosstrack_xyz_plot()
-# print("soldir", spice.unorm(soldir))
-# print("satdir", spice.unorm(satdir))
-#
-# axxy.arrow(0, 0, soldir_unorm[0], soldir_unorm[1])
-# axxz.arrow(0, 0, soldir_unorm[0], soldir_unorm[2])
-# axyz.arrow(0, 0, soldir_unorm[1], soldir_unorm[2])
-#
-# axxy.arrow(0, 0, satdir_unorm[0], satdir_unorm[1], color='r')
-# axxz.arrow(0, 0, satdir_unorm[0], satdir_unorm[2], color='r')
-# axyz.arrow(0, 0, satdir_unorm[1], satdir_unorm[2], color='r')
+def crosstrack_xyz_plot():
+    soldir = soldir_from_titan()
+    satdir = satdir_from_titan()
+    soldir_unorm = spice.unorm(soldir)[0] * 1000
+    satdir_unorm = spice.unorm(satdir)[0] * 1000
+    axxy, axxz, axyz = crosstrack_xyz_plot()
+    print("soldir", spice.unorm(soldir))
+    print("satdir", spice.unorm(satdir))
+
+    axxy.arrow(0, 0, soldir_unorm[0], soldir_unorm[1])
+    axxz.arrow(0, 0, soldir_unorm[0], soldir_unorm[2])
+    axyz.arrow(0, 0, soldir_unorm[1], soldir_unorm[2])
+
+    axxy.arrow(0, 0, satdir_unorm[0], satdir_unorm[1], color='r')
+    axxz.arrow(0, 0, satdir_unorm[0], satdir_unorm[2], color='r')
+    axyz.arrow(0, 0, satdir_unorm[1], satdir_unorm[2], color='r')
+
+cassini_titan_test("t27",[0])
 
 
 plt.show()

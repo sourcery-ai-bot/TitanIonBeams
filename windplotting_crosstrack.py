@@ -68,6 +68,9 @@ altax2.set_ylabel("Absolute Crosstrack velocity [m/s]")
 crosstrack_fig, crosstrack_ax = plt.subplots()
 reduced_windsdf = windsdf[["IBS crosstrack velocity","ELS crosstrack velocity"]]
 sns.regplot(data=windsdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crosstrack_ax)
+z = np.polyfit(windsdf["IBS crosstrack velocity"],windsdf["ELS crosstrack velocity"],1)
+p = np.poly1d(z)
+print("Coefficients", p )
 x = np.linspace(-400,400,10)
 crosstrack_ax.plot(x,x,color='k')
 
@@ -75,14 +78,16 @@ crosstrack_ax.plot(x,x,color='k')
 
 crosstrack_dist_fig, (crosstrack_ibsdist_ax, crosstrack_elsdist_ax) = plt.subplots(2)
 
-sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crosstrack_elsdist_ax, kde=True)
-sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crosstrack_ibsdist_ax, kde=True)
+sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crosstrack_elsdist_ax, bins=np.arange(-400, 400, 50), kde=True)
+sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crosstrack_ibsdist_ax, bins=np.arange(-400, 400, 50), kde=True)
 
+crosstrack_elsdist_ax.set_xlim(-450,450)
+crosstrack_ibsdist_ax.set_xlim(-450,450)
 # -----------------------------------------------
 
 figdist, axdist = plt.subplots()
-sns.histplot(data=windsdf, x="Crosstrack velocity", bins=np.arange(-550, 550, 50), ax=axdist, element="step",
-             stat="probability")
+sns.histplot(data=windsdf, x="Crosstrack velocity", bins=np.arange(-500, 500, 50), ax=axdist, kde=True)
+axdist.set_xlim(-500,500)
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
 figdist.legend()
 
