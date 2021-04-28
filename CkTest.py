@@ -186,26 +186,17 @@ def caps_crosstrack_spice(tempdatetime, windspeed):
 def cassini_titan_test(flyby, anodes=False):
     times = []
     states = []
-    lons, lats, alts = [], [], []
-    crossvecs_lonlatalts = []
-    crossvecs_lonlatalts_spicenormal = []
+    longs, latits, rs = [], [], []
 
     rs, longs, latits = [], [], []
-    crossvecs_rlonglats = []
     crossvecs_rlonglats_spicenormal = []
 
-    cmats = []
     vecs = []
-    anode_vecs = []
-    anode_seps = [[], [], [], [], [], [], [], []]
     anodes1, anodes8 = [], []
-    crossvecs = []
-    angularseparations = []
     beamanodes = []
     spiceplanenormals = []
     pos_alongtrack, neg_alongtrack = [], []
     full_wind_vectors = []
-    full_wind_vectors_lonlatalts = []
     full_wind_vectors_rlonglats = []
 
     alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
@@ -240,32 +231,17 @@ def cassini_titan_test(flyby, anodes=False):
         latits.append(lat * spice.dpr())
         rs.append(alt)
 
-        # vecs.append(cassini_act_2_titan(tempdatetime))
-        crossvec = caps_crosstrack(tempdatetime, np.mean([negwindspeed_crosstrack, poswindspeed_crosstrack]))
-
         testspicenormal, anode1, anode8 = caps_crosstrack_spice(tempdatetime, np.mean([negwindspeed_crosstrack, poswindspeed_crosstrack]))
+        testspicenormal_neg, anode1, anode8 = caps_crosstrack_spice(tempdatetime, negwindspeed_crosstrack)
+        testspicenormal_pos, anode1, anode8 = caps_crosstrack_spice(tempdatetime, poswindspeed_crosstrack)
+
         anodes1.append(anode1)
         anodes8.append(anode8)
         spiceplanenormals.append(testspicenormal)
-        print("test spice normal", testspicenormal)
-        jacobian_dpgrdr = spice.dpgrdr("TITAN", states[-1][0], states[-1][1], states[-1][2],
-                                spice.bodvrd('TITAN', 'RADII', 3)[1][0],
-                                1.44e-4)
         jacobian_dlatdr = spice.dlatdr(states[-1][0], states[-1][1], states[-1][2])
-
-        # print("jacobian", jacobian)
-        crossvec_lonlatalt = spice.mxv(jacobian_dpgrdr, spice.vhat(crossvec))
-        crossvec_lonlatalt_spicenormal = spice.mxv(jacobian_dpgrdr, testspicenormal)
 
         crossvec_rlonglat_spicenormal = spice.mxv(jacobian_dlatdr, testspicenormal)
         crossvecs_rlonglats_spicenormal.append(crossvec_rlonglat_spicenormal)
-
-        # print("recpgr", lon, lat, alt)
-        # print("crossvec latlon", crossvec_lonlatalt)
-        # print("crossvec latlon vhat", spice.vhat(crossvec_latlon))
-        crossvecs.append(crossvec)
-        crossvecs_lonlatalts.append(crossvec_lonlatalt)
-        crossvecs_lonlatalts_spicenormal.append(crossvec_lonlatalt_spicenormal)
 
         alongtrack_vec_normal = spice.vhat(state[3:6])
         print("crossvec", testspicenormal)
@@ -275,8 +251,6 @@ def cassini_titan_test(flyby, anodes=False):
         print("Full wind vec", full_wind_vec)
         full_wind_vectors.append(full_wind_vec)
 
-        full_wind_lonlatalt = spice.mxv(jacobian_dpgrdr, spice.vhat(full_wind_vec))
-        full_wind_vectors_lonlatalts.append(full_wind_lonlatalt)
 
         full_wind_rlonglat = spice.mxv(jacobian_dlatdr, spice.vhat(full_wind_vec))
         full_wind_vectors_rlonglats.append(full_wind_rlonglat)
@@ -313,13 +287,6 @@ def cassini_titan_test(flyby, anodes=False):
         u.append(i[0])
         v.append(i[1])
         w.append(i[2])
-
-    # Crosstrack
-    u2, v2, w2 = [], [], []
-    for j in crossvecs:
-        u2.append(j[0])
-        v2.append(j[1])
-        w2.append(j[2])
 
     # SPICE plane normal
     u3, v3, w3 = [], [], []
@@ -366,7 +333,6 @@ def cassini_titan_test(flyby, anodes=False):
             ax.quiver(X, Y, Z, i[0], i[1], i[2], length=30, color='C1')
             ax.quiver(X, Y, Z, j[0], j[1], j[2], length=30, color='C2')
 
-    #ax.quiver(x, y, z, u2, v2, w2, length=30, color='m') # Old method
     ax.quiver(x, y, z, u1, v1, w1, length=5, color='k') #Ram Direction
     ax.quiver(x, y, z, u3, v3, w3, length=30, color='r') #Crosstrack from spice normal
     ax.quiver(x, y, z, u4, v4, w4, length=30, color='b') #Full wind vector normal
@@ -382,20 +348,10 @@ def cassini_titan_test(flyby, anodes=False):
         dlat.append(i[1])
         dlon.append(i[0])
 
-    dlat_spicenormal, dlon_spicenormal = [], []
-    for i in crossvecs_lonlatalts_spicenormal:
-        dlat_spicenormal.append(i[1])
-        dlon_spicenormal.append(i[0])
-
     dlatit_spicenormal, dlong_spicenormal = [], []
     for i in crossvecs_rlonglats_spicenormal:
         dlatit_spicenormal.append(i[2])
         dlong_spicenormal.append(i[1])
-
-    dlat_fullwind, dlon_fullwind = [], []
-    for i in full_wind_vectors_lonlatalts:
-        dlat_fullwind.append(i[1])
-        dlon_fullwind.append(i[0])
 
     dlatit_fullwind, dlong_fullwind = [], []
     for i in full_wind_vectors_rlonglats:
@@ -403,12 +359,8 @@ def cassini_titan_test(flyby, anodes=False):
         dlong_fullwind.append(i[1])
 
     fig2, ax2 = plt.subplots()
-    #ax2.plot(lons, lats)
     ax2.plot(longs, latits)
-    #ax2.quiver(lons, lats, dlon, dlat) Old method
-    #ax2.quiver(lons, lats, dlon_spicenormal, dlat_spicenormal, color='r')
     ax2.quiver(longs, latits, dlong_spicenormal, dlatit_spicenormal, color='m')
-    #ax2.quiver(lons, lats, dlon_fullwind, dlat_fullwind, color='b')
     ax2.quiver(longs, latits, dlong_fullwind, dlatit_fullwind, color='b')
     ax2.set_xlabel("Longitude")
     ax2.set_ylabel("Latitude")
@@ -748,7 +700,7 @@ def crosstrack_xyz_plot():
     axxz.arrow(0, 0, satdir_unorm[0], satdir_unorm[2], color='r')
     axyz.arrow(0, 0, satdir_unorm[1], satdir_unorm[2], color='r')
 
-cassini_titan_test("t16",[0])
+cassini_titan_test("t26",[0])
 
 
 plt.show()
