@@ -279,7 +279,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50], numofflybys=1):
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 76, 117], numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -363,7 +363,7 @@ windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 
-def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50], numofflybys=1):
+def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74], numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -405,12 +405,36 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
     #peakvalue_list = peakvalue_2darray[peakvalue_indices]
     print(peakvalue_indices[:,0],peakvalue_indices[:,0])
 
-    print(np.array(tempx)[peakvalue_indices[:,0]])
+
+    energyvalues = np.array(tempx)[peakvalue_indices[:,0]]
+    expectedenergies = []
+    for mass in els_masses:
+        expectedenergies.append()
+    print(energyvalues)
 
     plt.subplot(1,2,1)
     plt.imshow(np.flip(tempdataslice,axis=0))
     plt.subplot(1,2,2)
     plt.imshow(np.flip(peakvalue_2darray,axis=0))
+
+    z, cov = np.polyfit(x=np.array(els_masses), y=np.array(energyvalues[:len(els_masses)]), deg=1, cov=True)
+    ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
+    ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
+    print(elsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
+
+    fig, ax = plt.subplots()
+    p = np.poly1d(z)
+    ax.errorbar(els_masses, np.array(energyvalues[:len(els_masses)]), fmt='.')  # ,yerr=effectivescplist_errors)
+    ax.plot(els_masses, p(els_masses))
+
+    # SCP calculation
+    # scpvalues = []
+    # for masscounter, mass in enumerate(masses):
+    #     scpvalues.append((effectivescplist[masscounter] - ((mass * AMU * cassini_speed * ionwindspeed) / e))/charge)
+    # print("scplist", scpvalues)
+    # scp_mean = np.mean(scpvalues)
+    # scp_err = np.std(scpvalues)
+
 
     # print(tempdataslice)
     # print(tempx)
