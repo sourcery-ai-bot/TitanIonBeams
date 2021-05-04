@@ -17,6 +17,8 @@ import pandas as pd
 import spiceypy as spice
 from astropy.modeling import models, fitting
 from itertools import chain
+from scipy.ndimage.filters import maximum_filter
+from scipy.ndimage.morphology import generate_binary_structure, binary_erosion
 
 from lmfit import CompositeModel, Model
 from lmfit.models import GaussianModel
@@ -365,79 +367,84 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
-    els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
+
+    els_slicenumber_start = CAPS_slicenumber(elsdata, tempdatetime) - 3
+    els_slicenumber_end = CAPS_slicenumber(elsdata, tempdatetime) + 3
+
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
-
-    windspeed = 0
     temperature = titan_linearfit_temperature(titanaltitude)
 
-    els_lowerenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][0],
-                                            ELS_energybound_dict[elsdata['flyby']][0])[0]
-    els_upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1],
-                                            ELS_energybound_dict[elsdata['flyby']][1])[0]
+    # els_lowerenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][0],
+    #                                         ELS_energybound_dict[elsdata['flyby']][0])[0]
+    # els_upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1],
+    #                                         ELS_energybound_dict[elsdata['flyby']][1])[0]
+    els_lowerenergyslice = CAPS_energyslice("els", 2.5, 2.5)[0]
+    els_upperenergyslice = CAPS_energyslice("els", 1100, 1100)[0]
     # x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
     anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
 
     tempdataslice = list(
-        np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
-                   els_lowerenergyslice:els_upperenergyslice, anode, 0]))
+        np.float32(ELS_backgroundremoval(elsdata, els_slicenumber_start, els_slicenumber_end, datatype="data")[
+                   els_lowerenergyslice:els_upperenergyslice, anode, :]))
     tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
 
-    while tempdataslice[0] < 10:
-        tempdataslice.pop(0)
-        tempx.pop(0)
+    fig, ax = plt.subplots()
 
-    tempdataslice = np.array(tempdataslice)
-    tempdataslice[tempdataslice <= 0] = 1
-    dataslice = np.array(tempdataslice)
+    CS = ax.pcolormesh(elsdata['times_utc'][els_slicenumber_start:els_slicenumber_end], tempx, tempdataslice,norm=LogNorm(vmin=1e8, vmax=1e12),
+                       cmap='viridis')
+    ax.set_yscale("log")
 
-    if numofflybys == 1:
-        stepplotfig_els, ax = plt.subplots()
-        stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
-        ax.step(tempx, dataslice, where='mid')
-        ax.errorbar(tempx, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
-        ax.set_yscale("log")
-        # ax.set_xlim(1, 25)
-        ax.set_ylim(0.9 * min(dataslice), 1.1 * max(dataslice))
-        ax.set_ylabel("Counts [/s]", fontsize=16)
-        ax.tick_params(axis='both', which='major', labelsize=15)
-        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-        ax.minorticks_on()
-        ax.set_title(elsdata['times_utc_strings'][els_slicenumber])
-        ax.set_xlabel("Energy [eV/q]", fontsize=14)
+    detected_peaks = detect_peaks(np.flip(tempdataslice,axis=0))
+    print(detected_peaks)
+    peakvalue_2darray = np.where(detected_peaks,np.flip(tempdataslice,axis=0),0)
+    peakvalue_2darray[peakvalue_2darray < 1e3] = 0
+    peakvalue_indices = np.argwhere(peakvalue_2darray > 1e3)
+    #peakvalue_list = peakvalue_2darray[peakvalue_indices]
+    print(peakvalue_indices,peakvalue_indices)
 
-    out = total_fluxgaussian(np.array(tempx), dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
-                             charge=-1,
-                             FWHM=ELS_FWHM)
-    if out.params['ionvelocity'].stderr is None:
-        out.params['ionvelocity'].stderr = np.nan
-    if out.params['scp'].stderr is None:
-        out.params['scp'].stderr = np.nan
-    GOF = np.mean((abs(out.best_fit - dataslice) / dataslice) * 100)
 
-    # for out in outputs:
-    #     print(out.params['ionvelocity'], out.params['scp'])
-    if numofflybys == 1:
-        ax.plot(tempx, out.best_fit, 'r-', label='best fit')
-        ax.text(0.8, 0.01,
-                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
-                transform=ax.transAxes)
-        ax.text(0.8, .05,
-                "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                transform=ax.transAxes)
-        ax.text(0.8, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
-        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
-        ax.text(0.8, .13, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
-        ax.text(0.8, .17, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
-    # comps = out.eval_components(x=x)
-    # for mass in els_masses:
-    #     stepplotax_els.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+    plt.subplot(1,2,1)
+    plt.imshow(np.flip(tempdataslice,axis=0))
+    plt.subplot(1,2,2)
+    plt.imshow(peakvalue_2darray)
 
-    return out, GOF, lpvalue
+    # print(tempdataslice)
+    # print(tempx)
+
+def detect_peaks(image):
+    """
+    Takes an image and detect the peaks usingthe local maximum filter.
+    Returns a boolean mask of the peaks (i.e. 1 when
+    the pixel's value is the neighborhood maximum, 0 otherwise)
+    """
+
+    # define an 8-connected neighborhood
+    neighborhood = generate_binary_structure(2, 2)
+
+    # apply the local maximum filter; all pixel of maximal value
+    # in their neighborhood are set to 1
+    local_max = maximum_filter(image, footprint=neighborhood) == image
+    # local_max is a mask that contains the peaks we are
+    # looking for, but also the background.
+    # In order to isolate the peaks we must remove the background from the mask.
+
+    # we create the mask of the background
+    background = (image == 0)
+
+    # a little technicality: we must erode the background in order to
+    # successfully subtract it form local_max, otherwise a line will
+    # appear along the background border (artifact of the local maximum filter)
+    eroded_background = binary_erosion(background, structure=neighborhood, border_value=1)
+
+    # we obtain the final mask, containing only peaks,
+    # by removing the background from the local_max mask (xor operation)
+    detected_peaks = local_max ^ eroded_background
+
+    return detected_peaks
+
 
 def multiple_alongtrackwinds_flybys(usedflybys):
     outputdf = pd.DataFrame()
@@ -554,16 +561,20 @@ def single_slice_test(flyby, slicenumber):
     print("Altitude", tempdf['Altitude'].iloc[slicenumber])
     print(tempdf['Positive Peak Time'].iloc[slicenumber])
     lpdata = read_LP_V1(flyby)
-    ibs_out, ibs_GOF, lpvalue = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
+    ELS_fluxfitting_2dfluxtest(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
                                                 tempdf['Altitude'].iloc[slicenumber],
                                                 lpdata=lpdata)
-    els_out, els_GOF, lpvalue = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
-                                                tempdf['Altitude'].iloc[slicenumber],
-                                                lpdata=lpdata)
+    # ibs_out, ibs_GOF, lpvalue = IBS_fluxfitting(ibsdata, tempdf['Positive Peak Time'].iloc[slicenumber],
+    #                                             tempdf['Altitude'].iloc[slicenumber],
+    #                                             lpdata=lpdata)
+    # els_out, els_GOF, lpvalue = ELS_fluxfitting(elsdata, tempdf['Negative Peak Time'].iloc[slicenumber],
+    #                                             tempdf['Altitude'].iloc[slicenumber],
+    #                                             lpdata=lpdata)
 
 
-#single_slice_test("t16", slicenumber=4)
-multiple_alongtrackwinds_flybys(["t42"])
+
+single_slice_test("t40", slicenumber=0)
+#multiple_alongtrackwinds_flybys(["t42"])
 # multiple_alongtrackwinds_flybys(
 #     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
 
