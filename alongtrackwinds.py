@@ -386,9 +386,9 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
                               tempdatetime + datetime.timedelta(seconds=10))
     print("anode", anode)
 
-    tempdataslice = list(
+    tempdataslice = np.array(list(
         np.float32(ELS_backgroundremoval(elsdata, els_slicenumber_start, els_slicenumber_end, datatype="data")[
-                   els_lowerenergyslice:els_upperenergyslice, anode, :]))
+                   els_lowerenergyslice:els_upperenergyslice, anode, :])))
     tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
 
     fig, ax = plt.subplots()
@@ -397,19 +397,20 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
                        cmap='viridis')
     ax.set_yscale("log")
 
-    detected_peaks = detect_peaks(np.flip(tempdataslice,axis=0))
+    detected_peaks = detect_peaks(tempdataslice)
     print(detected_peaks)
-    peakvalue_2darray = np.where(detected_peaks,np.flip(tempdataslice,axis=0),0)
+    peakvalue_2darray = np.where(detected_peaks,tempdataslice,0)
     peakvalue_2darray[peakvalue_2darray < 1e3] = 0
-    peakvalue_indices = np.argwhere(peakvalue_2darray > 1e3)
+    peakvalue_indices = np.array(np.argwhere(peakvalue_2darray > 1e3),dtype=int)
     #peakvalue_list = peakvalue_2darray[peakvalue_indices]
-    print(peakvalue_indices,peakvalue_indices)
+    print(peakvalue_indices[:,0],peakvalue_indices[:,0])
 
+    print(np.array(tempx)[peakvalue_indices[:,0]])
 
     plt.subplot(1,2,1)
     plt.imshow(np.flip(tempdataslice,axis=0))
     plt.subplot(1,2,2)
-    plt.imshow(peakvalue_2darray)
+    plt.imshow(np.flip(peakvalue_2darray,axis=0))
 
     # print(tempdataslice)
     # print(tempx)
