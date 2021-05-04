@@ -15,7 +15,7 @@ matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
 
 # ---Alongtrack stats-----
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity_1.073energy.csv", index_col=0, parse_dates=True)
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
 crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 crary_windsdf = pd.read_csv("crarywinds.csv")
 flybyslist = alongtrack_windsdf.Flyby.unique()
@@ -61,6 +61,13 @@ sns.histplot(data=windsdf, x="IBS crosstrack velocity", bins=np.arange(-400, 400
 sns.histplot(data=windsdf, x="ELS crosstrack velocity", bins=np.arange(-400, 400, 50),
              ax=alongtrack_els_ionvelocity_axdist, element="step",
              kde=True,hue="Actuation Direction")
+
+##----Alongtrack Actuation direction
+neg_fig, neg_ax = plt.subplots()
+sns.stripplot(data=windsdf, x="Flyby", y="ELS alongtrack velocity", hue="Actuation Direction", dodge=False,ax=neg_ax)
+pos_fig, pos_ax = plt.subplots()
+sns.stripplot(data=windsdf, x="Flyby", y="IBS alongtrack velocity", hue="Actuation Direction", dodge=False,ax=pos_ax)
+
 
 
 plt.show()

@@ -113,11 +113,14 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     if charge == 1:
         pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
     elif charge == -1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+        #pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+
+        pars.add('scp', value=-1.4)
+        pars['scp'].vary = False
+
     pars.add('temp_eV', value=8 * k * temperature)  # , min=130, max=170)
     pars.add('spacecraftvelocity', value=cassini_speed)
     pars.add('ionvelocity', value=windspeed, min=-500, max=500)
-    # pars['scp'].vary = False
     pars['spacecraftvelocity'].vary = False
     pars['temp_eV'].vary = False
 
@@ -274,7 +277,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     return maxflux_anode
 
 
-def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117], numofflybys=1):
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50], numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
     cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -357,6 +360,84 @@ windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
+
+def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50], numofflybys=1):
+    et = spice.datetime2et(tempdatetime)
+    state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+    els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
+    lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
+    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
+
+    windspeed = 0
+    temperature = titan_linearfit_temperature(titanaltitude)
+
+    els_lowerenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][0],
+                                            ELS_energybound_dict[elsdata['flyby']][0])[0]
+    els_upperenergyslice = CAPS_energyslice("els", ELS_energybound_dict[elsdata['flyby']][1],
+                                            ELS_energybound_dict[elsdata['flyby']][1])[0]
+    # x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
+    anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
+                              tempdatetime + datetime.timedelta(seconds=10))
+    print("anode", anode)
+
+    tempdataslice = list(
+        np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
+                   els_lowerenergyslice:els_upperenergyslice, anode, 0]))
+    tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
+
+    while tempdataslice[0] < 10:
+        tempdataslice.pop(0)
+        tempx.pop(0)
+
+    tempdataslice = np.array(tempdataslice)
+    tempdataslice[tempdataslice <= 0] = 1
+    dataslice = np.array(tempdataslice)
+
+    if numofflybys == 1:
+        stepplotfig_els, ax = plt.subplots()
+        stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
+        ax.step(tempx, dataslice, where='mid')
+        ax.errorbar(tempx, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+        ax.set_yscale("log")
+        # ax.set_xlim(1, 25)
+        ax.set_ylim(0.9 * min(dataslice), 1.1 * max(dataslice))
+        ax.set_ylabel("Counts [/s]", fontsize=16)
+        ax.tick_params(axis='both', which='major', labelsize=15)
+        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+        ax.minorticks_on()
+        ax.set_title(elsdata['times_utc_strings'][els_slicenumber])
+        ax.set_xlabel("Energy [eV/q]", fontsize=14)
+
+    out = total_fluxgaussian(np.array(tempx), dataslice, els_masses, cassini_speed, windspeed, lpvalue, temperature,
+                             charge=-1,
+                             FWHM=ELS_FWHM)
+    if out.params['ionvelocity'].stderr is None:
+        out.params['ionvelocity'].stderr = np.nan
+    if out.params['scp'].stderr is None:
+        out.params['scp'].stderr = np.nan
+    GOF = np.mean((abs(out.best_fit - dataslice) / dataslice) * 100)
+
+    # for out in outputs:
+    #     print(out.params['ionvelocity'], out.params['scp'])
+    if numofflybys == 1:
+        ax.plot(tempx, out.best_fit, 'r-', label='best fit')
+        ax.text(0.8, 0.01,
+                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .05,
+                "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+        ax.text(0.8, .13, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
+        ax.text(0.8, .17, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
+    # comps = out.eval_components(x=x)
+    # for mass in els_masses:
+    #     stepplotax_els.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+
+    return out, GOF, lpvalue
 
 def multiple_alongtrackwinds_flybys(usedflybys):
     outputdf = pd.DataFrame()
@@ -482,12 +563,12 @@ def single_slice_test(flyby, slicenumber):
 
 
 #single_slice_test("t16", slicenumber=4)
-#multiple_alongtrackwinds_flybys(["t16"])
+multiple_alongtrackwinds_flybys(["t42"])
 # multiple_alongtrackwinds_flybys(
 #     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
 
 
-multiple_alongtrackwinds_flybys(['t16', 't17', 't19', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't39', 't40',
-              't41', 't42', 't43', 't46'])
+# multiple_alongtrackwinds_flybys(['t16', 't17', 't19', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't39', 't40',
+#               't41', 't42', 't43', 't46'])
 
 plt.show()
