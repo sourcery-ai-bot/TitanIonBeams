@@ -112,6 +112,7 @@ plt.subplots_adjust(bottom=0.10)
 # -----------------------------------------------
 
 fig, ax = plt.subplots()
-sns.stripplot(data=windsdf, x="Flyby", y="Crosstrack velocity", hue="Actuation Direction", dodge=False)
+sns.stripplot(data=windsdf, x="Flyby", y="ELS crosstrack velocity", hue="Actuation Direction", dodge=False,ax=ax)
+sns.stripplot(data=windsdf, x="Flyby", y="IBS crosstrack velocity", hue="Actuation Direction", marker="X", dodge=False,ax=ax)
 
 plt.show()

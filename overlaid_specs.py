@@ -14,7 +14,8 @@ import datetime
 import spiceypy as spice
 import glob
 
-from cassinipy.caps.mssl import CAPS_slicenumber, CAPS_energyslice, ELS_backgroundremoval, caps_ramdirection_time, CAPS_actuationtimeslice
+from cassinipy.caps.mssl import CAPS_slicenumber, CAPS_energyslice, ELS_backgroundremoval, caps_ramdirection_time, \
+    CAPS_actuationtimeslice
 from cassinipy.caps.spice import caps_ramdirection_azielv
 
 if spice.ktotal('spk') == 0:
@@ -50,7 +51,6 @@ def ELS_spectrogram(elsdata, anode, starttime, seconds, ax=None, cax=None, fig=N
     """
     datacalib = elscalib['polyearray']
     elsnorm = LogNorm(vmin=1e8, vmax=1e12)
-
     for counter, i in enumerate(elsdata['times_utc_strings']):
         if i >= starttime:
             slicenumber = counter
@@ -106,13 +106,13 @@ def heavy_ion_finder(elsdata, startenergy, anode, starttime, endtime):
     startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
     tempslice = ELS_backgroundremoval(elsdata, startslice, endslice)[:, anode, :]
     maxindices = np.unravel_index(tempslice.argmax(), tempslice.shape)
-    #print("Max DEF", tempslice[maxindices])
-    prominence = tempslice[maxindices] / 40
-    #print("prominence", prominence)
+    # print("Max DEF", tempslice[maxindices])
+    prominence = tempslice[maxindices] / 30
+    # print("prominence", prominence)
     energybin = CAPS_energyslice("els", startenergy, startenergy)[0]
 
     dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)[energybin, anode, :]
-    peaks, properties = find_peaks(dataslice, height=3e9, prominence=prominence, width=0.5, rel_height=0.5,
+    peaks, properties = find_peaks(dataslice, height=1e9, prominence=prominence, width=0.5, rel_height=0.5,
                                    distance=15)
     results = peak_widths(dataslice, peaks, rel_height=0.97)
 
@@ -158,7 +158,7 @@ def heavy_ion_finder_ibs(ibsdata, startenergy, starttime, endtime):
     tempslice = (ibsdata['ibsdata'][:, 1, startslice:endslice] / (ibscalib['ibsgeom'] * 1e-4))
     maxindices = np.unravel_index(tempslice.argmax(), tempslice.shape)
     prominence = tempslice[maxindices] / 10
-    #print("prominence", prominence)
+    # print("prominence", prominence)
     # dataslice = ibsdata['ibsdata'][energybin, 1, startslice:endslice]
     singlepeakslice = (ibsdata['ibsdata'][energybin, 1, startslice:endslice] / (ibscalib['ibsgeom'] * 1e-4))
     # peaks, properties = find_peaks(dataslice, height=5e2, prominence=prominence,distance=15)
@@ -215,12 +215,13 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
 
     maxflux_anode = np.argmax(anodesums)
-    #print(anodesums, maxflux_anode)
+    # print(anodesums, maxflux_anode)
     return maxflux_anode
 
 
 filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
                    "t17": ["07-sep-2006", "20:13:00"],
+                   "t18": ["23-sep-2006", "18:55:00"],
                    "t19": ["09-oct-2006", "17:27:00"],
                    "t20": ["25-oct-2006", "15:54:00"],
                    "t21": ["12-dec-2006", "11:38:00"],
@@ -232,17 +233,25 @@ filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
                    "t29": ["26-apr-2007", "21:29:00"],
                    "t30": ["12-may-2007", "20:06:00"],
                    "t32": "13-jun-2007",
+                   "t36": ["02-oct-2007", "04:39:00"],
                    "t39": ["20-dec-2007", "22:54:00"],
                    "t40": ["05-jan-2008", "21:26:00"],
                    "t41": ["22-feb-2008", "17:28:00"],
                    "t42": ["25-mar-2008", "14:24:00"],
                    "t43": ["12-may-2008", "09:58:00"],
                    "t46": ["03-nov-2008", "17:32:00"],
-                   "t47": "19-nov-2008"}
+                   "t47": "19-nov-2008",
+                   "t48": ["05-dec-2008", "14:22:00"],
+                   "t49": ["21-dec-2008", "12:57:00"],
+                   "t50": ["07-feb-2009", "08:47:00"],
+                   "t51": ["27-mar-2009", "04:40:00"],
+                   "t71": ["07-jul-2010", "00:19:00"],
+                   "t83": ["22-may-2012", "01:07:00"]}
 
 flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 40)],
                    "t17": [datetime.datetime(2006, 9, 7, 20, 14, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)],
-                   #"t19": [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)],
+                   "t18": [datetime.datetime(2006, 9, 23, 18, 56), datetime.datetime(2006, 9, 23, 19, 2)],
+                   # "t19": [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)],
                    "t19": [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 33, 10)],
                    "t20": [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)],
                    "t21": [datetime.datetime(2006, 12, 12, 11, 39, 45), datetime.datetime(2006, 12, 12, 11, 43, 20)],
@@ -254,15 +263,23 @@ flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datet
                    "t29": [datetime.datetime(2007, 4, 26, 21, 29, 30), datetime.datetime(2007, 4, 26, 21, 35, 30)],
                    "t30": [datetime.datetime(2007, 5, 12, 20, 8, 20), datetime.datetime(2007, 5, 12, 20, 11, 45)],
                    "t32": [datetime.datetime(2007, 6, 13, 17, 44), datetime.datetime(2007, 6, 13, 17, 48)],
+                   "t36": [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)],
                    "t39": [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)],
                    "t40": [datetime.datetime(2008, 1, 5, 21, 27, 20), datetime.datetime(2008, 1, 5, 21, 33, 30)],
                    "t41": [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)],
                    "t42": [datetime.datetime(2008, 3, 25, 14, 25), datetime.datetime(2008, 3, 25, 14, 30, 20)],
                    "t43": [datetime.datetime(2008, 5, 12, 9, 59), datetime.datetime(2008, 5, 12, 10, 5)],
-                   "t46": [datetime.datetime(2008, 11, 3, 17, 33), datetime.datetime(2008, 11, 3, 17, 36, 30)]
+                   "t46": [datetime.datetime(2008, 11, 3, 17, 33), datetime.datetime(2008, 11, 3, 17, 36, 30)],
+                   "t48": [datetime.datetime(2008, 12, 5, 14, 23, 30), datetime.datetime(2008, 12, 5, 14, 28)],
+                   "t49": [datetime.datetime(2008, 12, 21, 12, 58), datetime.datetime(2008, 12, 21, 13, 2, 15)],
+                   "t50": [datetime.datetime(2009, 2, 7, 8, 48, 45), datetime.datetime(2009, 2, 7, 8, 53)],
+                   "t51": [datetime.datetime(2009, 3, 27, 4, 42), datetime.datetime(2009, 3, 27, 4, 46)],
+                   "t71": [datetime.datetime(2010, 7, 7, 0, 20, 30), datetime.datetime(2010, 7, 7, 0, 25)],
+                   "t83": [datetime.datetime(2012, 5, 22, 1, 7, 45), datetime.datetime(2012, 5, 22, 1, 13)],
                    }
 flyby_ramanodes = {"t16": [4, 5],
                    "t17": [4, 5],
+                   "t18": [4, 5],
                    "t19": [4, 5],
                    "t20": [1, 2],
                    "t21": [4, 5],
@@ -274,16 +291,24 @@ flyby_ramanodes = {"t16": [4, 5],
                    "t29": [4, 5],
                    "t30": [4, 5],
                    "t32": [4, 5],
+                   "t36": [4, 5],
                    "t39": [4, 5],
                    "t40": [4, 5],
                    "t41": [4, 5],
                    "t42": [4, 5],
                    "t43": [4, 5],
                    "t46": [4, 5],
+                   "t48": [4, 5],
+                   "t49": [4, 5],
+                   "t50": [4, 5],
+                   "t51": [4, 5],
+                   "t71": [4, 5],
+                   "t83": [4, 5],
                    }
 
+
 def main():
-    flyby = "t40"
+    flyby = "t83"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     lowerenergy = 2
@@ -309,11 +334,10 @@ def main():
     for i in ramtimes:
         maxflux_anodes.append(
             ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10), i + datetime.timedelta(seconds=10)))
-    # print(ramtimes,maxflux_anodes)
 
     heavypeaktimes, heavypeakenergies = [], []
     for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
-        #print(ramtime, maxflux_anode)
+        # print(ramtime, maxflux_anode)
         print(maxflux_anode, ramtime - datetime.timedelta(seconds=15), ramtime + datetime.timedelta(seconds=15))
         heavypeaktime, heavypeakenergy = heavy_ion_finder(elsdata, 20, maxflux_anode,
                                                           ramtime - datetime.timedelta(seconds=15),
@@ -327,7 +351,8 @@ def main():
     for ramtime in ramtimes:
         print("IBS", ramtime)
         # print(50, maxflux_anode, ramtime - datetime.timedelta(seconds=10), ramtime + datetime.timedelta(seconds=10))
-        heavypeaktime_ibs, heavypeakenergy_ibs = heavy_ion_finder_ibs(ibsdata, 15, ramtime - datetime.timedelta(seconds=20),
+        heavypeaktime_ibs, heavypeakenergy_ibs = heavy_ion_finder_ibs(ibsdata, 15,
+                                                                      ramtime - datetime.timedelta(seconds=20),
                                                                       ramtime + datetime.timedelta(seconds=20))
         # print(heavypeaktime_ibs, heavypeakenergy_ibs)
         print("------Next------")
@@ -356,8 +381,8 @@ def main():
 
     actuator_plot(elsdata, filedates_times[flyby][1], 600, ax=actax)
     actax.plot(CAPS_df['Azimuthal Ram Time'], CAPS_df['Azimuthal Ram Angle'], color='k')
-    actax.plot(CAPS_df['Negative Peak Time'], CAPS_df['Negative Azimuth Angle'], color='k',linestyle='dotted')
-    actax.plot(CAPS_df['Positive Peak Time'], CAPS_df['Positive Azimuth Angle'], color='k',linestyle='dashed')
+    actax.plot(CAPS_df['Negative Peak Time'], CAPS_df['Negative Azimuth Angle'], color='k', linestyle='dotted')
+    actax.plot(CAPS_df['Positive Peak Time'], CAPS_df['Positive Azimuth Angle'], color='k', linestyle='dashed')
     actax.plot(CAPS_df['Bulk Time'], CAPS_df['Bulk Azimuth'], color='k', linestyle='dashdot')
 
     elsax.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
@@ -367,7 +392,7 @@ def main():
     for ax in (elsax, elsax2):
         ax.set_ylim(lowerenergy, upperenergy)
 
-    ibsax.set_ylim(3,200)
+    ibsax.set_ylim(3, 200)
 
     for ax in (elsax, elsax2, ibsax, actax):
         ax.vlines(CAPS_df['Azimuthal Ram Time'], lowerenergy - 0.5, upperenergy + 50, color='k')
@@ -379,5 +404,5 @@ def main():
 
     plt.show()
 
-main()
 
+main()
