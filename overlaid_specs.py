@@ -308,7 +308,7 @@ flyby_ramanodes = {"t16": [4, 5],
 
 
 def main():
-    flyby = "t83"
+    flyby = "t49"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     lowerenergy = 2
@@ -364,29 +364,29 @@ def main():
     ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 420, ax=elsax2, fig=fig)
     IBS_spectrogram(ibsdata, 2, filedates_times[flyby][1], 420, ax=ibsax, fig=fig)
 
-    for peaktime, peakenergy, maxflux_anode in zip(heavypeaktimes, heavypeakenergies, maxflux_anodes):
-        if maxflux_anode == (anode1 - 1):
-            elsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-            elsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
-            actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
-        if maxflux_anode == (anode2 - 1):
-            elsax2.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-            elsax2.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
-            actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
+    #for peaktime, peakenergy, maxflux_anode in zip(heavypeaktimes, heavypeakenergies, maxflux_anodes):
+        #if maxflux_anode == (anode1 - 1):
+            #elsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
+            #elsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
+            #actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
+        #if maxflux_anode == (anode2 - 1):
+            #elsax2.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
+            #elsax2.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dotted")
+            #actax.vlines(peaktime, 1, 110, color='m', linestyle="dotted")
 
     for peaktime, peakenergy in zip(heavypeaktimes_ibs, heavypeakenergies_ibs):
         ibsax.scatter(peaktime, peakenergy, color='m', marker="X", s=100)
-        ibsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dashed")
-        actax.vlines(peaktime, 1, 110, color='m', linestyle="dashed")
+        #ibsax.vlines(peaktime, lowerenergy - 0.5, upperenergy + 50, color='m', linestyle="dashed")
+        #actax.vlines(peaktime, 1, 110, color='m', linestyle="dashed")
 
     actuator_plot(elsdata, filedates_times[flyby][1], 600, ax=actax)
     actax.plot(CAPS_df['Azimuthal Ram Time'], CAPS_df['Azimuthal Ram Angle'], color='k')
     actax.plot(CAPS_df['Negative Peak Time'], CAPS_df['Negative Azimuth Angle'], color='k', linestyle='dotted')
     actax.plot(CAPS_df['Positive Peak Time'], CAPS_df['Positive Azimuth Angle'], color='k', linestyle='dashed')
-    actax.plot(CAPS_df['Bulk Time'], CAPS_df['Bulk Azimuth'], color='k', linestyle='dashdot')
+    #actax.plot(CAPS_df['Bulk Time'], CAPS_df['Bulk Azimuth'], color='k', linestyle='dashdot')
 
-    elsax.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
-    elsax2.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
+    #elsax.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
+    #elsax2.vlines(CAPS_df['Negative Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dotted")
     ibsax.vlines(CAPS_df['Positive Peak Time'], lowerenergy - 0.5, upperenergy + 50, color='k', linestyle="dashed")
 
     for ax in (elsax, elsax2):

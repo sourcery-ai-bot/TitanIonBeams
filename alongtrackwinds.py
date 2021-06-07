@@ -81,8 +81,8 @@ IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25], "t18": [3.5, 16.25]
                         "t27": [4.5, 18.25],
                         "t28": [4.5, 18.25], "t29": [4.5, 18.25],
                         "t30": [4.5, 18.25], "t32": [4.5, 18.25], "t36": [4.5, 19], "t39": [4.5, 18.25], "t40": [4.5, 18.25], "t41": [4.5, 18.25],
-                        "t42": [4.5, 19.5], "t43": [4.5, 19.5], "t46": [4, 17], "t47": [4.5, 18.25], "t48": [4.5, 19],
-                        "t49": [4.5, 19], "t50": [4.5, 19], "t51": [4.5, 19], "t71": [3.5, 16.5], "t83": [3.5, 16.5]}
+                        "t42": [4.5, 19.5], "t43": [4.5, 19.5], "t46": [4, 17], "t47": [4.5, 18.25], "t48": [4, 19.25],
+                        "t49": [4.5, 19.5], "t50": [4.5, 19], "t51": [4.5, 19], "t71": [3.5, 16.5], "t83": [3.5, 16.5]}
 
 # ELS_energybound_dict = {"t16": [1, 30], "t17": [1.5, 30], "t18": [1.5, 30], "t19": [1.5, 30],
 #                         "t20": [1, 30], "t21": [1, 30], "t23": [1, 30],  "t25": [1, 30], "t26": [1.5, 30], "t27": [1.5, 30],
@@ -169,7 +169,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     eval_pars = Parameters()
 
     if charge == 1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+        pars.add('scp', value=LPvalue+0.4, min=LPvalue - 2, max=0)
         # pars.add('scp', value=LPvalue+lpoffset)
         # pars['scp'].vary = False
     elif charge == -1:
@@ -321,9 +321,9 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
         # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
         # ax.text(0.8, .32, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
         ax.text(0.8, .13, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
-    # for mass in ibs_masses:
-    #     stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
-    # stepplotax.legend(loc='best')
+        for mass in ibs_masses:
+            ax.plot(x, out["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+        ax.legend(loc='best')
 
     return out, GOF, lpvalue
 
@@ -397,7 +397,7 @@ def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses, nu
     # for out in outputs:
     #     print(out.params['ionvelocity'], out.params['scp'])
     if numofflybys == 1:
-        ax.plot(tempx, out.best_fit, 'r-', label='best fit')
+        ax.plot(tempx, out.best_fit, 'k-', label='best fit')
         ax.text(0.8, 0.01,
                 "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
                 transform=ax.transAxes)
@@ -662,15 +662,15 @@ def single_slice_test(flyby, slicenumber):
 
 
 
-#single_slice_test("t27", slicenumber=0)
-#multiple_alongtrackwinds_flybys(["t83"])
+single_slice_test("t17", slicenumber=4)
+#multiple_alongtrackwinds_flybys(["t17"])
 # multiple_alongtrackwinds_flybys(
 #     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
-multiple_alongtrackwinds_flybys(
-    ['t36','t48','t49','t50','t51','t71','t83'])
+# multiple_alongtrackwinds_flybys(
+#     ['t36','t48','t49','t50','t51','t71','t83'])
 
 
-# multiple_alongtrackwinds_flybys(['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't39', 't40',
-#               't41', 't42', 't43'])
+# multiple_alongtrackwinds_flybys(['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
+#               't41', 't42', 't43', 't48','t49','t50','t51','t71','t83'])
 
 plt.show()

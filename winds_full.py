@@ -240,8 +240,8 @@ data_times_pairs = [
     ["t83", [datetime.datetime(2012, 5, 22, 1, 7, 45), datetime.datetime(2012, 5, 22, 1, 13)], 20, 15, 30],
 ]
 
-#usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't39', 't40',
-#              't41', 't42', 't43']
+usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
+              't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
 #oldflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 #newflybys = ['t36','t48','t49','t50','t51','t71','t83']
 #LowAzimuthFlybys = ['t20', 't46']
@@ -254,7 +254,7 @@ data_times_pairs = [
 def CAPS_winds(data_times_pairs):
     elspeakslist = []
     for flyby, times, negativemass, positivemass, timewindow in data_times_pairs:
-        if flyby in newflybys:
+        if flyby in usedflybys:
             elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
             generate_mass_bins(elsdata, flyby, "els")
             ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
@@ -320,6 +320,20 @@ data["IBS crosstrack velocity"] = np.sin(data["Positive Deflection from Ram Angl
 
 data["Crosstrack velocity"] = np.sin(data["Bulk Deflection from Ram Angle"] * spice.rpd()) * data['Flyby velocity']
 data["Absolute Crosstrack velocity"] = data["Crosstrack velocity"].abs()
+
+SZAs = []
+def cassini_SZA(tempdatetime,moon="TITAN"):
+    et = spice.datetime2et(tempdatetime)
+    cassinidir, ltime = spice.spkpos('CASSINI', et, 'IAU_TITAN', "LT+S", 'TITAN')
+    sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+    print(cassinidir,sundir)
+    SZA = spice.vsep(cassinidir,sundir) * spice.dpr()
+    print("SZA", SZA)
+    return SZA
+for tempdatetime in data['Bulk Time']:
+    SZA = cassini_SZA(tempdatetime)
+    SZAs.append(SZA)
+data['Solar Zenith Angle'] = SZAs
 
 alts, lats, lons = [], [], []
 for tempdatetime in data['Bulk Time']:

@@ -15,7 +15,7 @@ matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
 
 # ---Alongtrack stats-----
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity.csv", index_col=0, parse_dates=True)
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_2peaks.csv", index_col=0, parse_dates=True)
 crary_windsdf = pd.read_csv("crarywinds.csv")
 flybyslist = alongtrack_windsdf.Flyby.unique()
 print(flybyslist)

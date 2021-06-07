@@ -706,6 +706,7 @@ def crosstrack_xyz_plot():
 def soldir_from_titan():  # Only use for one flyby
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
+        print(tempdf)
         i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
         et = spice.datetime2et(i)
         sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
@@ -724,15 +725,15 @@ def satdir_from_titan():  # Only use for one flyby
 # flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-flybys = ['t43']
+flybys = ['t48']
 # flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
 #               't41', 't42', 't43', 't46'] # midlatitude flybys
 
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained.csv", index_col=0, parse_dates=True)
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_2peaks.csv", index_col=0, parse_dates=True)
 crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
 windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
-
+print(windsdf)
 #crosstrack_latlon_plot()
 
 
@@ -765,9 +766,9 @@ allflybys_superlist = [prograde_zonalwind_flybys,retrograde_zonalwind_flybys,pol
 allflybys_superlist_colors = ['C0','C1','C2','C3','C4','C5']
 
 #for flybytype,flybycolor in zip(allflybys_superlist,allflybys_superlist_colors):
-fig2, (positive_ax, negative_ax) = plt.subplots(2, sharex='all', sharey='all')
-for flyby in retrograde_zonalwind_flybys:
-    cassini_titan_test(flyby,positive_ax, negative_ax,[0],plot_along=False,plot_cross=False,plot_color='k')
+# fig2, (positive_ax, negative_ax) = plt.subplots(2, sharex='all', sharey='all')
+# for flyby in retrograde_zonalwind_flybys:
+#     cassini_titan_test(flyby,positive_ax, negative_ax,[0],plot_along=False,plot_cross=False,plot_color='k')
 
 
 plt.show()

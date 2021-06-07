@@ -15,6 +15,7 @@ matplotlib.rcParams['grid.alpha'] = 0.5
 windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 
 flybyslist = windsdf.Flyby.unique()
+print("Number of Flybys", len(flybyslist))
 
 # for counter, flyby in enumerate(flybyslist):
 #     tempdf = windsdf[windsdf['Flyby'] == flyby]
@@ -78,21 +79,21 @@ crosstrack_ax.plot(x,x,color='k')
 
 crosstrack_dist_fig, (crosstrack_ibsdist_ax, crosstrack_elsdist_ax) = plt.subplots(2)
 
-sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crosstrack_elsdist_ax, bins=np.arange(-400, 400, 50), kde=True)
-sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crosstrack_ibsdist_ax, bins=np.arange(-400, 400, 50), kde=True)
+sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crosstrack_elsdist_ax, bins=np.arange(-600, 600, 50), kde=True)
+sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crosstrack_ibsdist_ax, bins=np.arange(-600, 600, 50), kde=True)
 
-crosstrack_elsdist_ax.set_xlim(-450,450)
-crosstrack_ibsdist_ax.set_xlim(-450,450)
+crosstrack_elsdist_ax.set_xlim(-600,600)
+crosstrack_ibsdist_ax.set_xlim(-600,600)
 # -----------------------------------------------
 
 figdist, axdist = plt.subplots()
-sns.histplot(data=windsdf, x="Crosstrack velocity", bins=np.arange(-500, 500, 50), ax=axdist, kde=True)
-axdist.set_xlim(-500,500)
+sns.histplot(data=windsdf, x="Crosstrack velocity", bins=np.arange(-600, 600, 50), ax=axdist, kde=True)
+axdist.set_xlim(-600,600)
 # sns.kdeplot(data=windsdf, x="Crosstrack velocity", ax=axdist)
 figdist.legend()
 
 g = sns.FacetGrid(windsdf, row="Flyby", hue="Flyby", aspect=8, height=2, sharey=False)
-g.map(sns.kdeplot, "Crosstrack velocity", fill=True, clip=[-500, 500])
+g.map(sns.kdeplot, "Crosstrack velocity", fill=True, clip=[-600, 600])
 g.map(sns.rugplot, "Crosstrack velocity", height=0.2)
 g.map(plt.axhline, y=0, lw=2, clip_on=False)
 
