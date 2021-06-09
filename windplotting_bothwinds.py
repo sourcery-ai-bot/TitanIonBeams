@@ -89,7 +89,7 @@ sns.pairplot(reduced_windsdf4,corner=True)
 sns.pairplot(reduced_windsdf5,hue="Flyby",corner=True)
 
 # print(windsdf)
-maxwind = 400
+maxwind = 500
 
 #------Alongtrack----
 # alongtrack_ionvelocity_figdist, (alongtrack_ibs_ionvelocity_axdist, alongtrack_els_ionvelocity_axdist) = plt.subplots(2)
@@ -159,6 +159,21 @@ ax6.set_ylabel("Alongtrack Velocity")
 ax6.legend()
 ax6.set_xlim(0,360)
 ax6.set_title("Southern Flybys")
+
+dist_fig, (northdist_ax, southdist_ax) = plt.subplots(2)
+sns.histplot(data=northern_flybys_df, x="ELS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+sns.histplot(data=northern_flybys_df, x="IBS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+sns.histplot(data=southern_flybys_df, x="IBS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+sns.histplot(data=southern_flybys_df, x="ELS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+
+northdist_ax.set_xlim(-maxwind,maxwind)
+southdist_ax.set_xlim(-maxwind,maxwind)
+northdist_ax.legend()
+southdist_ax.legend()
+northdist_ax.set_title("Northern Flybys")
+southdist_ax.set_title("Southern Flybys")
+northdist_ax.set_xlabel("")
+southdist_ax.set_xlabel("Alongtrack Velocity")
 
 ##----Alongtrack Actuation direction
 # neg_fig, neg_ax = plt.subplots()
