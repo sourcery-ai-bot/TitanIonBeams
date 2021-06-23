@@ -8,6 +8,8 @@ from scipy import stats
 from scipy.stats import norm
 import datetime
 from heliopy.data.cassini import mag_1min
+import spiceypy as spice
+import glob
 
 from matplotlib.lines import Line2D
 
@@ -15,6 +17,12 @@ matplotlib.rcParams.update({'font.size': 15})
 matplotlib.rcParams['axes.grid'] = True
 matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
+
+# if spice.ktotal('spk') == 0:
+#     for file in glob.glob("spice/**/*.*", recursive=True):
+#         spice.spiceypy.furnsh(file)
+#     count = spice.ktotal('ALL')
+#     print('Kernel count after load:        {0}\n'.format(count))
 
 def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     start = tempdatetime - datetime.timedelta(seconds=31)
@@ -28,14 +36,14 @@ def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     return mag_magnitude
 
 #--Generating Windsdf----
-#alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_2peaks.csv", index_col=0, parse_dates=True)
-#crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+# alongtrack_windsdf = pd.read_csv("alongtrackvelocity_1.035energy_2dfitting_2peaks.csv", index_col=0, parse_dates=True)
+# crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 # windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
 # windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 
 windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
 flybyslist = windsdf.Flyby.unique()
-# print(flybyslist)
+print(flybyslist)
 
 
 crary_windsdf = pd.read_csv("crarywinds.csv")
@@ -50,6 +58,18 @@ def add_magdata(windsdf):
         mag_magnitudes.append(tempmag)
     windsdf["BT"] = mag_magnitudes
 
+def add_angle_to_corot(windsdf):
+    angles_from_corot = []
+    for i in windsdf['Positive Peak Time']:
+        temp = datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S.%f")
+        et = spice.datetime2et(temp)
+        state, ltime = spice.spkezr("CASSINI", et, "IAU_TITAN", "NONE", "titan")
+        ramdir = spice.vhat(state[3:6])
+        #print("ramdir", ramdir)
+        #print("Angle to Corot Direction", spice.dpr() * spice.vsepg(ramdir, [0, 1], 2))
+        angles_from_corot.append(spice.dpr() * spice.vsep(ramdir, [0, -1, 0]))
+    windsdf["Angle2Corot"] = angles_from_corot
+
 # def add_electricfield(windsdf):
 #     ELS_crosstrack_Efield, ELS_alongtrack_Efield, IBS_crosstrack_Efield, IBS_alongtrack_Efield = [],[],[],[]
 #     for i in windsdf['BT']:
@@ -60,6 +80,7 @@ def add_magdata(windsdf):
 #     windsdf["BT"] = mag_magnitudes
 
 #add_magdata(windsdf)
+#add_angle_to_corot(windsdf)
 #windsdf.to_csv("winds_full.csv")
 
 #------ All processing above here--------
@@ -76,11 +97,11 @@ lonlatax.set_xlabel("Longitude")
 lonlatax.set_ylabel("Latitude")
 
 
-reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","BT","Solar Zenith Angle","Flyby"]]
+reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","Flyby"]]#, "BT","Solar Zenith Angle",]]
 reduced_windsdf2 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Altitude", "Longitude", "Latitude","Flyby"]]
-reduced_windsdf3 = windsdf[["IBS spacecraft potentials", "ELS spacecraft potentials", "LP Potentials", "Solar Zenith Angle", "Actuation Direction","Flyby"]]
+reduced_windsdf3 = windsdf[["IBS spacecraft potentials", "ELS spacecraft potentials", "LP Potentials", "Actuation Direction","Flyby"]]#,"Solar Zenith Angle", ]]
 reduced_windsdf4 = windsdf[["Positive Peak Energy", "Negative Peak Energy", "IBS crosstrack velocity","ELS crosstrack velocity", "Actuation Direction"]]
-reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Solar Zenith Angle","Flyby"]]
+reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Flyby" ]]# "Angle2Corot",,"Solar Zenith Angle",]]
 
 sns.pairplot(reduced_windsdf1,hue="Flyby",corner=True)
 sns.pairplot(reduced_windsdf2,hue="Flyby",corner=True)
@@ -132,16 +153,16 @@ alongax.set_ylim(-maxwind,maxwind)
 crossax.set_xlim(-maxwind,maxwind)
 crossax.set_ylim(-maxwind,maxwind)
 
-regfig2, (ax2) = plt.subplots(1)
-sns.regplot(data=windsdf, x="Solar Zenith Angle", y="IBS spacecraft potentials",ax=ax2,label="IBS")
-sns.regplot(data=windsdf, x="Solar Zenith Angle", y="ELS spacecraft potentials",ax=ax2,label="ELS")
-ax2.set_ylabel("Spacecraft potential")
-ax2.legend()
-regfig3, (ax3) = plt.subplots(1)
-sns.regplot(data=windsdf, x="Solar Zenith Angle", y="IBS alongtrack velocity",ax=ax3,label="IBS")
-sns.regplot(data=windsdf, x="Solar Zenith Angle", y="ELS alongtrack velocity",ax=ax3,label="ELS")
-ax3.set_ylabel("Alongtrack Velocity")
-ax3.legend()
+# regfig2, (ax2) = plt.subplots(1)
+# sns.regplot(data=windsdf, x="Solar Zenith Angle", y="IBS spacecraft potentials",ax=ax2,label="IBS")
+# sns.regplot(data=windsdf, x="Solar Zenith Angle", y="ELS spacecraft potentials",ax=ax2,label="ELS")
+# ax2.set_ylabel("Spacecraft potential")
+# ax2.legend()
+# regfig3, (ax3) = plt.subplots(1)
+# sns.regplot(data=windsdf, x="Solar Zenith Angle", y="IBS alongtrack velocity",ax=ax3,label="IBS")
+# sns.regplot(data=windsdf, x="Solar Zenith Angle", y="ELS alongtrack velocity",ax=ax3,label="ELS")
+# ax3.set_ylabel("Alongtrack Velocity")
+# ax3.legend()
 
 
 regfig4, (ax5, ax6) = plt.subplots(2)
@@ -160,11 +181,17 @@ ax6.legend()
 ax6.set_xlim(0,360)
 ax6.set_title("Southern Flybys")
 
+regfig5, ax8 = plt.subplots()
+sns.regplot(data=windsdf, x="IBS alongtrack velocity", y="IBS crosstrack velocity",ax=ax8)
+# ax5.set_xlabel(" ")
+# ax5.set_ylabel("Alongtrack Velocity")
+
+
 dist_fig, (northdist_ax, southdist_ax) = plt.subplots(2)
 sns.histplot(data=northern_flybys_df, x="ELS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
 sns.histplot(data=northern_flybys_df, x="IBS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
-sns.histplot(data=southern_flybys_df, x="IBS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
-sns.histplot(data=southern_flybys_df, x="ELS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+sns.histplot(data=southern_flybys_df, x="ELS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+sns.histplot(data=southern_flybys_df, x="IBS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
 
 northdist_ax.set_xlim(-maxwind,maxwind)
 southdist_ax.set_xlim(-maxwind,maxwind)
@@ -174,6 +201,19 @@ northdist_ax.set_title("Northern Flybys")
 southdist_ax.set_title("Southern Flybys")
 northdist_ax.set_xlabel("")
 southdist_ax.set_xlabel("Alongtrack Velocity")
+
+dist_fig2, (alongdist_ax, crossdist_ax) = plt.subplots(2)
+sns.histplot(data=windsdf, x="ELS alongtrack velocity", ax=alongdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+sns.histplot(data=windsdf, x="IBS alongtrack velocity", ax=alongdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+sns.histplot(data=windsdf, x="ELS crosstrack velocity", ax=crossdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+sns.histplot(data=windsdf, x="IBS crosstrack velocity", ax=crossdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+
+alongdist_ax.set_xlim(-maxwind,maxwind)
+crossdist_ax.set_xlim(-maxwind,maxwind)
+alongdist_ax.legend()
+crossdist_ax.legend()
+alongdist_ax.set_xlabel("Alongtrack Velocity")
+crossdist_ax.set_xlabel("Crosstrack Velocity")
 
 ##----Alongtrack Actuation direction
 # neg_fig, neg_ax = plt.subplots()

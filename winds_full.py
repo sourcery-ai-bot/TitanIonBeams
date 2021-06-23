@@ -189,6 +189,7 @@ def els_alongtrack_velocity(elsdata, tempdatetime):
     # return alongtrackvelocity
 
 
+
 # def ibs_alongtrack_velocity(ibsdata,tempdatetime):
 
 
@@ -249,7 +250,7 @@ usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't2
 
 # usedflybys = ['t42', 't46']
 # usedflybys = ['t16', 't17', 't29']
-`
+
 
 def CAPS_winds(data_times_pairs):
     elspeakslist = []
@@ -330,6 +331,12 @@ def cassini_SZA(tempdatetime,moon="TITAN"):
     SZA = spice.vsep(cassinidir,sundir) * spice.dpr()
     print("SZA", SZA)
     return SZA
+
+def satdir_from_titan(i):  # Only use for one flyby
+    et = spice.datetime2et(i)
+    satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+    return satdir
+
 for tempdatetime in data['Bulk Time']:
     SZA = cassini_SZA(tempdatetime)
     SZAs.append(SZA)
