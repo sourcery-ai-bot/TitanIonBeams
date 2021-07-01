@@ -765,8 +765,8 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs
     midpoints = [int(i) for i in np.convolve(peakvalue_indices[:, 0], np.ones(2) / 2, mode='valid')]
     # print(midpoints)
 
-    #LogTest
-    dataslice = np.log(ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, ibs_slicenumber_start:ibs_slicenumber_end])
+
+    dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, ibs_slicenumber_start:ibs_slicenumber_end]
 
 
     merged_dataslice = []
@@ -841,7 +841,7 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs
     energyax.plot(x, out.best_fit, 'k-', label='best fit')
 
     for i in ibs_masses:
-        energyax.plot(x,gaussian(x,out.params["mass"+str(i)+"_center"],out.params["mass"+str(i)+"_sigma"],out.params["mass"+str(i)+"_amplitude"]))
+        energyax.plot(x,gaussian(x,out.params["mass"+str(i)+"_center"],out.params["mass"+str(i)+"_sigma"],out.params["mass"+str(i)+"_height"]))
 
     energyax.text(0.6, 0.01,
                   "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
