@@ -298,6 +298,86 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
 
     return out, init
 
+def total_fluxgaussian_objective(xvalues, yvalues, masses, cassini_speed, windspeed, LPvalue, lpoffset, temperature, charge,
+                       FWHM):
+    gaussmodels = []
+    pars = Parameters()
+    eval_pars = Parameters()
+
+    if charge == 1:
+        pars.add('scp', value=LPvalue+0.25, min=LPvalue - 2, max=-0.2)
+        # pars.add('scp', value=LPvalue+lpoffset)
+        # pars['scp'].vary = False
+    elif charge == -1:
+        pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
+        # pars.add('scp', value=LPvalue+lpoffset)
+        # pars['scp'].vary = False
+
+    pars.add('temp_eV', value=8 * k * temperature)  # , min=130, max=170)
+    pars.add('spacecraftvelocity', value=cassini_speed)
+    pars.add('ionvelocity', value=windspeed, min=windspeed-500, max=windspeed+500)
+    pars['spacecraftvelocity'].vary = False
+    pars['temp_eV'].vary = False
+
+    pars.add('e', value=e)
+    pars.add('AMU', value=AMU)
+    pars.add('charge', value=charge)
+    pars['e'].vary = False
+    pars['AMU'].vary = False
+    pars['charge'].vary = False
+
+    for masscounter, mass in enumerate(masses):
+        tempprefix = "mass" + str(mass) + '_'
+        gaussmodels.append(GaussianModel(prefix=tempprefix))
+        pars.add(tempprefix, value=mass, vary=False)
+        if charge == 1:
+            sigmavals = IBS_fluxfitting_dict[tempprefix]['sigma']
+            #ampval = IBS_fluxfitting_dict_log[tempprefix]['amplitude'][0]
+        elif charge == -1:
+            # sigmaval = ELS_fluxfitting_dict[tempprefix]['sigma']
+            sigmavals = ELS_fluxfitting_dict[tempprefix]['sigma']
+            ampval = ELS_fluxfitting_dict[tempprefix]['amplitude'][0]
+
+        # effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*windspeed' #Windspeed defined positive if going in same direction as Cassini
+        # pars.add(tempprefix + "effectivescp", expr=effectivescpexpr)
+        pars.update(gaussmodels[-1].make_params())
+
+        temppeakflux = peakflux(mass, pars['spacecraftvelocity'], 0, LPvalue, temperature, charge=charge)
+        # print("mass", mass, "Init Flux", temppeakflux)
+
+        peakfluxexpr = '(0.5*(' + tempprefix + '*AMU)*((spacecraftvelocity+ionvelocity)**2) - scp*e*charge + temp_eV)/e'
+        pars[tempprefix + 'center'].set(expr=peakfluxexpr)
+        # min=temppeakflux - 2, max=temppeakflux + 2)
+
+        pars[tempprefix + 'sigma'].set(value=sigmavals[1], min=sigmavals[0], max=sigmavals[2])
+        pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (1 + sigmavals[1]), min=min(yvalues))
+
+
+    for counter, model in enumerate(gaussmodels):
+        if counter == 0:
+            mod = model
+        else:
+            mod = mod + model
+
+    init = mod.eval(pars, x=xvalues)
+    out = mod.fit(yvalues, pars, x=xvalues)
+
+    # if poor fit essentially
+    # if out.params['windspeed'].stderr is None or out.params['scp'].stderr is None:
+    #     maxscpincrease = 0.1
+    #     while out.params['windspeed'].stderr is None or out.params['scp'].stderr is None:
+    #         print("Trying better fit")
+    #         maxscpincrease += 0.1
+    #         pars["scp"].set(value=LPvalue + 0.1, min=LPvalue - 0.1, max=LPvalue + 0.15 + maxscpincrease)
+    #         out = mod.fit(yvalues, pars, x=xvalues)
+
+    print(out.fit_report(min_correl=0.7))
+
+    # Calculating CI's
+    # print(out.ci_report(p_names=["scp","windspeed"],sigmas=[1],verbose=True,with_offset=False,ndigits=2))
+
+    return out, init
+
 
 def titan_linearfit_temperature(altitude):
     if altitude > 1150:
