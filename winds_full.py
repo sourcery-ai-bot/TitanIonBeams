@@ -291,7 +291,10 @@ def CAPS_winds(data_times_pairs):
                 peaks.append(flyby)
                 peaks.append(str(titan_flybydates[flyby][2]) + '/' + str(titan_flybydates[flyby][1]) + '/' + str(
                     titan_flybydates[flyby][0]))
-                peaks.append(titan_flybyvelocities[flyby])
+                et = spice.datetime2et(heavypeaktime_pos)
+                state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+                cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+                peaks.append(cassini_speed)
                 peaks.append(CAPS_actuationtimeslice(ramtime, elsdata)[2])
                 elspeakslist.append(list(peaks))
             del elsdata
