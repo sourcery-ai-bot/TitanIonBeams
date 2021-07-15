@@ -68,7 +68,7 @@ def IBS_spectrogram(ibsdata, fan, starttime, seconds, ax=None, cax=None, fig=Non
     Plots single ibs fan
     """
     datacalib = ibscalib['ibspolyearray']
-    ibsnorm = LogNorm(vmin=1e11, vmax=1e14)
+    ibsnorm = LogNorm(vmin=1e11, vmax=5e14)
 
     for counter, i in enumerate(ibsdata['times_utc_strings']):
         if i >= starttime:
@@ -228,7 +228,7 @@ filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
                    "t23": ["13-jan-2007", "08:35:00"],
                    "t25": ["22-feb-2007", "03:08:00"],
                    "t26": ["10-mar-2007", "01:43:00"],
-                   "t27": ["26-mar-2007", "00:20:00"],
+                   "t27": ["26-mar-2007", "00:18:00"],
                    "t28": ["10-apr-2007", "22:53:00"],
                    "t29": ["26-apr-2007", "21:29:00"],
                    "t30": ["12-may-2007", "20:06:00"],
@@ -308,9 +308,10 @@ flyby_ramanodes = {"t16": [4, 5],
 
 
 def main():
-    flyby = "t50"
+    flyby = "t27"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
+    anode3 = anode2+1
     lowerenergy = 2
     upperenergy = 750
 
@@ -359,10 +360,11 @@ def main():
         heavypeaktimes_ibs.append(heavypeaktime_ibs)
         heavypeakenergies_ibs.append(heavypeakenergy_ibs)
 
-    fig, (elsax, elsax2, ibsax, actax) = plt.subplots(4, figsize=(18, 6), sharex="all")
-    ELS_spectrogram(elsdata, anode1, filedates_times[flyby][1], 420, ax=elsax, fig=fig)
-    ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 420, ax=elsax2, fig=fig)
-    IBS_spectrogram(ibsdata, 2, filedates_times[flyby][1], 420, ax=ibsax, fig=fig)
+    fig, (elsax, elsax2, elsax3, ibsax, actax) = plt.subplots(5, figsize=(18, 6), sharex="all")
+    ELS_spectrogram(elsdata, anode1, filedates_times[flyby][1], 540, ax=elsax, fig=fig)
+    ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 540, ax=elsax2, fig=fig)
+    ELS_spectrogram(elsdata, anode3, filedates_times[flyby][1], 540, ax=elsax3, fig=fig)
+    IBS_spectrogram(ibsdata, 2, filedates_times[flyby][1], 540, ax=ibsax, fig=fig)
 
     for peaktime, peakenergy, maxflux_anode in zip(heavypeaktimes, heavypeakenergies, maxflux_anodes):
         if maxflux_anode == (anode1 - 1):

@@ -22,7 +22,7 @@ elevations_30eV_edges = np.arange(-8.5, 9, 1)
 filelist_30eV = ["ELSC030B.DAT","ELSC030C.DAT","ELSC030D.DAT","ELSC030E.DAT","ELSC030F.DAT",
                  "ELSC030G.DAT","ELSC030H.DAT","ELSC030J.DAT","ELSC030K.DAT","ELSC030L.DAT","ELSC030M.DAT"] #Only half the files?
 
-def parse_ELS_energyangle():
+def parse_ELS_energyangle_elevation():
 
     #datafiles = glob.glob("ELS_energyangle_data/30eV/*")
     datafiles = ["ELS_energyangle_data/30eV/" + i for i in filelist_30eV]
@@ -47,7 +47,6 @@ def parse_ELS_energyangle():
                     elevationcounter += 1
         filecounter +=1
     return dataarray
-
 
 def plot_ELS_energyangle_anodes(data,anodeangle):
     fig, axes = plt.subplots(4, 2, sharex='all', sharey='all')
@@ -151,8 +150,11 @@ def convolution_2d(elsdata):
 
     fig.text(0.08, 0.5, 'Elevation', va='center', rotation='vertical',fontsize=25)
 
-els_30eV_data = parse_ELS_energyangle()
+els_30eV_data = parse_ELS_energyangle_elevation()
 
 multi_elevation_plot(els_30eV_data)
+#convolution_2d(els_30eV_data)
+
+
 
 plt.show()

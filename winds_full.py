@@ -288,6 +288,7 @@ def CAPS_winds(data_times_pairs):
                 # print("--------Next----------")
                 peaks.append(caps_ramdirection_time(elsdata, heavypeaktime_neg))
                 peaks.append(caps_ramdirection_azielv(heavypeaktime_neg)[0])
+                peaks.append(maxflux_anode + 1)
                 peaks.append(flyby)
                 peaks.append(str(titan_flybydates[flyby][2]) + '/' + str(titan_flybydates[flyby][1]) + '/' + str(
                     titan_flybydates[flyby][0]))
@@ -301,7 +302,7 @@ def CAPS_winds(data_times_pairs):
             del ibsdata
     capsdf = pd.DataFrame(elspeakslist, columns=["Negative Peak Time", "Negative Peak Energy", "Negative Azimuth Angle",
                                                  "Positive Peak Time", "Positive Peak Energy", "Positive Azimuth Angle",
-                                                 "Azimuthal Ram Time", "Azimuthal Ram Angle",
+                                                 "Azimuthal Ram Time", "Azimuthal Ram Angle", "Max Flux Anode",
                                                  "Flyby", "FlybyDate", "Flyby velocity", "Actuation Direction"])
 
     capsdf['Bulk Azimuth'] = capsdf[["Negative Azimuth Angle", "Positive Azimuth Angle"]].mean(axis=1)

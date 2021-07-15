@@ -770,7 +770,7 @@ def gaussian(x, mu, sig, amp):
 # flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-flybys = ['t83']
+flybys = ['t16']
 # flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
 #               't41', 't42', 't43', 't46'] # midlatitude flybys
 

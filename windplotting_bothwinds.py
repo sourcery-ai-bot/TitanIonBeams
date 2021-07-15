@@ -62,6 +62,8 @@ print(flybyslist)
 crary_windsdf = pd.read_csv("crarywinds.csv")
 crary_windsdf = crary_windsdf[crary_windsdf['Flyby'].isin([i.upper() for i in flybyslist])]
 
+#windsdf["IBS alongtrack velocity"] = windsdf["IBS alongtrack velocity"] + 180
+
 FullIonVelocity = windsdf["IBS alongtrack velocity"] + windsdf["Flyby velocity"]
 windsdf["FullIonVelocity"] = FullIonVelocity
 wind_predicted = windsdf["Flyby velocity"]
@@ -196,43 +198,43 @@ crossax.set_ylim(-maxwind,maxwind)
 # ax3.set_ylabel("Alongtrack Velocity")
 # ax3.legend()
 
-
-regfig4, (ax5, ax6) = plt.subplots(2)
-sns.regplot(data=northern_flybys_df, x="Longitude", y="IBS alongtrack velocity",order=2,ax=ax5,label="IBS")
-sns.regplot(data=northern_flybys_df, x="Longitude", y="ELS alongtrack velocity",order=2,ax=ax5,label="ELS")
-ax5.set_xlabel(" ")
-ax5.set_ylabel("Alongtrack Velocity")
-ax5.legend()
-ax5.set_xlim(0,360)
-ax5.set_title("Northern Flybys")
-
-sns.regplot(data=southern_flybys_df, x="Longitude", y="IBS alongtrack velocity",order=2,ax=ax6,label="IBS")
-sns.regplot(data=southern_flybys_df, x="Longitude", y="ELS alongtrack velocity",order=2,ax=ax6,label="ELS")
-ax6.set_ylabel("Alongtrack Velocity")
-ax6.legend()
-ax6.set_xlim(0,360)
-ax6.set_title("Southern Flybys")
-
-regfig5, ax8 = plt.subplots()
-sns.regplot(data=windsdf, x="IBS alongtrack velocity", y="IBS crosstrack velocity",ax=ax8)
+#
+# regfig4, (ax5, ax6) = plt.subplots(2)
+# sns.regplot(data=northern_flybys_df, x="Longitude", y="IBS alongtrack velocity",order=2,ax=ax5,label="IBS")
+# sns.regplot(data=northern_flybys_df, x="Longitude", y="ELS alongtrack velocity",order=2,ax=ax5,label="ELS")
+# ax5.set_xlabel(" ")
+# ax5.set_ylabel("Alongtrack Velocity")
+# ax5.legend()
+# ax5.set_xlim(0,360)
+# ax5.set_title("Northern Flybys")
+#
+# sns.regplot(data=southern_flybys_df, x="Longitude", y="IBS alongtrack velocity",order=2,ax=ax6,label="IBS")
+# sns.regplot(data=southern_flybys_df, x="Longitude", y="ELS alongtrack velocity",order=2,ax=ax6,label="ELS")
+# ax6.set_ylabel("Alongtrack Velocity")
+# ax6.legend()
+# ax6.set_xlim(0,360)
+# ax6.set_title("Southern Flybys")
+#
+# regfig5, ax8 = plt.subplots()
+# sns.regplot(data=windsdf, x="IBS alongtrack velocity", y="IBS crosstrack velocity",ax=ax8)
 # ax5.set_xlabel(" ")
 # ax5.set_ylabel("Alongtrack Velocity")
 
-
-dist_fig, (northdist_ax, southdist_ax) = plt.subplots(2)
-sns.histplot(data=northern_flybys_df, x="ELS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
-sns.histplot(data=northern_flybys_df, x="IBS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
-sns.histplot(data=southern_flybys_df, x="ELS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
-sns.histplot(data=southern_flybys_df, x="IBS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
-
-northdist_ax.set_xlim(-maxwind,maxwind)
-southdist_ax.set_xlim(-maxwind,maxwind)
-northdist_ax.legend()
-southdist_ax.legend()
-northdist_ax.set_title("Northern Flybys")
-southdist_ax.set_title("Southern Flybys")
-northdist_ax.set_xlabel("")
-southdist_ax.set_xlabel("Alongtrack Velocity")
+#
+# dist_fig, (northdist_ax, southdist_ax) = plt.subplots(2)
+# sns.histplot(data=northern_flybys_df, x="ELS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+# sns.histplot(data=northern_flybys_df, x="IBS alongtrack velocity", ax=northdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+# sns.histplot(data=southern_flybys_df, x="ELS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
+# sns.histplot(data=southern_flybys_df, x="IBS alongtrack velocity", ax=southdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
+#
+# northdist_ax.set_xlim(-maxwind,maxwind)
+# southdist_ax.set_xlim(-maxwind,maxwind)
+# northdist_ax.legend()
+# southdist_ax.legend()
+# northdist_ax.set_title("Northern Flybys")
+# southdist_ax.set_title("Southern Flybys")
+# northdist_ax.set_xlabel("")
+# southdist_ax.set_xlabel("Alongtrack Velocity")
 
 dist_fig2, (alongdist_ax, crossdist_ax) = plt.subplots(2)
 sns.histplot(data=windsdf, x="ELS alongtrack velocity", ax=alongdist_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="ELS")
@@ -344,18 +346,21 @@ latitude_velocityaxes[2,0].set_xlabel("Alongtrack Ion Velocity")
 #     massenergy_axes[counter, 0].set_ylabel("IBS Mass\n"+str(i)+" energy")
 #     massenergy_axes[counter, 1].set_ylabel("IBS Mass\n" + str(i) + " energy")
 
-# massenergy_fig2, massenergy_axes2 = plt.subplots(nrows=6,ncols=2,sharex='col')
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass28Energy",color='k',ax=massenergy_axes2[0,0])
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass40Energy",color='k',ax=massenergy_axes2[1,0])
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass53Energy",color='k',ax=massenergy_axes2[2,0])
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass66Energy",color='k',ax=massenergy_axes2[3,0])
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass78Energy",color='k',ax=massenergy_axes2[4,0])
-# sns.regplot(data=windsdf,x="FullIonVelocity",y="PredictedMass91Energy",color='k',ax=massenergy_axes2[5,0])
-# for counter, i in enumerate([28, 40, 53, 66, 78, 91]):
-#     sns.regplot(data=windsdf,x="FullIonVelocity",y="IBS Mass "+str(i)+" energy",color='C0',ax=massenergy_axes2[counter,0])
-#     sns.regplot(data=windsdf, x="IBS spacecraft potentials", y="IBS Mass " + str(i) + " energy", color='C0',ax=massenergy_axes2[counter, 1])
-#     massenergy_axes2[counter, 0].set_ylabel("IBS Mass\n"+str(i)+" energy")
-#     massenergy_axes2[counter, 1].set_ylabel("IBS Mass\n" + str(i) + " energy")
+
+
+
+
+slow_flybys = ['t16', 't17', 't19', 't21', 't23', 't71', 't83']
+
+normal_df = windsdf.loc[~windsdf['Flyby'].isin(slow_flybys)]
+anomalous_df = windsdf.loc[windsdf['Flyby'].isin(slow_flybys)]
+massenergy_fig2, massenergy_axes2 = plt.subplots(nrows=6,ncols=2,sharex='col',sharey='row')
+for counter, i in enumerate([28, 40, 53, 66, 78, 91]):
+    sns.regplot(data=normal_df,x="Angles to Zonal Wind",y="IBS Mass "+str(i)+" energy",color='k',ax=massenergy_axes2[counter, 0])
+    sns.regplot(data=anomalous_df, x="Angles to Zonal Wind", y="IBS Mass " + str(i) + " energy", color='r',
+                ax=massenergy_axes2[counter, 1])
+    massenergy_axes2[counter, 0].set_ylabel("IBS Mass\n"+str(i)+" energy")
+    massenergy_axes2[counter, 1].set_ylabel("IBS Mass\n" + str(i) + " energy")
 
 def gaussian(x, mu, sig, amp):
     return amp*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
@@ -365,7 +370,8 @@ x = np.linspace(-90, 90, 1000)
 y_2016 = gaussian(x,0,70/2.355,373)
 y_2017 = gaussian(x,3,101/2.355,196)
 y_MW2006 = gaussian(x,0,70/2.355,60)
-windsdf['Absolute IBS Zonal Velocity'] = abs(windsdf['IBS alongtrack velocity'] * np.cos(windsdf['Angles to Zonal Wind']*spice.rpd()))
+
+windsdf["Absolute IBS Zonal Velocity"] = abs(windsdf['IBS alongtrack velocity'] * np.cos(windsdf['Angles to Zonal Wind']*spice.rpd()))
 sns.scatterplot(data=windsdf, x="Latitude", y="Absolute IBS Zonal Velocity",ax=latitudedist_ax,label="Absolute IBS Zonal Velocity")
 latitudedist_ax.plot(x, y_2016, color='r', label="August 2016")
 latitudedist_ax.fill_between(x, y_2016-26.6, y_2016+26.6, color='r',alpha=0.25)
@@ -377,6 +383,30 @@ latitudedist_ax.set_ylabel("Zonal Wind Speeds (m/s)")
 
 anglefig, angleaxes = plt.subplots(2)
 windsdf['Absolute IBS crosstrack velocity'] = abs(windsdf['IBS crosstrack velocity'])
-sns.regplot(data=windsdf,x="Angles to Zonal Wind", y="IBS alongtrack velocity", ax=angleaxes[0])
-sns.regplot(data=windsdf,x="Angles to Zonal Wind", y='IBS crosstrack velocity', ax=angleaxes[1])
+
+sns.regplot(data=windsdf,x="Angles to Zonal Wind", y="IBS alongtrack velocity", ax=angleaxes[0],color='C0')
+sns.regplot(data=windsdf,x="Angles to Zonal Wind", y="ELS alongtrack velocity", ax=angleaxes[0],color='C1')
+z3 = np.polyfit(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"], 1)
+p3 = np.poly1d(z3)
+angleaxes[0].text(0.8, 0.075,"R = %.2f\n" % stats.pearsonr(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"])[
+                                           0] + "y = %.2fx + %2.0f" % (p3[1], p3[0]),
+                                       transform=angleaxes[0].transAxes, fontsize=14)
+
+sns.regplot(data=windsdf,x="Angles to Zonal Wind", y='IBS crosstrack velocity', ax=angleaxes[1],color='C0')
+sns.regplot(data=windsdf,x="Angles to Zonal Wind", y='ELS crosstrack velocity', ax=angleaxes[1],color='C1')
+angleaxes[0].set_ylabel("Alongtrack Velocity")
+angleaxes[1].set_ylabel("Crosstrack Velocity")
+
+
+quickfig, quickaxes = plt.subplots()
+sns.histplot(data=windsdf, x="Positive Deflection from Ram Angle", ax=quickaxes, bins=np.arange(-4, 4, 0.5), kde=True,color='C0',label="IBS")
+
+# quickfig2, quickaxes2 = plt.subplots()
+# markerlist = [".",",","x","v","^","<"]
+# for counter, i in enumerate([28, 40, 53, 66, 78, 91]):
+#     windsdf["IBS Mass "+str(i)+" energy normalised"] = windsdf["IBS Mass "+str(i)+" energy"]/max(windsdf["IBS Mass "+str(i)+" energy"])
+#     sns.scatterplot(data=windsdf, x="Angles to Zonal Wind", y="IBS Mass "+str(i)+" energy normalised", ax=quickaxes2,marker=markerlist[counter], hue="Flyby", label="IBS Mass "+str(i)+" energy")
+# quickaxes2.set_ylabel("IBS Energies - Normalised")
+# quickaxes2.get_legend().remove()
+
 plt.show()
