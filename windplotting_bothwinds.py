@@ -49,7 +49,7 @@ def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     return mag_magnitude
 
 #--Generating Windsdf----
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_2dfitting_2peaks.csv", index_col=0, parse_dates=True)
+alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
 crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
 windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
@@ -398,8 +398,8 @@ angleaxes[0].set_ylabel("Alongtrack Velocity")
 angleaxes[1].set_ylabel("Crosstrack Velocity")
 
 
-quickfig, quickaxes = plt.subplots()
-sns.histplot(data=windsdf, x="Positive Deflection from Ram Angle", ax=quickaxes, bins=np.arange(-4, 4, 0.5), kde=True,color='C0',label="IBS")
+# quickfig, quickaxes = plt.subplots()
+# sns.histplot(data=windsdf, x="Positive Deflection from Ram Angle", ax=quickaxes, bins=np.arange(-4, 4, 0.5), kde=True,color='C0',label="IBS")
 
 # quickfig2, quickaxes2 = plt.subplots()
 # markerlist = [".",",","x","v","^","<"]
@@ -408,5 +408,7 @@ sns.histplot(data=windsdf, x="Positive Deflection from Ram Angle", ax=quickaxes,
 #     sns.scatterplot(data=windsdf, x="Angles to Zonal Wind", y="IBS Mass "+str(i)+" energy normalised", ax=quickaxes2,marker=markerlist[counter], hue="Flyby", label="IBS Mass "+str(i)+" energy")
 # quickaxes2.set_ylabel("IBS Energies - Normalised")
 # quickaxes2.get_legend().remove()
+
+
 
 plt.show()

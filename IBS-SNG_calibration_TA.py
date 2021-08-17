@@ -42,7 +42,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     if charge == 1:
         pars.add('scp', value=LPvalue+0.25, min=LPvalue - 2, max=0)
         # pars.add('scp', value=LPvalue+lpoffset)
-        # pars['scp'].vary = False
+        #pars['scp'].vary = False
     elif charge == -1:
         pars.add('scp', value=LPvalue, min=LPvalue - 2, max=0)
         # pars.add('scp', value=LPvalue+lpoffset)
@@ -140,20 +140,29 @@ TASNG_endslice = CAPS_slicenumber(TASNGdata, end)
 
 fig, (elsax, ibsax, sngax) = plt.subplots(3, sharex="all", sharey="all")
 elsax.pcolormesh(TAELSdata['times_utc'][TAELS_startslice:TAELS_endslice], elscalib['earray'],
-                 TAELSdata['data'][:, 3, TAELS_startslice:TAELS_endslice], norm=LogNorm(vmin=50, vmax=5e4),
+                 TAELSdata['data'][:, 3, TAELS_startslice:TAELS_endslice], norm=LogNorm(vmin=50, vmax=6e4),
                  cmap='viridis')
 ibsax.pcolormesh(TAIBSdata['times_utc'][TAIBS_startslice:TAIBS_endslice], ibscalib['ibsearray'],
-                 TAIBSdata['ibsdata'][:, 1, TAIBS_startslice:TAIBS_endslice], norm=LogNorm(vmin=50, vmax=5e4),
+                 TAIBSdata['ibsdata'][:, 1, TAIBS_startslice:TAIBS_endslice], norm=LogNorm(vmin=256, vmax=8e5),
                  cmap='viridis')
 sngax.pcolormesh(TASNGdata['times_utc'][TASNG_startslice:TASNG_endslice], sngcalib['sngearray'],
-                 TASNGdata['sngdata'][:, 9, TASNG_startslice:TASNG_endslice], norm=LogNorm(vmin=50, vmax=5e4),
+                 TASNGdata['sngdata'][:, 8, TASNG_startslice:TASNG_endslice], norm=LogNorm(vmin=50, vmax=8e5),
                  cmap='viridis')
 sngax.set_yscale("log")
+elsax.set_ylabel("ELS Anode 4 \n ev/q")
 ibsax.set_ylabel("IBS Fan 2 \n ev/q")
 sngax.set_ylabel("SNG All Anodes \n ev/q")
+for ax in (elsax, ibsax, sngax):
+    ax.set_ylim(1,100)
 # plt.show()
 
 # slicetime = datetime.datetime(2004,10,26,15,29,45)
+
+def predicted_energy(mass,spacecraftvelocity,ionvelocity,spacecraftpotential):
+
+    energy = 0.5*mass*AMU*((spacecraftvelocity+ionvelocity)**2)/e-spacecraftpotential
+
+    return energy
 
 def intra_calibration(slicetime_sng, plot=True):
 
@@ -173,11 +182,12 @@ def intra_calibration(slicetime_sng, plot=True):
     TA_SNGslicetime_end = TASNGdata['times_utc'][TASNG_slice_end]
 
     lowerenergy = 2.3
-    upperenergy = 10
+    upperenergy_ibs = 10
+    upperenergy_sng = 10
     lowerenergyslice_ibs = CAPS_energyslice("ibs", lowerenergy, lowerenergy)[0]
-    upperenergyslice_ibs  = CAPS_energyslice("ibs", upperenergy, upperenergy)[0]
+    upperenergyslice_ibs  = CAPS_energyslice("ibs", upperenergy_ibs, upperenergy_ibs)[0]
     lowerenergyslice_sng = CAPS_energyslice("ims", lowerenergy, lowerenergy)[0]
-    upperenergyslice_sng  = CAPS_energyslice("ims", upperenergy, upperenergy)[0]
+    upperenergyslice_sng  = CAPS_energyslice("ims", upperenergy_sng, upperenergy_sng)[0]
 
     TAIBS_data = np.mean(TAIBSdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, TAIBS_slice:TAIBS_slice_end],axis=1) / (ibscalib['ibsgeom'] * 1e-4)
     TAIBS_series = pd.Series(TAIBS_data, index=ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs])
@@ -189,7 +199,7 @@ def intra_calibration(slicetime_sng, plot=True):
     IBS_shift = 1e13
 
     TAIBS_data_binned = TAIBS_sampledseries.to_numpy() * IBS_scaling
-    TASNG_data = np.mean(TASNGdata['sngdef'][lowerenergyslice_sng:upperenergyslice_sng, 8, TASNG_slice:TASNG_slice_end],axis=1)
+    TASNG_data = np.mean(TASNGdata['sngdef'][lowerenergyslice_sng:upperenergyslice_sng,8, TASNG_slice:TASNG_slice_end],axis=1)
 
 
 
@@ -198,10 +208,10 @@ def intra_calibration(slicetime_sng, plot=True):
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(slicetime_ibs), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
     #print(TAIBS_data, TAIBS_data.shape,type(TAIBS_data))
-    out_ibs = total_fluxgaussian(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs], TAIBS_data, masses=[15,28],cassini_speed=6.1e3,windspeed=-500,LPvalue=lpvalue,lpoffset=0,temperature=150,charge=1,FWHM=IBS_FWHM)
+    out_ibs = total_fluxgaussian(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs], TAIBS_data, masses=[15,28],cassini_speed=6.1e3,windspeed=0,LPvalue=lpvalue,lpoffset=0,temperature=150,charge=1,FWHM=IBS_FWHM)
     #print(TAIBS_data_binned.flatten(), TAIBS_data_binned.flatten().shape,type(TAIBS_data_binned))
     #out_ibs_binned = total_fluxgaussian(sngcalib['sngearray'], TAIBS_data_binned.flatten(), masses=[15,28],cassini_speed=6.1e3,windspeed=-500,LPvalue=lpvalue,lpoffset=-0.1,temperature=150,charge=1,FWHM=SNG_FWHM)
-    out_sng = total_fluxgaussian(sngcalib['sngearray'][lowerenergyslice_sng:upperenergyslice_sng], TASNG_data , masses=[15,28],cassini_speed=6.1e3,windspeed=-500,LPvalue=lpvalue,lpoffset=-0.1,temperature=150,charge=1,FWHM=SNG_FWHM)
+    out_sng = total_fluxgaussian(sngcalib['sngearray'][lowerenergyslice_sng:upperenergyslice_sng], TASNG_data , masses=[15,28],cassini_speed=6.1e3,windspeed=0,LPvalue=lpvalue,lpoffset=0,temperature=150,charge=1,FWHM=SNG_FWHM)
 
     for i in [out_ibs, out_sng]:
         if i.params['ionvelocity'].stderr is None:
@@ -220,8 +230,19 @@ def intra_calibration(slicetime_sng, plot=True):
                 label="SNG Data, " + str(TA_SNGslicetime) + " to " + str(TA_SNGslicetime_end))
         axes[1].plot(sngcalib['sngearray'][lowerenergyslice_sng:upperenergyslice_sng], out_sng.best_fit, 'c-', label='SNG best fit')
 
+        sc_vel = 6100
+        ion_vel = 0
+        lp_pot = lpvalue
+        predicted_15amu_eV = predicted_energy(15,sc_vel,ion_vel,lp_pot)
+        predicted_28amu_eV = predicted_energy(28,sc_vel,ion_vel,lp_pot)
+        axes[0].vlines([predicted_15amu_eV,predicted_28amu_eV],1e8,1e14,color='k')
+        axes[1].vlines([predicted_15amu_eV,predicted_28amu_eV], 1e8, 1e14, color='k')
+        axes[0].text(predicted_15amu_eV, 0.25*np.mean(TAIBS_data),
+                "%2.2f eV" % predicted_15amu_eV, color="k")
+        axes[0].text(predicted_28amu_eV, 0.25*np.mean(TAIBS_data),
+                "%2.2f eV" % predicted_28amu_eV, color="k")
 
-        for ax, out, instrument in zip(axes, [out_ibs, out_sng], ["IBS","IMS"]):
+        for ax, out, instrument, color in zip(axes, [out_ibs, out_sng], ["IBS","IMS"],["r","c"]):
             ax.set_yscale("log")
             ax.text(0.6, 0.01,
                     "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
@@ -230,9 +251,9 @@ def intra_calibration(slicetime_sng, plot=True):
                     instrument+"-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
                     transform=ax.transAxes)
             ax.text(0.6, .17, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
-            ax.set_ylim(bottom=1e9)
-            ax.text(out.params['mass15_center'].value, out.params['mass15_height'].value, "%2.2f eV" % out.params['mass15_center'].value)
-            ax.text(out.params['mass28_center'].value, out.params['mass28_height'].value, "%2.2f eV" % out.params['mass28_center'].value)
+            ax.set_ylim(bottom=1e10)
+            ax.text(out.params['mass15_center'].value, out.params['mass15_height'].value, "%2.2f eV" % out.params['mass15_center'].value,color=color)
+            ax.text(out.params['mass28_center'].value, out.params['mass28_height'].value*0.5, "%2.2f eV" % out.params['mass28_center'].value,color=color)
 
     # axes[2].step(sngcalib['sngearray'], TAIBS_data_binned , where='mid',
     #         label="IBS data, binned to SNG bins," + str(IBS_scaling) + " scale")
@@ -275,11 +296,11 @@ df = pd.DataFrame(columns=["Time","IBS 15u energy", "SNG 15u energy",
                                  "IBS SCP", "SNG SCP", "LP SCP"])
 
 #slicetime_sng = datetime.datetime(2004, 10, 26, 15, 34, 32)
-#slicetimes = [datetime.datetime(2004, 10, 26, 15, 27, 12)]
-slicetimes = [datetime.datetime(2004, 10, 26, 15, 25, 56),
-              datetime.datetime(2004, 10, 26, 15, 26, 48), datetime.datetime(2004, 10, 26, 15, 34, 36),
-              datetime.datetime(2004, 10, 26, 15, 34, 40), datetime.datetime(2004, 10, 26, 15, 34, 44),
-              datetime.datetime(2004, 10, 26, 15, 34, 48)]
+slicetimes = [datetime.datetime(2004, 10, 26, 15, 34, 36)]
+# slicetimes = [datetime.datetime(2004, 10, 26, 15, 25, 28),datetime.datetime(2004, 10, 26, 15, 25, 56),
+#               datetime.datetime(2004, 10, 26, 15, 26, 48), datetime.datetime(2004, 10, 26, 15, 34, 36),
+#               datetime.datetime(2004, 10, 26, 15, 34, 40), datetime.datetime(2004, 10, 26, 15, 34, 44),
+#               datetime.datetime(2004, 10, 26, 15, 34, 48)]
 
 for slicetime_sng in slicetimes:
     temp = [slicetime_sng] + list(intra_calibration(slicetime_sng))

@@ -258,7 +258,7 @@ flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 22), datetime.datet
                    "t23": [datetime.datetime(2007, 1, 13, 8, 35), datetime.datetime(2007, 1, 13, 8, 42)],
                    "t25": [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)],
                    "t26": [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)],
-                   "t27": [datetime.datetime(2007, 3, 26, 0, 21, 30), datetime.datetime(2007, 3, 26, 0, 26)],
+                   "t27": [datetime.datetime(2007, 3, 26, 0, 20, 30), datetime.datetime(2007, 3, 26, 0, 26)],
                    "t28": [datetime.datetime(2007, 4, 10, 22, 55, 40), datetime.datetime(2007, 4, 10, 23)],
                    "t29": [datetime.datetime(2007, 4, 26, 21, 29, 30), datetime.datetime(2007, 4, 26, 21, 35, 30)],
                    "t30": [datetime.datetime(2007, 5, 12, 20, 8, 20), datetime.datetime(2007, 5, 12, 20, 11, 45)],
@@ -308,7 +308,7 @@ flyby_ramanodes = {"t16": [4, 5],
 
 
 def main():
-    flyby = "t27"
+    flyby = "t25"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     anode3 = anode2+1
