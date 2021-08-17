@@ -403,6 +403,7 @@ windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 
+
 def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117],
                                numofflybys=1):
     et = spice.datetime2et(tempdatetime)
@@ -637,6 +638,78 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
     # print(tempdataslice)
     # print(tempx)
     return out, GOF, lpvalue
+
+def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 53, 66, 78, 91], numofflybys=1):
+    et = spice.datetime2et(tempdatetime)
+    state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+    slicenumber = CAPS_slicenumber(ibsdata, tempdatetime)
+    lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
+    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
+    print("interp lpvalue", lpvalue)
+
+    lowerenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][0] - lpvalue,
+                                        IBS_energybound_dict[ibsdata['flyby']][0] - lpvalue)[0]
+    upperenergyslice = CAPS_energyslice("ibs", IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue,
+                                        IBS_energybound_dict[ibsdata['flyby']][1] - lpvalue)[0]
+
+    windspeed = IBS_init_ionvelocity_dict[ibsdata['flyby']]
+    temperature = titan_linearfit_temperature(titanaltitude)
+
+    dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
+
+    # print("old x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice])
+    # print("new x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035 )
+    # x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
+    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035
+    # x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.073
+
+    dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
+
+    if numofflybys == 1:
+        stepplotfig_ibs, ax = plt.subplots()
+        stepplotfig_ibs.suptitle("Histogram of " + ibsdata['flyby'].upper() + " IBS data", fontsize=32)
+        ax.step(x, dataslice, where='mid')
+        ax.errorbar(x, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+        ax.set_yscale("log")
+        ax.set_xlim(1, 25)
+        ax.set_ylim(0.9 * min(dataslice), 1.1 * max(dataslice))
+        ax.set_ylabel("Counts [/s]", fontsize=16)
+        ax.tick_params(axis='both', which='major', labelsize=15)
+        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+        ax.minorticks_on()
+        ax.set_title(ibsdata['times_utc_strings'][slicenumber])
+        ax.set_xlabel("Energy [eV/q]", fontsize=14)
+
+    out = total_fluxgaussian(x, dataslice, ibs_masses, cassini_speed, windspeed, lpvalue,
+                             LP_offset_dict[ibsdata['flyby']], temperature,
+                             charge=1,
+                             FWHM=ELS_FWHM)
+    if out.params['ionvelocity'].stderr is None:
+        out.params['ionvelocity'].stderr = np.nan
+    if out.params['scp'].stderr is None:
+        out.params['scp'].stderr = np.nan
+    GOF = np.mean((abs(out.best_fit - dataslice) / dataslice) * 100)
+
+    if numofflybys == 1:
+        ax.plot(x, out.best_fit, 'r-', label='best fit')
+        ax.text(0.8, 0.01,
+                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .05,
+                "IBS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+        # ax.text(0.8, .32, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
+        ax.text(0.8, .13, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
+        # for mass in ibs_masses:
+        #     ax.plot(x, out["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+        # ax.legend(loc='best')
+
+    return out, GOF, lpvalue
+
 
 def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 52, 65, 77, 91],#[28, 40, 53, 66, 78, 91]
                                numofflybys=1):
