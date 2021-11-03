@@ -227,7 +227,13 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     eval_pars = Parameters()
 
     if charge == 1:
-        pars.add('scp', value=LPvalue+0.5, min=LPvalue+0.4, max=0.25)
+        if LPvalue+0.5 > 0:
+            startscp = LPvalue/2
+            minscp = LPvalue-1
+        else:
+            startscp = LPvalue+0.5
+            minscp = LPvalue-1
+        pars.add('scp', value=startscp, min=minscp, max=0)
         # pars.add('scp', value=LPvalue+lpoffset)
         # pars['scp'].vary = False
     elif charge == -1:
@@ -403,6 +409,90 @@ windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
 
+def ELS_fluxfitting(elsdata, tempdatetime, titanaltitude, lpdata, els_masses, numofflybys=1):  # [26, 50, 79, 117]
+    et = spice.datetime2et(tempdatetime)
+    state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+    els_slicenumber = CAPS_slicenumber(elsdata, tempdatetime)
+    lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
+    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
+
+    windspeed = -300
+    temperature = titan_linearfit_temperature(titanaltitude)
+
+    if len(els_masses) == 2:
+        energydict = ELS_smallenergybound_dict[elsdata['flyby']]
+    if len(els_masses) > 2:
+        energydict = ELS_energybound_dict[elsdata['flyby']]
+
+    els_lowerenergyslice = CAPS_energyslice("els", energydict[0], energydict[0])[0]
+    els_upperenergyslice = CAPS_energyslice("els", energydict[1], energydict[1])[0]
+    # x = elscalib['earray'][els_lowerenergyslice:els_upperenergyslice]
+    anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
+                              tempdatetime + datetime.timedelta(seconds=10))
+    print("anode", anode)
+
+    tempdataslice = list(
+        np.float32(ELS_backgroundremoval(elsdata, els_slicenumber, els_slicenumber + 1, datatype="data")[
+                   els_lowerenergyslice:els_upperenergyslice, anode, 0]))
+    tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
+
+    while tempdataslice[0] < 10:
+        tempdataslice.pop(0)
+        tempx.pop(0)
+
+    tempdataslice = np.array(tempdataslice)
+    tempdataslice[tempdataslice <= 0] = 1
+    dataslice = np.array(tempdataslice)
+
+    if numofflybys == 1:
+        stepplotfig_els, ax = plt.subplots()
+        stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data", fontsize=32)
+        ax.step(tempx, dataslice, where='mid')
+        ax.errorbar(tempx, dataslice, yerr=[np.sqrt(i) for i in dataslice], color='k', fmt='none')
+        ax.set_yscale("log")
+        # ax.set_xlim(1, 25)
+        ax.set_ylim(0.9 * min(dataslice), 1.1 * max(dataslice))
+        ax.set_ylabel("Counts [/s]", fontsize=16)
+        ax.tick_params(axis='both', which='major', labelsize=15)
+        ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+        ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+        ax.minorticks_on()
+        ax.set_title(elsdata['times_utc_strings'][els_slicenumber])
+        ax.set_xlabel("Energy [eV/q]", fontsize=14)
+        ax.set_xlim(1, 25)
+
+    out = total_fluxgaussian(np.array(tempx), dataslice, els_masses, cassini_speed, windspeed, lpvalue,
+                             LP_offset_dict[elsdata['flyby']], temperature,
+                             charge=-1,
+                             FWHM=ELS_FWHM)
+    if out.params['ionvelocity'].stderr is None:
+        out.params['ionvelocity'].stderr = np.nan
+    if out.params['scp'].stderr is None:
+        out.params['scp'].stderr = np.nan
+    GOF = np.mean((abs(out.best_fit - dataslice) / dataslice) * 100)
+
+    # for out in outputs:
+    #     print(out.params['ionvelocity'], out.params['scp'])
+    if numofflybys == 1:
+        ax.plot(tempx, out.best_fit, 'k-', label='best fit')
+        ax.text(0.8, 0.01,
+                "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .05,
+                "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                transform=ax.transAxes)
+        ax.text(0.8, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes)
+        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+        ax.text(0.8, .13, "Chi-square = %.2E" % out.chisqr, transform=ax.transAxes)
+        ax.text(0.8, .17, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes)
+    # comps = out.eval_components(x=x)
+    # for mass in els_masses:
+    #     stepplotax_els.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+
+    return out, GOF, lpvalue
+
+
 
 def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els_masses=[26, 50, 74, 117],
                                numofflybys=1):
@@ -553,52 +643,53 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, lpdata, els
         out.params['scp'].stderr = np.nan
     GOF = np.mean((abs(out.best_fit - merged_dataslice) / merged_dataslice) * 100)
 
-    energyfig, energyax = plt.subplots()
-    energyax.step(np.array(tempx),merged_dataslice, where='mid',color='b')
-    for counter, peakspair in enumerate(peakvalue_indices):
-        if counter == 0:
-            energyax.step(np.array(tempx)[0:midpoints[counter] + 1],
-                          merged_dataslice[0:midpoints[counter] + 1], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
-        elif counter == len(peakvalue_indices) - 1:
-            energyax.step(np.array(tempx)[midpoints[counter - 1]:],
-                          merged_dataslice[midpoints[counter - 1]:], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
-        else:
-            energyax.step(np.array(tempx)[midpoints[counter - 1]:midpoints[counter] + 1],
-                          merged_dataslice[midpoints[counter - 1]:midpoints[counter] + 1], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
-        # print("x",np.array(tempx)[midpoints[counter-1]:midpoints[counter]])
-        # print("dataslice",tempdataslice[midpoints[counter-1]:midpoints[counter], peakspair[1]])
-        # energyax.step(np.array(tempx)[peakspair[0]-3:peakspair[0]+4],tempdataslice[peakspair[0]-3:peakspair[0]+4,peakspair[1]], where='mid')
-    energyax.set_yscale("log")
-    energyax.set_xlim(1, 25)
-    energyax.set_ylim(bottom=2e3)
-    energyax.set_ylim(0.9 * min(merged_dataslice), 1.1 * max(merged_dataslice))
-    energyax.set_ylabel("Counts [/s]", fontsize=16)
-    energyax.tick_params(axis='both', which='major', labelsize=15)
-    energyax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    energyax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    energyax.minorticks_on()
-    energyax.set_xlabel("Energy [eV/q]", fontsize=14)
-    energyax.set_xlim(1, 25)
-    energyax.legend()
+    if numofflybys == 1:
+        energyfig, energyax = plt.subplots()
+        energyax.step(np.array(tempx),merged_dataslice, where='mid',color='b')
+        for counter, peakspair in enumerate(peakvalue_indices):
+            if counter == 0:
+                energyax.step(np.array(tempx)[0:midpoints[counter] + 1],
+                              merged_dataslice[0:midpoints[counter] + 1], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
+            elif counter == len(peakvalue_indices) - 1:
+                energyax.step(np.array(tempx)[midpoints[counter - 1]:],
+                              merged_dataslice[midpoints[counter - 1]:], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
+            else:
+                energyax.step(np.array(tempx)[midpoints[counter - 1]:midpoints[counter] + 1],
+                              merged_dataslice[midpoints[counter - 1]:midpoints[counter] + 1], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=elsdata['times_utc_strings'][els_slicenumber_start + peakspair[1]])
+            # print("x",np.array(tempx)[midpoints[counter-1]:midpoints[counter]])
+            # print("dataslice",tempdataslice[midpoints[counter-1]:midpoints[counter], peakspair[1]])
+            # energyax.step(np.array(tempx)[peakspair[0]-3:peakspair[0]+4],tempdataslice[peakspair[0]-3:peakspair[0]+4,peakspair[1]], where='mid')
+        energyax.set_yscale("log")
+        energyax.set_xlim(1, 25)
+        energyax.set_ylim(bottom=2e3)
+        energyax.set_ylim(0.9 * min(merged_dataslice), 1.1 * max(merged_dataslice))
+        energyax.set_ylabel("Counts [/s]", fontsize=16)
+        energyax.tick_params(axis='both', which='major', labelsize=15)
+        energyax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+        energyax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+        energyax.minorticks_on()
+        energyax.set_xlabel("Energy [eV/q]", fontsize=14)
+        energyax.set_xlim(1, 25)
+        energyax.legend()
 
-    energyax.plot(tempx, out.init_fit, 'b-', label='init fit')
-    energyax.plot(tempx, out.best_fit, 'k-', label='best fit')
-    energyax.text(0.6, 0.01,
-                  "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
-                  transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .05,
-                  "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                  transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=energyax.transAxes, fontsize=18)
-    # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
-    energyax.text(0.6, .13, "Chi-square = %.2E" % out.chisqr, transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .17, "My GOF = %2.0f %%" % GOF, transform=energyax.transAxes, fontsize=18)
+        energyax.plot(tempx, out.init_fit, 'b-', label='init fit')
+        energyax.plot(tempx, out.best_fit, 'k-', label='best fit')
+        energyax.text(0.6, 0.01,
+                      "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                      transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .05,
+                      "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                      transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=energyax.transAxes, fontsize=18)
+        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+        energyax.text(0.6, .13, "Chi-square = %.2E" % out.chisqr, transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .17, "My GOF = %2.0f %%" % GOF, transform=energyax.transAxes, fontsize=18)
 
     # energyvalues = np.array(tempx)[peakvalue_indices[:, 0]]
     # expectedenergies, expectedenergies_lp = [], []
@@ -660,8 +751,8 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
 
     # print("old x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice])
     # print("new x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035 )
-    # x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
-    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035
+    x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice]
+    #x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035
     # x = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.073
 
     dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice, 1, slicenumber]
@@ -711,7 +802,7 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28
     return out, GOF, lpvalue
 
 
-def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 52, 65, 77, 91],#[28, 40, 53, 66, 78, 91]
+def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs_masses=[28, 40, 53, 66, 78, 91],
                                numofflybys=1):
     et = spice.datetime2et(tempdatetime)
     state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
@@ -804,77 +895,79 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs
         out.params['scp'].stderr = np.nan
     GOF = np.mean((abs(out.best_fit - merged_dataslice) / merged_dataslice) * 100)
 
-    energyfig, energyax = plt.subplots()
-    energyax.step(np.array(x),merged_dataslice, where='mid',
-                          color="b", label="Merged dataslice")
-    for counter, peakspair in enumerate(peakvalue_indices):
-        if counter == 0:
-            energyax.step(np.array(x)[0:midpoints[counter] + 1],
-                          dataslice[0:midpoints[counter] + 1, peakspair[1]], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
-        elif counter == len(peakvalue_indices) - 1:
-            energyax.step(np.array(x)[midpoints[counter - 1]:],
-                          dataslice[midpoints[counter - 1]:, peakspair[1]], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
-        else:
-            energyax.step(np.array(x)[midpoints[counter - 1]:midpoints[counter] + 1],
-                          dataslice[midpoints[counter - 1]:midpoints[counter] + 1, peakspair[1]], where='mid',
-                          color="C" + str(peakspair[1]),
-                          label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
-        # print("x",np.array(tempx)[midpoints[counter-1]:midpoints[counter]])
-        # print("dataslice",tempdataslice[midpoints[counter-1]:midpoints[counter], peakspair[1]])
-        # energyax.step(np.array(tempx)[peakspair[0]-3:peakspair[0]+4],tempdataslice[peakspair[0]-3:peakspair[0]+4,peakspair[1]], where='mid')
-    energyax.set_yscale("log")
-    energyax.set_xlim(1, 25)
-    energyax.set_ylim(bottom=2e3)
-    energyax.set_ylim(0.9 * min(merged_dataslice), 1.1 * max(merged_dataslice))
-    energyax.set_ylabel("Counts [/s]", fontsize=16)
-    energyax.tick_params(axis='both', which='major', labelsize=15)
-    energyax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
-    energyax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
-    energyax.minorticks_on()
-    energyax.set_xlabel("Energy [eV/q]", fontsize=14)
-    energyax.set_xlim(1, 25)
-    energyax.legend()
+    if numofflybys == 1:
+        energyfig, energyax = plt.subplots()
+        # energyax.step(np.array(x),merged_dataslice, where='mid',
+        #                       color="b", label="Merged dataslice")
+        for counter, peakspair in enumerate(peakvalue_indices):
+            if counter == 0:
+                energyax.step(np.array(x)[0:midpoints[counter] + 1],
+                              dataslice[0:midpoints[counter] + 1, peakspair[1]], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
+            elif counter == len(peakvalue_indices) - 1:
+                energyax.step(np.array(x)[midpoints[counter - 1]:],
+                              dataslice[midpoints[counter - 1]:, peakspair[1]], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
+            else:
+                energyax.step(np.array(x)[midpoints[counter - 1]:midpoints[counter] + 1],
+                              dataslice[midpoints[counter - 1]:midpoints[counter] + 1, peakspair[1]], where='mid',
+                              color="C" + str(peakspair[1]),
+                              label=ibsdata['times_utc_strings'][ibs_slicenumber_start + peakspair[1]])
+            # print("x",np.array(tempx)[midpoints[counter-1]:midpoints[counter]])
+            # print("dataslice",tempdataslice[midpoints[counter-1]:midpoints[counter], peakspair[1]])
+            # energyax.step(np.array(tempx)[peakspair[0]-3:peakspair[0]+4],tempdataslice[peakspair[0]-3:peakspair[0]+4,peakspair[1]], where='mid')
+        energyax.set_yscale("log")
+        energyax.set_xlim(1, 25)
+        energyax.set_ylim(bottom=2e3)
+        energyax.set_ylim(0.9 * min(merged_dataslice), 1.1 * max(merged_dataslice))
+        energyax.set_ylabel("Counts [/s]", fontsize=16)
+        energyax.tick_params(axis='both', which='major', labelsize=15)
+        energyax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+        energyax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+        energyax.minorticks_on()
+        energyax.set_xlabel("Energy [eV/q]", fontsize=14)
+        energyax.set_xlim(1, 25)
+        energyax.legend()
 
 
 
-    energyax.plot(x, out.init_fit, 'b-', label='init fit')
-    energyax.plot(x, out.best_fit, 'k-', label='best fit')
+        energyax.plot(x, out.init_fit, 'b-', label='init fit')
+        energyax.plot(x, out.best_fit, 'k-', label='best fit')
 
-    for i in ibs_masses:
-        energyax.plot(x,gaussian(x,out.params["mass"+str(i)+"_center"],out.params["mass"+str(i)+"_sigma"],out.params["mass"+str(i)+"_height"]))
+        for i in ibs_masses:
+            energyax.plot(x,gaussian(x,out.params["mass"+str(i)+"_center"],out.params["mass"+str(i)+"_sigma"],out.params["mass"+str(i)+"_height"]))
 
-    energyax.text(0.6, 0.01,
-                  "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
-                  transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .05,
-                  "IBS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
-                  transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=energyax.transAxes, fontsize=18)
-    # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
-    energyax.text(0.6, .13, "Chi-square = %.2E" % out.chisqr, transform=energyax.transAxes, fontsize=18)
-    energyax.text(0.6, .17, "My GOF = %2.0f %%" % GOF, transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, 0.01,
+                      "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
+                      transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .05,
+                      "IBS-derived S/C Potential = %2.2f ± %2.2f V" % (out.params['scp'], out.params['scp'].stderr),
+                      transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=energyax.transAxes, fontsize=18)
+        # ax.text(0.8, .20, "Temp = %2.2f" % temperature, transform=ax.transAxes)
+        energyax.text(0.6, .13, "Chi-square = %.2E" % out.chisqr, transform=energyax.transAxes, fontsize=18)
+        energyax.text(0.6, .17, "My GOF = %2.0f %%" % GOF, transform=energyax.transAxes, fontsize=18)
 
-    print("ibsdata",ibsdata['ibsdata'].shape)
+    #print("ibsdata",ibsdata['ibsdata'].shape)
     single_dataslice = ibsdata['ibsdata'][lowerenergyslice:upperenergyslice+5, fan, ibs_slicenumber_start+peakvalue_indices[-1][1]]
     x2 = ibscalib['ibsearray'][lowerenergyslice:upperenergyslice+5]
-    energyax.step(np.array(x2),single_dataslice, where='mid',color="c", label="Single dataslice")
-    print(single_dataslice)
+    # if numofflybys == 1:
+    #     energyax.step(np.array(x2),single_dataslice, where='mid',color="c", label="Single dataslice")
+    #print(single_dataslice)
     peaks, properties = find_peaks(single_dataslice, height=1e4, prominence=1e4, width=0.2, rel_height=0.5,
                                    distance=5)
-    print("Peaks",peaks)
+    #print("Peaks",peaks)
     energyvalues = np.array(x2)[peaks]
     expectedenergies, expectedenergies_lp = [], []
     for mass in ibs_masses[:len(energyvalues)]:
         expectedenergies.append((0.5 * (mass * AMU) * ((cassini_speed) ** 2)) / e)
         expectedenergies_lp.append(
             (0.5 * (mass * AMU) * ((cassini_speed) ** 2) - ((lpvalue) * e) + (8 * k * temperature)) / e)
-    print(energyvalues[:len(ibs_masses)], expectedenergies, expectedenergies_lp)
+    #print(energyvalues[:len(ibs_masses)], expectedenergies, expectedenergies_lp)
     energyoffset = energyvalues[:len(ibs_masses)] - np.array(expectedenergies_lp)
-    print(energyoffset)
+    #print(energyoffset)
 
     if numofflybys == 1:
         fig1, (ax1, ax2) = plt.subplots(1, 2)
@@ -883,10 +976,10 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, lpdata, ibs
         fig1.subplots_adjust(wspace=0.05)
 
     z, cov = np.polyfit(x=np.array(ibs_masses[:len(energyvalues)]), y=energyoffset, deg=1, cov=True)
-    print(z)
+    #print(z)
     ionwindspeed = (z[0] * (e / AMU)) / (cassini_speed)
     ionwindspeed_err = (np.sqrt(np.diag(cov)[0]) * (e / AMU)) / (cassini_speed)
-    print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
+    #print(ibsdata['flyby'], " Ion wind velocity = %2.2f ± %2.2f m/s" % (ionwindspeed, ionwindspeed_err))
 
     if numofflybys == 1:
         fig, ax = plt.subplots()
@@ -942,6 +1035,7 @@ def detect_peaks(image):
 def multiple_alongtrackwinds_flybys(usedflybys):
     outputdf = pd.DataFrame()
     for flyby in usedflybys:
+        print("Flyby", flyby)
         tempdf = windsdf[windsdf['Flyby'] == flyby.lower()]
         elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
         generate_mass_bins(elsdata, flyby, "els")
@@ -950,6 +1044,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         ibs_outputs, ibs_datetimes, ibs_GOFvalues, lpvalues, cassini_speeds = [], [], [], [],[]
         els_outputs, els_datetimes, els_GOFvalues = [], [], []
         zonalangles, zonalwinds_2016, zonalwinds_2017 = [], [], []
+        x_titan, y_titan, z_titan, dx_titan, dy_titan, dz_titan = [], [], [], [], [], []
         lptimes = list(tempdf['Positive Peak Time'])
         lpdata = read_LP_V1(flyby)
 
@@ -984,6 +1079,12 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             et = spice.datetime2et(i)
             alt, lat, lon = cassini_titan_altlatlon(i)
             state, ltime = spice.spkezr("CASSINI", et, "IAU_TITAN", "NONE", "titan")
+            x_titan.append(state[0])
+            y_titan.append(state[1])
+            z_titan.append(state[2])
+            dx_titan.append(state[3])
+            dy_titan.append(state[4])
+            dz_titan.append(state[5])
             ramdir = spice.vhat(state[3:6])
             titandir, state = titan_dir(i)
             titandir_unorm = spice.vhat(titandir)
@@ -1069,6 +1170,12 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             tempoutputdf['Flyby velocity'] = cassini_speeds
             tempoutputdf['Positive Peak Time'] = tempdf['Positive Peak Time']
             tempoutputdf['Negative Peak Time'] = tempdf['Negative Peak Time']
+            tempoutputdf['X Titan'] = x_titan
+            tempoutputdf['Y Titan'] = y_titan
+            tempoutputdf['Z Titan'] = z_titan
+            tempoutputdf['DX Titan'] = dx_titan
+            tempoutputdf['DY Titan'] = dy_titan
+            tempoutputdf['DZ Titan'] = dz_titan
             tempoutputdf['IBS alongtrack velocity'] = [i.params['ionvelocity'].value for i in ibs_outputs]
             tempoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_outputs]
             tempoutputdf['ELS alongtrack velocity'] = [i.params['ionvelocity'].value for i in els_outputs]
@@ -1083,7 +1190,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             tempoutputdf['IBS Mass 66 energy'] = [i.params['mass66_center'].value for i in ibs_outputs]
             tempoutputdf['IBS Mass 78 energy'] = [i.params['mass78_center'].value for i in ibs_outputs]
             tempoutputdf['IBS Mass 91 energy'] = [i.params['mass91_center'].value for i in ibs_outputs]
-            print(tempoutputdf)
+            #print(tempoutputdf)
             outputdf = pd.concat([outputdf, tempoutputdf])
     if len(usedflybys) != 1:
         outputdf.to_csv("alongtrackvelocity.csv")
@@ -1152,10 +1259,9 @@ def non_actuating(flyby, tempdatetime):
 
 
 #non_actuating_test("ta", datetime.datetime(2004,10,26,15, 31, 27))
-single_slice_test("t16", slicenumber=4)
-#multiple_alongtrackwinds_flybys(["t16"])
-# multiple_alongtrackwinds_flybys(
-#     ['t16', 't17'])
+#single_slice_test("t48", slicenumber=2)
+#multiple_alongtrackwinds_flybys(["t48"])
+multiple_alongtrackwinds_flybys(['t43'])
 # multiple_alongtrackwinds_flybys(
 #     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
 # multiple_alongtrackwinds_flybys(

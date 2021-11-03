@@ -606,6 +606,7 @@ def crosstrack_xyz_plot():
     axxz.set_box_aspect(1)
 
     magnitudes, windspeeds, flybyslist, flybycolors = [], [], [], []
+    times = []
     negwindspeed_crosstracks, poswindspeed_crosstracks, negwindspeed_alongtracks, poswindspeed_alongtracks = [],[],[],[]
     crosstrack_states = []
     titan_dirs, ramdirs = [], []
@@ -635,6 +636,7 @@ def crosstrack_xyz_plot():
 
                 flybyslist.append(flyby)
             titandir, state = titan_dir(time)
+            times.append(time)
             titan_dirs.append(spice.unorm(titandir)[0] * 300)
             ramdirs.append(spice.vhat(state[3:6]))
 
@@ -647,7 +649,7 @@ def crosstrack_xyz_plot():
         print(negwindspeed_crosstracks[:, 3], negwindspeed_alongtracks[:, 3])
 
 
-        for i, titandir_unorm, ramdir in zip(negwindspeed_crosstracks, titan_dirs, ramdirs):
+        for i, titandir_unorm, ramdir, time in zip(negwindspeed_crosstracks, titan_dirs, ramdirs, times):
 
             parallel_to_titan_plane = spice.nvp2pl(i[:3],i[:3])
             print(parallel_to_titan_plane)
@@ -658,7 +660,7 @@ def crosstrack_xyz_plot():
             print("two vectors",spice.pl2psv(parallel_to_titan_plane))
             print(i[:3], titandir_unorm, spice.vhat(parallel_to_titan), parallel_to_titan_projected)
 
-
+            axxy.text(i[0], i[1],time)
             axxy.arrow(i[0], i[1], titandir_unorm[0], titandir_unorm[1], color='b')
             axxy.arrow(i[0], i[1], parallel_to_titan[0], parallel_to_titan[1], color='m')
             axxy.arrow(i[0], i[1], parallel_to_titan_noZ[0], parallel_to_titan_noZ[1], color='y')
@@ -770,7 +772,7 @@ def gaussian(x, mu, sig, amp):
 # flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-flybys = ['t16']
+flybys = ['t40']
 # flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
 #               't41', 't42', 't43', 't46'] # midlatitude flybys
 

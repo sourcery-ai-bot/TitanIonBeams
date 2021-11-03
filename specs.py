@@ -61,9 +61,9 @@ plt.rcParams['date.epoch'] = '0000-12-31'
 # generate_mass_bins(T25ELSdata, "t25", "els")
 # ELS_spectrogram(T25ELSdata, [2, 3, 4, 5], "03:08:00", 600)
 #
-# T25IBSdata = readsav("data/ibs/ibsres_22-feb-2007.dat")
-# generate_mass_bins(T25IBSdata, "t25", "ibs")
-# IBS_spectrogram(T25IBSdata, [1], "03:08:00", 600)
+T25IBSdata = readsav("data/ibs/ibsres_22-feb-2007.dat")
+generate_mass_bins(T25IBSdata, "t25", "ibs")
+IBS_spectrogram(T25IBSdata, [0,1,2,3], "03:08:00", 600)
 
 # T26ELSdata = readsav("data/els/elsres_10-mar-2007.dat")
 # generate_mass_bins(T26ELSdata, "t26", "els")

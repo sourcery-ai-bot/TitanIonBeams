@@ -15,6 +15,7 @@ matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
 
 # ---Alongtrack stats-----
+#alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
 alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
 crary_windsdf = pd.read_csv("crarywinds.csv")
 desai_windsdf = pd.read_csv("DesaiPotentials.csv")
@@ -83,7 +84,7 @@ els_regfig, els_regax = plt.subplots()
 sns.regplot(data=alongtrack_windsdf, x="IBS spacecraft potentials", y="ELS spacecraft potentials",ax=els_regax)
 
 flyby_potentialfig, flyby_potentialax = plt.subplots()
-sns.pointplot(x="Flyby", y="ELS Potential", data=desai_windsdf,join=False,color='g',ax=flyby_potentialax,capsize=.2)
+#sns.pointplot(x="Flyby", y="ELS Potential", data=desai_windsdf,join=False,color='g',ax=flyby_potentialax,capsize=.2)
 sns.pointplot(x="Flyby", y="IBS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C0',ax=flyby_potentialax,capsize=.2)
 sns.pointplot(x="Flyby", y="LP Potentials", data=alongtrack_windsdf,join=False,color='r',ax=flyby_potentialax,capsize=.2)
 sns.pointplot(x="Flyby", y="ELS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C1',ax=flyby_potentialax,capsize=.2)
@@ -93,9 +94,9 @@ flyby_potentialax.legend(handles=[Line2D([0], [0], marker='o', color='C0', label
           Line2D([0], [0], marker='o', color='C1', label='ELS',
                           markerfacecolor='C1', markersize=8),
           Line2D([0], [0], marker='o', color='r', label='LP',
-               markerfacecolor='r', markersize=8),
-          Line2D([0], [0], marker='o', color='g', label='Desai+, 2018; ELS',
-               markerfacecolor='g', markersize=8)]
+               markerfacecolor='r', markersize=8)]
+          # Line2D([0], [0], marker='o', color='g', label='Desai+, 2018; ELS',
+          #      markerfacecolor='g', markersize=8)]
                 )
 maxlp = alongtrack_windsdf.groupby('Flyby', as_index=False)["LP Potentials"].max()
 minlp = alongtrack_windsdf.groupby('Flyby', as_index=False)["LP Potentials"].min()
@@ -121,9 +122,9 @@ flyby_velocityax.legend(handles=[Line2D([0], [0], marker='o', color='C0', label=
 )
 
 #----------------Unconstrained----------------
-flyby_potentialax.plot(flybyslist,minlp["LP Potentials"]-2,color='k',linestyle='--')
-flyby_potentialax.plot(flybyslist,[0]*len(flybyslist),color='k',linestyle='--')
-flyby_potentialax.set_title("Derived s/c potential bounds, [LPvalue-2,0] \n Derived ion velocity bounds, [-500,500]")
+#flyby_potentialax.plot(flybyslist,minlp["LP Potentials"]-2,color='k',linestyle='--')
+#flyby_potentialax.plot(flybyslist,[0]*len(flybyslist),color='k',linestyle='--')
+#flyby_potentialax.set_title("Derived s/c potential bounds, [LPvalue-2,0] \n Derived ion velocity bounds, [-500,500]")
 flyby_velocityax.plot(flybyslist,[500]*len(flybyslist),color='k',linestyle='--')
 flyby_velocityax.plot(flybyslist,[-500]*len(flybyslist),color='k',linestyle='--')
 flyby_velocityax.set_title("Derived s/c potential bounds, [LPvalue-2,0] \n Derived ion velocity bounds, [-500,500]")

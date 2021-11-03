@@ -13,6 +13,7 @@ import glob
 import scipy
 
 from matplotlib.lines import Line2D
+import matplotlib.colors as mcolors
 
 matplotlib.rcParams.update({'font.size': 15})
 matplotlib.rcParams['axes.grid'] = True
@@ -37,6 +38,10 @@ if spice.ktotal('spk') == 0:
     count = spice.ktotal('ALL')
     print('Kernel count after load:        {0}\n'.format(count))
 
+
+
+
+
 def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     start = tempdatetime - datetime.timedelta(seconds=31)
     end = tempdatetime + datetime.timedelta(seconds=31)
@@ -49,12 +54,12 @@ def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     return mag_magnitude
 
 #--Generating Windsdf----
-alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
-crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
-windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
+# alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
+# crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+# windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
+# windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 
-# windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
+windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
 flybyslist = windsdf.Flyby.unique()
 print(flybyslist)
 
@@ -66,14 +71,14 @@ crary_windsdf = crary_windsdf[crary_windsdf['Flyby'].isin([i.upper() for i in fl
 
 FullIonVelocity = windsdf["IBS alongtrack velocity"] + windsdf["Flyby velocity"]
 windsdf["FullIonVelocity"] = FullIonVelocity
-wind_predicted = windsdf["Flyby velocity"]
-lpvalues_predicted = windsdf["LP Potentials"]
-windsdf["PredictedMass28Energy"] = predicted_energy(28,wind_predicted ,lpvalues_predicted)
-windsdf["PredictedMass40Energy"] = predicted_energy(40,wind_predicted ,lpvalues_predicted)
-windsdf["PredictedMass53Energy"] = predicted_energy(53,wind_predicted ,lpvalues_predicted)
-windsdf["PredictedMass66Energy"] = predicted_energy(66,wind_predicted ,lpvalues_predicted)
-windsdf["PredictedMass78Energy"] = predicted_energy(78,wind_predicted ,lpvalues_predicted)
-windsdf["PredictedMass91Energy"] = predicted_energy(91,wind_predicted ,lpvalues_predicted)
+# wind_predicted = windsdf["Flyby velocity"]
+# lpvalues_predicted = windsdf["LP Potentials"]
+# windsdf["PredictedMass28Energy"] = predicted_energy(28,wind_predicted ,lpvalues_predicted)
+# windsdf["PredictedMass40Energy"] = predicted_energy(40,wind_predicted ,lpvalues_predicted)
+# windsdf["PredictedMass53Energy"] = predicted_energy(53,wind_predicted ,lpvalues_predicted)
+# windsdf["PredictedMass66Energy"] = predicted_energy(66,wind_predicted ,lpvalues_predicted)
+# windsdf["PredictedMass78Energy"] = predicted_energy(78,wind_predicted ,lpvalues_predicted)
+# windsdf["PredictedMass91Energy"] = predicted_energy(91,wind_predicted ,lpvalues_predicted)
 
 # reduced_windsdf_ibsenergies = windsdf[["IBS alongtrack velocity", "FullIonVelocity", "IBS spacecraft potentials", "IBS Mass 28 energy",\
 #                                        "IBS Mass 40 energy","IBS Mass 53 energy","IBS Mass 66 energy","IBS Mass 78 energy",\
@@ -101,7 +106,7 @@ def add_angle_to_corot(windsdf):
         ramdir = spice.vhat(state[3:6])
         #print("ramdir", ramdir)
         #print("Angle to Corot Direction", spice.dpr() * spice.vsepg(ramdir, [0, 1], 2))
-        angles_from_corot.append(spice.dpr() * spice.vsep(ramdir, [0, -1, 0]))
+        angles_from_corot.append(spice.dpr() * spice.vsep(ramdir, [0, 1, 0]))
     windsdf["Angle2Corot"] = angles_from_corot
 
 # def add_electricfield(windsdf):
@@ -113,9 +118,9 @@ def add_angle_to_corot(windsdf):
 #         mag_magnitudes.append(tempmag)
 #     windsdf["BT"] = mag_magnitudes
 
-#add_magdata(windsdf)
-add_angle_to_corot(windsdf)
-#windsdf.to_csv("winds_full.csv")
+# add_magdata(windsdf)
+# add_angle_to_corot(windsdf)
+# windsdf.to_csv("winds_full.csv")
 
 #------ All processing above here--------
 
@@ -131,17 +136,17 @@ lonlatax.set_xlabel("Longitude")
 lonlatax.set_ylabel("Latitude")
 
 
-reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","Flyby"]]#, "BT","Solar Zenith Angle",]]
+reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","Flyby", "BT"]]#, "BT","Solar Zenith Angle",]]
 reduced_windsdf2 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Altitude", "Longitude", "Latitude","Flyby"]]
 reduced_windsdf3 = windsdf[["IBS spacecraft potentials", "ELS spacecraft potentials", "LP Potentials", "Actuation Direction","Flyby"]]#,"Solar Zenith Angle", ]]
 reduced_windsdf4 = windsdf[["Positive Peak Energy", "Negative Peak Energy", "IBS crosstrack velocity","ELS crosstrack velocity", "Actuation Direction"]]
-reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Flyby" ]]# "Angle2Corot",,"Solar Zenith Angle",]]
+reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "Altitude", "Flyby", "Angle2Corot" ]]# "Angle2Corot",,"Solar Zenith Angle",]]
 
-sns.pairplot(reduced_windsdf1,hue="Flyby",corner=True)
-sns.pairplot(reduced_windsdf2,hue="Flyby",corner=True)
-sns.pairplot(reduced_windsdf3,hue="Flyby",corner=True)
-sns.pairplot(reduced_windsdf4,corner=True)
-sns.pairplot(reduced_windsdf5,hue="Flyby",corner=True)
+sns.pairplot(reduced_windsdf1,hue="Flyby")
+sns.pairplot(reduced_windsdf2,hue="Flyby")
+sns.pairplot(reduced_windsdf3,hue="Flyby")
+sns.pairplot(reduced_windsdf4)
+sns.pairplot(reduced_windsdf5,hue="Flyby")
 
 # print(windsdf)
 maxwind = 500
@@ -409,6 +414,195 @@ angleaxes[1].set_ylabel("Crosstrack Velocity")
 # quickaxes2.set_ylabel("IBS Energies - Normalised")
 # quickaxes2.get_legend().remove()
 
+flybys_disagreeing = ["t16","t21","t36","t39","t40","t41","t42","t48","t49","t51","t83"]
+flybys_agreeing = sorted(list(set(flybyslist) - set(flybys_disagreeing)))
+flybys_disagreeing_midlatitude = ["t40","t41","t42","t48"]
+print(flybys_agreeing)
+
+def alt_vel_plot(flybyslist):
+
+    fig, ax = plt.subplots()
+
+    ax.set_ylabel("Altitude [km]")
+    for flyby in flybyslist:
+        if flyby in list(windsdf['Flyby']):
+            tempdf = windsdf[windsdf['Flyby']==flyby]
+            tempdf.reset_index(inplace=True)
+            #print(flyby)
+
+            minalt_index = tempdf["Altitude"].idxmin()
+            #print(minalt_index)
+
+            if flyby in flybys_disagreeing:
+                #print("here, disagree")
+                sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C0',markers=['x'])
+                sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C1',markers=['x'])
+            else:
+                #print("here, agree")
+                sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C0')
+                sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C1')
+
+    ax.set_title(flyby)
+    ax.set_xlabel("Alongtrack Velocities [m/s]")
+    minvel = -250
+    maxvel= 250
+    ax.set_xlim(minvel,maxvel)
+    ax.set_ylim(bottom=950,top=1300)
+
+def Titan_frame_plot(flybys):
+
+    # average_latitude = np.mean(singleflyby_df['Latitude'])
+    # print(average_latitude,np.cos(average_latitude*spice.rpd())*2575.15)
+    # Titan_current_radius = np.cos(average_latitude*spice.rpd())*2575.15
+
+    Titan_current_radius = 2575.15
+    lower_layer_alt = 1030
+    middle_layer_alt = 1300
+    upper_layer_alt = 0
+
+
+    TitanBody_xy = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5)
+    TitanLower_xy = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='k', fill=False,
+                               linestyle='--')
+    TitanMiddle_xy = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=False,
+                                linestyle='-.')
+    TitanExobase_xy = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='k', fill=False)
+    TitanBody_yz = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5)
+    TitanLower_yz = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='k', fill=False,
+                               linestyle='--')
+    TitanMiddle_yz = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=False,
+                                linestyle='-.')
+    TitanExobase_yz = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='k', fill=False)
+    TitanBody_xz = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5)
+    TitanLower_xz = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='k', fill=False,
+                               linestyle='--')
+    TitanMiddle_xz = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=False,
+                                linestyle='-.')
+    TitanExobase_xz = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='k', fill=False)
+    TitanBody_cyl = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5, zorder=3)
+    TitanLower_cyl = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='w', fill=True, alpha=0.5,
+                                zorder=2)
+    TitanMiddle_cyl = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=True, alpha=0.5,
+                                 zorder=1)
+    TitanExobase_cyl = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='g', fill=False, zorder=0)
+
+    figxy, axxy = plt.subplots(figsize=(8, 8), tight_layout=True)
+    axxy.set_xlabel("X")
+    axxy.set_ylabel("Y")
+    axxy.set_xlim(-5000, 5000)
+    axxy.set_ylim(-5000, 5000)
+    axxy.add_artist(TitanBody_xy)
+    axxy.add_artist(TitanLower_xy)
+    axxy.add_artist(TitanMiddle_xy)
+    axxy.add_artist(TitanExobase_xy)
+    axxy.set_aspect("equal")
+    figyz, axyz = plt.subplots(figsize=(8, 8), tight_layout=True)
+    axyz.set_xlabel("Y")
+    axyz.set_ylabel("Z")
+    axyz.set_xlim(-5000, 5000)
+    axyz.set_ylim(-5000, 5000)
+    axyz.add_artist(TitanBody_yz)
+    axyz.add_artist(TitanLower_yz)
+    axyz.add_artist(TitanMiddle_yz)
+    axyz.add_artist(TitanExobase_yz)
+    axyz.set_aspect("equal")
+    figxz, axxz = plt.subplots(figsize=(8, 8), tight_layout=True)
+    axxz.set_xlabel("X")
+    axxz.set_ylabel("Z")
+    axxz.set_xlim(-5000, 5000)
+    axxz.set_ylim(-5000, 5000)
+
+    axxz.add_artist(TitanExobase_xz)
+    axxz.add_artist(TitanMiddle_xz)
+    axxz.add_artist(TitanLower_xz)
+    axxz.add_artist(TitanBody_xz)
+    axxz.set_aspect("equal")
+
+    figcyl, axcyl = plt.subplots(figsize=(8, 8), tight_layout=True)
+    axcyl.set_xlabel("Y")
+    axcyl.set_ylabel("(X^1/2 + Z^1/2)^2")
+    axcyl.set_xlim(-5000, 5000)
+    axcyl.set_ylim(0, 5000)
+    axcyl.add_artist(TitanBody_cyl)
+    axcyl.add_artist(TitanLower_cyl)
+    axcyl.add_artist(TitanMiddle_cyl)
+    axcyl.add_artist(TitanExobase_cyl)
+    axcyl.set_aspect("equal")
+
+    axxy.plot([-2575.15, -2575.15], [0, -5000], color='k')
+    axxy.plot([2575.15, 2575.15], [0, -5000], color='k')
+    axyz.plot([0, -5000], [-2575.15, -2575.15], color='k')
+    axyz.plot([0, -5000], [2575.15, 2575.15], color='k')
+    axcyl.plot([0, -5000], [-2575.15, -2575.15], color='k', zorder=8)
+    axcyl.plot([0, -5000], [2575.15, 2575.15], color='k', zorder=8)
+
+
+    x1, y1, z1 = spice.pgrrec('TITAN', 90 * spice.rpd(), 30 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+    x2, y2, z1 = spice.pgrrec('TITAN', 270 * spice.rpd(), 30 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+
+    x1, y3, z2 = spice.pgrrec('TITAN', 90 * spice.rpd(), 50.5 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+    x2, y4, z2 = spice.pgrrec('TITAN', 270 * spice.rpd(), 50.5 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+
+    print(y1,y2,z1)
+    print(y3,y4,z2)
+
+
+    axyz.plot([y1, y2], [z1, z1], color='r')
+    axyz.plot([y1, y2], [-z1, -z1], color='r')
+
+    axyz.plot([y3, y4], [z2, z2], color='b')
+    axyz.plot([y3, y4], [-z2, -z2], color='b')
+
+    #
+    # axyz.plot([-2575.15 * np.cos(np.radians(50.5)), 2575.15 * np.cos(np.radians(50.5))], [2575.15 * np.sin(np.radians(50.5)), 2575.15 * np.sin(np.radians(50.5))], color='b')
+    # axyz.plot([-2575.15 * np.cos(np.radians(50.5)), 2575.15 * np.cos(np.radians(50.5))],
+    #           [-2575.15 * np.sin(np.radians(50.5)), -2575.15 * np.sin(np.radians(50.5))], color='b')
+
+    hue_norm = mcolors.CenteredNorm(vcenter=0, halfrange=150)
+    for flyby in flybys:
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+
+        sns.scatterplot(x='X Titan', y='Y Titan', hue='IBS alongtrack velocity', hue_norm=hue_norm, label=flyby,
+                        ax=axxy, palette='bwr', data=singleflyby_df, legend=False)
+        sns.scatterplot(x='Y Titan', y='Z Titan', hue='IBS alongtrack velocity', hue_norm=hue_norm, label=flyby,
+                        ax=axyz, palette='bwr', data=singleflyby_df, legend=False)
+        sns.scatterplot(x='X Titan', y='Z Titan', hue='IBS alongtrack velocity', hue_norm=hue_norm, label=flyby,
+                        ax=axxz, palette='bwr', data=singleflyby_df, legend=False)
+
+        # axyz.plot(singleflyby_df['Y Titan'],singleflyby_df['Z Titan'],label=flyby)
+        # axxz.plot(singleflyby_df['X Titan'],singleflyby_df['Z Titan'],label=flyby)
+        # axcyl.plot(singleflyby_df['Y Titan'],(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2)**0.5,label=flyby)
+        sns.scatterplot(x=singleflyby_df['Y Titan'],
+                        y=(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2) ** 0.5,
+                        hue=singleflyby_df['IBS alongtrack velocity'],
+                        hue_norm=mcolors.CenteredNorm(vcenter=0, halfrange=50), label=flyby, ax=axcyl,
+                        palette='bwr', legend=False, alpha=0.7, zorder=5)
+
+        last_counter = 0
+        for counter, (index, row) in enumerate(singleflyby_df.iterrows()):
+            alongtrackvelocity = row['IBS alongtrack velocity']
+            normed_vector = spice.unorm(np.array([row['DX Titan'], row['DY Titan'], row['DZ Titan']]))
+            scale = 0.1
+            scaled_dx = normed_vector[0][0] * -alongtrackvelocity * scale
+            scaled_dy = normed_vector[0][1] * -alongtrackvelocity * scale
+            scaled_dz = normed_vector[0][2] * -alongtrackvelocity * scale
+            axxy.arrow(row['X Titan'], row['Y Titan'], scaled_dx, scaled_dy, head_width=30, width=2.5)
+            axyz.arrow(row['Y Titan'], row['Z Titan'], scaled_dy, scaled_dz, head_width=30, width=2.5)
+            axxz.arrow(row['X Titan'], row['Z Titan'], scaled_dx, scaled_dz, head_width=30, width=2.5)
+            # axcyl.arrow(row['Y Titan'], (row['X Titan']**2 + row['Z Titan']**2)**0.5, scaled_dy, (scaled_dx**2 + scaled_dz**2)**0.5, head_width=50, width=2.5)
+
+    for ax in [axxy, axxz, axyz]:
+        ax.legend()
+
+# scp_plot_byflyby()
+# alt_vel_plot(flybyslist)
+# Titan_frame_plot(flybys_agreeing)
+# Titan_frame_plot(flybys_disagreeing)
+# Titan_frame_plot(flybys_disagreeing_midlatitude)
 
 
 plt.show()

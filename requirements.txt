@@ -1,5 +1,5 @@
-aioftp @ file:///home/conda/feedstock_root/build_artifacts/aioftp_1597983627979/work
-aiohttp==3.6.2
+aioftp 
+aiohttp
 appdirs==1.4.3
 astropy==4.0.1.post1
 async-timeout==3.0.1

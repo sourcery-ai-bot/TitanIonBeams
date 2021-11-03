@@ -241,15 +241,15 @@ data_times_pairs = [
     ["t83", [datetime.datetime(2012, 5, 22, 1, 7, 45), datetime.datetime(2012, 5, 22, 1, 13)], 20, 15, 30],
 ]
 
-usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
-              't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
+# usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
+#               't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
 #oldflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 #newflybys = ['t36','t48','t49','t50','t51','t71','t83']
 #LowAzimuthFlybys = ['t20', 't46']
 
 
 # usedflybys = ['t42', 't46']
-# usedflybys = ['t16', 't17', 't29']
+usedflybys = ['t23']
 
 
 def CAPS_winds(data_times_pairs):
@@ -280,6 +280,7 @@ def CAPS_winds(data_times_pairs):
                                                                               ramtime + datetime.timedelta(
                                                                                   seconds=timewindow / 2))
                 heavypeakangle_neg = CAPS_ELS_FOVcentre_azi_elv(heavypeaktime_neg, elsdata)[0]
+                print("test",caps_ramdirection_azielv(heavypeaktime_pos),caps_ramdirection_azielv(heavypeaktime_neg))
                 heavypeakangle_pos = CAPS_IBS_FOVcentre_azi_elv(heavypeaktime_pos, elsdata)[0]
 
                 peaks = [heavypeaktime_neg, heavypeakenergy_neg, heavypeakangle_neg,
@@ -356,4 +357,4 @@ data['Altitude'] = alts
 data['Longitude'] = lons
 data['Latitude'] = lats
 
-data.to_csv("crosswinds_full.csv")
+data.to_csv("test.csv")
