@@ -1,24 +1,36 @@
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from scipy import stats
-from scipy.stats import norm
 import datetime
 from heliopy.data.cassini import mag_1min, mag_hires
 import spiceypy as spice
 import glob
 import scipy
+import time
 
-from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
+import mpl_toolkits.mplot3d.art3d as art3d
+
 import matplotlib.colors as mcolors
 
 matplotlib.rcParams.update({'font.size': 15})
 matplotlib.rcParams['axes.grid'] = True
 matplotlib.rcParams['axes.grid.which'] = 'both'
 matplotlib.rcParams['grid.alpha'] = 0.5
+
+############ 3D plot margin fix##################
+from mpl_toolkits.mplot3d.axis3d import Axis
+if not hasattr(Axis, "_get_coord_info_old"):
+    def _get_coord_info_new(self, renderer):
+        mins, maxs, centers, deltas, tc, highs = self._get_coord_info_old(renderer)
+        mins += deltas / 4
+        maxs -= deltas / 4
+        return mins, maxs, centers, deltas, tc, highs
+    Axis._get_coord_info_old = Axis._get_coord_info
+    Axis._get_coord_info = _get_coord_info_new
+############################################
 
 AMU = scipy.constants.physical_constants['atomic mass constant'][0]
 AMU_eV = scipy.constants.physical_constants['atomic mass unit-electron volt relationship'][0]
@@ -243,27 +255,65 @@ def Titan_frame_plot(flybys):
     axxz.add_artist(TitanBody_xz)
     axxz.set_aspect("equal")
 
-    figcyl, axcyl = plt.subplots(figsize=(8,8), tight_layout=True)
-    axcyl.set_xlabel("Y")
-    axcyl.set_ylabel("(X^1/2 + Z^1/2)^2")
-    axcyl.set_xlim(-5000, 5000)
-    axcyl.set_ylim(0, 5000)
-    axcyl.add_artist(TitanBody_cyl)
-    axcyl.add_artist(TitanLower_cyl)
-    axcyl.add_artist(TitanMiddle_cyl)
-    axcyl.add_artist(TitanExobase_cyl)
-    axcyl.set_aspect("equal")
+    figcyl, axescyl = plt.subplots(3,2,tight_layout=True, sharex='all',sharey='all')
+    figcyl.delaxes(axescyl.flatten()[-1])
+    for axcyl, flyby in zip(axescyl.flatten(),flybys):
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::10, :]
+        singleflyby_df = singleflyby_df[singleflyby_df['Altitude'] < 1500]
+        TitanBody_cyl = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5, zorder=3)
+        TitanLower_cyl = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='w', fill=True, alpha=0.5,
+                                    zorder=2)
+        TitanMiddle_cyl = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=True, alpha=0.5,
+                                     zorder=1)
+        TitanExobase_cyl = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='g', fill=False, zorder=0)
+        axcyl.set_xlabel("y")
+        axcyl.set_ylabel(r'$(x^{\frac{1}{2}} + z^{\frac{1}{2}})^{2}$')
+        axcyl.set_xlim(-2000, 2000)
+        axcyl.set_ylim(2000, 4500)
+        axcyl.add_artist(TitanBody_cyl)
+        axcyl.add_artist(TitanLower_cyl)
+        axcyl.add_artist(TitanMiddle_cyl)
+        axcyl.add_artist(TitanExobase_cyl)
+        axcyl.set_aspect("equal")
+        axcyl.plot([0, -5000], [-2575.15, -2575.15], color='k', zorder=8)
+        axcyl.plot([0, -5000], [2575.15, 2575.15], color='k', zorder=8)
+        sns.scatterplot(x=singleflyby_df['Y Titan'],
+                        y=(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2) ** 0.5,
+                        hue=singleflyby_df['IBS alongtrack velocity'],
+                        hue_norm=mcolors.CenteredNorm(vcenter=0, halfrange=50), label=flyby, ax=axcyl, palette='bwr',
+                        legend=False, alpha=0.7, zorder=5)
+        axcyl.set_title(flyby)
+    figcyl.subplots_adjust(wspace=0, hspace=0)
 
     axxy.plot([-2575.15,-2575.15], [0,-5000],color='k')
     axxy.plot([2575.15,2575.15], [0,-5000],color='k')
     axyz.plot([0,-5000],[-2575.15,-2575.15],color='k')
     axyz.plot([0,-5000], [2575.15, 2575.15],color='k')
-    axcyl.plot([0,-5000],[-2575.15,-2575.15],color='k',zorder=8)
-    axcyl.plot([0,-5000], [2575.15, 2575.15],color='k',zorder=8)
+
+    x1, y1, z1 = spice.pgrrec('TITAN', 90 * spice.rpd(), 30 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+    x2, y2, z1 = spice.pgrrec('TITAN', 270 * spice.rpd(), 30 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+
+    x1, y3, z2 = spice.pgrrec('TITAN', 90 * spice.rpd(), 50.5 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+    x2, y4, z2 = spice.pgrrec('TITAN', 270 * spice.rpd(), 50.5 * spice.rpd(), lower_layer_alt,
+                           spice.bodvrd('TITAN', 'RADII', 3)[1][0], 2.64e-4)
+
+    print(y1,y2,z1)
+    print(y3,y4,z2)
+
+
+    axyz.plot([y1, y2], [z1, z1], color='r')
+    axyz.plot([y1, y2], [-z1, -z1], color='r')
+
+    axyz.plot([y3, y4], [z2, z2], color='b')
+    axyz.plot([y3, y4], [-z2, -z2], color='b')
 
     hue_norm = mcolors.CenteredNorm(vcenter=0, halfrange=150)
     for flyby in flybys:
         singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::10, :]
+        singleflyby_df = singleflyby_df[singleflyby_df['Altitude'] < 1500]
 
         sns.scatterplot(x='X Titan',y='Y Titan',hue='IBS alongtrack velocity',hue_norm=hue_norm,label=flyby,ax=axxy,palette='bwr',data=singleflyby_df,legend=False)
         sns.scatterplot(x='Y Titan', y='Z Titan', hue='IBS alongtrack velocity', hue_norm=hue_norm, label=flyby,
@@ -275,8 +325,8 @@ def Titan_frame_plot(flybys):
         # axyz.plot(singleflyby_df['Y Titan'],singleflyby_df['Z Titan'],label=flyby)
         # axxz.plot(singleflyby_df['X Titan'],singleflyby_df['Z Titan'],label=flyby)
         #axcyl.plot(singleflyby_df['Y Titan'],(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2)**0.5,label=flyby)
-        sns.scatterplot(x=singleflyby_df['Y Titan'],y=(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2)**0.5,hue=singleflyby_df['IBS alongtrack velocity'],
-                        hue_norm=mcolors.CenteredNorm(vcenter=0,halfrange=50),label=flyby,ax=axcyl,palette='bwr',legend=False,alpha=0.7,zorder=5)
+        # sns.scatterplot(x=singleflyby_df['Y Titan'],y=(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2)**0.5,hue=singleflyby_df['IBS alongtrack velocity'],
+        #                 hue_norm=mcolors.CenteredNorm(vcenter=0,halfrange=50),label=flyby,ax=axcyl,palette='bwr',legend=False,alpha=0.7,zorder=5)
 
         last_counter=0
         for counter, (index, row) in enumerate(singleflyby_df.iterrows()):
@@ -301,7 +351,7 @@ def alt_vel_plot(flybyslist):
     flyby_levels = {"t55":[[1231,1202],[1127,1138],[1041,1059]],
                     "t56":[[1297,1378],[1108,1094],[1015,1033]],
                     "t57":[[1379,0],[1180,0],[1028,998]],
-                    "t58":[[0,1162],[0,1073],[0,0]],
+                    "t58":[[1462,1162],[0,1073],[969,966]],
                     "t59":[[1296,1184],[1074,1100],[0,0]]}
 
     num_of_flybys = len(flybyslist)
@@ -325,8 +375,8 @@ def alt_vel_plot(flybyslist):
     for flyby, ax in zip(flybyslist, axes):
         ax.set_title(flyby)
         ax.set_xlabel("Alongtrack Velocities [m/s]")
-        minvel = -250
-        maxvel= 250
+        minvel = -400
+        maxvel= 400
         ax.set_xlim(minvel,maxvel)
         ax.set_ylim(bottom=950,top=1800)
         ax.hlines(flyby_levels[flyby][0][0],minvel,maxvel,color='C0')
@@ -391,8 +441,147 @@ def alt_mag_plot(flybyslist):
     #     axes[i].set_ylabel("")
 
 
+def box_titan_trajectory_plot(flybys,wake=True,sun=False,StartPoint=False):
+    '''
+    Plots Cassini Trajectory on 2d plots in 3d box
+    '''
+
+    boundingvalue = 4500
+    dotinterval = 60
+    radius = 2575.15
+    exobase = 1500
+
+    lower_layer_alt = 1030
+    middle_layer_alt = 1300
+    upper_layer_alt = 1500
+
+
+    t0 = time.time()
+    # ADD Switch for planes
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.gca(projection='3d',box_aspect=(1,1,1))
+
+    i = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(i)
+    art3d.pathpatch_2d_to_3d(i, z=boundingvalue, zdir="x")
+    j = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(j)
+    art3d.pathpatch_2d_to_3d(j, z=boundingvalue, zdir="y")
+    k = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(k)
+    art3d.pathpatch_2d_to_3d(k, z=-boundingvalue, zdir="z")
+
+    m = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(m)
+    art3d.pathpatch_2d_to_3d(m, z=boundingvalue, zdir="x")
+    n = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(n)
+    art3d.pathpatch_2d_to_3d(n, z=boundingvalue, zdir="y")
+    o = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(o)
+    art3d.pathpatch_2d_to_3d(o, z=-boundingvalue, zdir="z")
+
+    for number, flyby in enumerate(flybys):
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+        # ax.plot((-(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2) ** 0.5), singleflyby_df['Y Titan'],
+        #         zs=-boundingvalue, zdir='z', color='C' + str(number), label=flyby)
+
+        ax.plot(singleflyby_df['X Titan'],singleflyby_df['Y Titan'],zs=-boundingvalue, zdir='z',color='C'+str(number),label=flyby)
+        ax.plot(singleflyby_df['X Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='y',color='C'+str(number))
+        ax.plot(singleflyby_df['Y Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='x',color='C'+str(number))
+
+        if StartPoint == True:
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Y Titan'].iloc[0], zs=-boundingvalue, zdir='z',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='y',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['Y Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='x',
+                    color='k', marker="^")
+
+
+    # if timedots == True:
+    #     for et in np.arange(lower_et, upper_et, dotinterval):
+    #         dotstate = cassini_phase(spice.et2utc(et, "ISOC", 0))
+    #         ax.scatter(dotstate[0] / 252, dotstate[1] / 252, zs=-boundingvalue, zdir='z', c='k', marker=".", s=15)
+    #         ax.scatter(dotstate[0] / 252, dotstate[2] / 252, zs=boundingvalue, zdir='y', c='k', marker=".", s=15)
+    #         ax.scatter(dotstate[1] / 252, dotstate[2] / 252, zs=boundingvalue, zdir='x', c='k', marker=".", s=15)
+    #
+    #     ax.text2D(0.65, 0.97, r'$\cdot$ 1 minute markers  ', fontsize=12, transform=ax.transAxes)
+    #
+    if wake == True:
+        # XY Wake
+        ax.plot([-radius, -radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+        ax.plot([radius, radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+
+        wake_rect_xy = mpatches.Rectangle((-radius, -boundingvalue), 2*radius, boundingvalue, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_xy)
+        art3d.pathpatch_2d_to_3d(wake_rect_xy, z=-boundingvalue, zdir="z")
+
+        # YZ Wake
+        ax.plot([-boundingvalue, 0], [-radius, -radius], zs=boundingvalue, zdir='x', c='g')
+        ax.plot([-boundingvalue, 0], [radius, radius], zs=boundingvalue, zdir='x', c='g')
+
+        wake_rect_yz = mpatches.Rectangle((-boundingvalue, -radius), boundingvalue, 2*radius, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_yz)
+        art3d.pathpatch_2d_to_3d(wake_rect_yz, z=boundingvalue, zdir="x")
+
+    if len(flybys) == 1 and sun == True:
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+        i = pd.to_datetime(singleflyby_df['Positive Peak Time']).iloc[0]
+
+        et = spice.datetime2et(i)
+        sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+        satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+        sundir_unorm = spice.unorm(sundir)[0]
+        satdir_unorm = spice.unorm(satdir)[0]
+        print("sundir", sundir_unorm)
+        print("satdir", satdir_unorm)
+        #
+        # ax.plot([0, satdir_unorm[0] * 1000], [0, satdir_unorm[1] * 1000],zs=-boundingvalue, zdir='z',color='r')
+        # ax.plot([0, satdir_unorm[0] * 1000], [0, satdir_unorm[2] * 1000], zs=boundingvalue, zdir='y', color='r')
+        # ax.plot([0, satdir_unorm[1] * 1000], [0, satdir_unorm[2] * 1000], zs=boundingvalue, zdir='x', color='r')
+
+        # ax.plot([0, sundir_unorm[0] * 1000], [0, sundir_unorm[1] * 1000],zs=-boundingvalue, zdir='z',color='b')
+        # ax.plot([0, sundir_unorm[0] * 1000], [0, sundir_unorm[2] * 1000], zs=boundingvalue, zdir='y', color='b')
+        # ax.plot([0, sundir_unorm[1] * 1000], [0, sundir_unorm[2] * 1000], zs=boundingvalue, zdir='x', color='b')
+
+        if sundir_unorm[1] < 0:
+            angle = np.degrees(spice.vsepg([-1, 0], [sundir_unorm[0], sundir_unorm[1]]))
+        else:
+            angle = -np.degrees(spice.vsepg([-1, 0], [sundir_unorm[0], sundir_unorm[1]]))
+
+        print("angle",angle)
+        startangle = -90 + angle
+        endangle = 90 + angle
+
+        c = mpatches.Wedge((0, 0), radius, startangle, endangle, fill=True, color='k', alpha=0.4)
+        ax.add_patch(c)
+        art3d.pathpatch_2d_to_3d(c, z=-boundingvalue, zdir="z")
+
+    ax.set_xlabel('X (km)')
+    ax.set_ylabel('Y (km)')
+    ax.set_zlabel('Z (km)')
+
+    ax.view_init(elev=30., azim=-135)
+
+    fig.legend()
+
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="z", style="sci", scilimits=(0, 0))
+
+    ax.set_xlim(-boundingvalue, boundingvalue)
+    ax.set_ylim(-boundingvalue, boundingvalue)
+    ax.set_zlim(-boundingvalue, boundingvalue)
+
+    t1 = time.time()
+    print("Time Elapsed", t1 - t0)
+
+
 Titan_frame_plot(["t55","t56","t57","t58","t59"])
-alt_vel_plot(["t55","t56","t57","t58","t59"])
+# alt_vel_plot(["t55","t56","t57","t58","t59"])
 #alt_mag_plot(["t55","t56","t57","t58","t59"])
+#box_titan_trajectory_plot(["t57"],StartPoint=True,sun=True)
 
 plt.show()

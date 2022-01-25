@@ -21,18 +21,52 @@ matplotlib.rcParams.update({'font.size': 15})
 ibscalib = readsav('calib/ibsdisplaycalib.dat')
 sngcalib = readsav('calib/sngdisplaycalib.dat')
 
-filedates_times = {"t55": ["21-may-2009", "21:27:00"],
-                   "t56": ["06-jun-2009", "20:00:00"],
-                   "t57": ["22-jun-2009", "18:33:00"],
-                   "t58": ["08-jul-2009", "17:04:00"],
-                   "t59": ["24-jul-2009", "15:31:00"],
-                   }
 
-flyby_datetimes = {"t55": [datetime.datetime(2009, 5, 21, 21, 18), datetime.datetime(2009, 5, 21, 21, 34)],
-                   "t56": [datetime.datetime(2009, 6, 6,  19, 53), datetime.datetime(2009, 6, 6, 20, 7)],
-                   "t57": [datetime.datetime(2009, 6, 22, 18, 26), datetime.datetime(2009, 6, 22, 18, 41)],
-                   "t58": [datetime.datetime(2009, 7, 8, 16, 55), datetime.datetime(2009, 7, 8, 17, 16)],
-                   "t59": [datetime.datetime(2009, 7, 24, 15, 25), datetime.datetime(2009, 7, 24, 15, 43)],
+
+filedates = {"t16": "22-jul-2006", "t17": "07-sep-2006", "t18": "23-sep-2006", "t19": "09-oct-2006",
+             "t20": "25-oct-2006", "t21": "12-dec-2006", "t23": "13-jan-2007", "t25": "22-feb-2007",
+             "t26": "10-mar-2007",
+             "t27": "26-mar-2007",
+             "t28": "10-apr-2007", "t29": "26-apr-2007",
+             "t30": "12-may-2007", "t32": "13-jun-2007", "t36": "02-oct-2007", "t39": "20-dec-2007",
+             "t40": "05-jan-2008", "t41": "22-feb-2008", "t42": "25-mar-2008", "t43": "12-may-2008",
+             "t46": "03-nov-2008", "t47": "19-nov-2008","t48": "05-dec-2008","t49": "21-dec-2008",
+             "t50": "07-feb-2009","t51": "27-mar-2009","t71": "07-jul-2010","t83": "22-may-2012",
+             "t55":"21-may-2009", "t56": "06-jun-2009", "t57": "22-jun-2009", "t58": "08-jul-2009",
+             "t59": "24-jul-2009"}
+
+flyby_datetimes = {"t16": [datetime.datetime(2006, 7, 22, 0, 20, 43), datetime.datetime(2006, 7, 22, 0, 32, 20)],
+                   "t17": [datetime.datetime(2006, 9, 7, 20, 9, 30), datetime.datetime(2006, 9, 7, 20, 24, 55)],
+                  "t19": [datetime.datetime(2006, 10, 9, 17, 22), datetime.datetime(2006, 10, 9, 17, 36, 30)],
+                  "t20": [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)],
+                  "t21": [datetime.datetime(2006, 12, 12, 11, 34, 30), datetime.datetime(2006, 12, 12, 11, 50)],
+                  "t23": [datetime.datetime(2007, 1, 13, 8, 31), datetime.datetime(2007, 1, 13, 8, 46, 15)],
+                  "t25": [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)],
+                  "t26": [datetime.datetime(2007, 3, 10, 1, 41, 30), datetime.datetime(2007, 3, 10, 1, 56, 45)],
+                  "t27": [datetime.datetime(2007, 3, 26, 0, 16, 30), datetime.datetime(2007, 3, 26, 0, 30, 30)],
+                  "t28": [datetime.datetime(2007, 4, 10, 22, 53), datetime.datetime(2007, 4, 10, 23, 3, 20)],
+                  "t29": [datetime.datetime(2007, 4, 26, 21, 28, 40), datetime.datetime(2007, 4, 26, 21, 38)],
+                  "t30": [datetime.datetime(2007, 5, 12, 20, 8, 30), datetime.datetime(2007, 5, 12, 20, 15, 20)],
+                  "t32": [datetime.datetime(2007, 6, 13, 17, 43, 10), datetime.datetime(2007, 6, 13, 17, 51, 25)],
+                  "t36": [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)],
+                  "t39": [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)],
+                  "t40": [datetime.datetime(2008, 1, 5, 21, 24), datetime.datetime(2008, 1, 5, 21, 37, 15)],
+                  "t41": [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)],
+                  "t42": [datetime.datetime(2008, 3, 25, 14, 22, 30), datetime.datetime(2008, 3, 25, 14, 33)],
+                  "t43": [datetime.datetime(2008, 5, 12, 9, 55, 30), datetime.datetime(2008, 5, 12, 10, 8, 30)],
+                  "t46": [datetime.datetime(2008, 11, 3, 17, 33, 10), datetime.datetime(2008, 11, 3, 17, 36, 30)],
+                  "t47": [datetime.datetime(2008, 11, 19, 15, 53), datetime.datetime(2008, 11, 19, 15, 54)],
+                  "t48": [datetime.datetime(2008, 12, 5, 14, 20), datetime.datetime(2008, 12, 5, 14, 32, 40)],
+                  "t49": [datetime.datetime(2008, 12, 21, 12, 55, 30), datetime.datetime(2008, 12, 21, 13, 4)],
+                  "t50": [datetime.datetime(2009, 2, 7, 8, 45, 20), datetime.datetime(2009, 2, 7, 8, 54, 45)],
+                  "t51": [datetime.datetime(2009, 3, 27, 4, 41), datetime.datetime(2009, 3, 27, 4, 49, 30)],
+                  "t71": [datetime.datetime(2010, 7, 7, 0, 17, 10), datetime.datetime(2010, 7, 7, 0, 26, 30)],
+                  "t83": [datetime.datetime(2012, 5, 22, 1, 2, 30), datetime.datetime(2012, 5, 22, 1, 16, 10)],
+                  "t55": [datetime.datetime(2009, 5, 21, 21, 18), datetime.datetime(2009, 5, 21, 21, 34)],
+                  "t56": [datetime.datetime(2009, 6, 6,  19, 53), datetime.datetime(2009, 6, 6, 20, 7)],
+                  "t57": [datetime.datetime(2009, 6, 22, 18, 26), datetime.datetime(2009, 6, 22, 18, 41)],
+                  "t58": [datetime.datetime(2009, 7, 8, 16, 55), datetime.datetime(2009, 7, 8, 17, 16)],
+                  "t59": [datetime.datetime(2009, 7, 24, 15, 25), datetime.datetime(2009, 7, 24, 15, 43)],
 
                    }
 
@@ -150,31 +184,65 @@ def find_CA_height_time(data,startslice):
     return currentalt, lastdatetime
 
 
-def IBS_alt_spec(flyby):
+def IBS_alt_spec(flyby,flybydf):
+    elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
+    generate_mass_bins(elsdata, flyby, "els")
+    ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
+    generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 
-    ibsdata = readsav("data/ibs/ibsres_" + filedates_times[flyby][0] + ".dat")
-    generate_mass_bins(ibsdata, flyby, "ibs")
+
     startslice = CAPS_slicenumber(ibsdata, flyby_datetimes[ibsdata['flyby']][0])
     endslice = CAPS_slicenumber(ibsdata, flyby_datetimes[ibsdata['flyby']][1])
     CA_height, CA_time = find_CA_height_time(ibsdata,startslice)
     print(CA_time,CA_height)
     CA_slice = CAPS_slicenumber(ibsdata, CA_time)
-    print(CA_slice)
+    print(ibsdata['times_utc'][CA_slice])
 
+    inbound_alts = [cassini_titan_altlatlon(i+datetime.timedelta(seconds=1))[0] for i in ibsdata['times_utc'][startslice:CA_slice]] #Fix timeoffset!!!!!!!!!!!!!!!!!!
+    outbound_alts = [cassini_titan_altlatlon(i+datetime.timedelta(seconds=1))[0] for i in ibsdata['times_utc'][CA_slice:endslice]]
 
-    inbound_alts = [cassini_titan_altlatlon(i)[0] for i in ibsdata['times_utc'][startslice:CA_slice]]
-    outbound_alts = [cassini_titan_altlatlon(i)[0] for i in ibsdata['times_utc'][CA_slice:endslice]]
+    print("last inbound alt",inbound_alts[-1])
+    print("first outbound alt",outbound_alts[0])
 
     X = ibscalib['ibsearray']
-    Y1 = inbound_alts
+    Y1 = np.array(inbound_alts)
     Y2 = outbound_alts
     Z1 = ibsdata['ibsdata'][:,1,startslice:CA_slice]
     Z2 = ibsdata['ibsdata'][:,1,CA_slice:endslice]
 
-    fig, axes = plt.subplots(nrows=1,ncols=2,sharey="all",sharex='all')
+    print(X.shape,Y1.shape,Z1.shape)
+
+    fig, axes = plt.subplots(nrows=1,ncols=3,sharey="all")
+    axes[0].get_shared_x_axes().join(axes[0], axes[1])
     CS1 = axes[0].pcolormesh(X, Y1, Z1.T, norm=LogNorm(vmin=50,vmax=1e6), cmap='viridis',shading='nearest')
     CS2 = axes[1].pcolormesh(X, Y2, Z2.T, norm=LogNorm(vmin=50,vmax=1e6), cmap='viridis',shading='nearest')
-    for ax in axes:
+
+    inbounddf = flybydf[(pd.to_datetime(flybydf["Positive Peak Time"]) < CA_time)]
+    outbounddf = flybydf[(pd.to_datetime(flybydf["Positive Peak Time"]) > CA_time)]
+
+    axes[0].plot(inbounddf['IBS Mass 17 energy'], inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 28 energy'],inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 40 energy'],inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 53 energy'],inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 66 energy'],inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 78 energy'],inbounddf['Altitude'],marker='.')
+    axes[0].plot(inbounddf['IBS Mass 91 energy'],inbounddf['Altitude'],marker='.')
+
+    axes[1].plot(outbounddf['IBS Mass 17 energy'], outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 28 energy'],outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 40 energy'],outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 53 energy'],outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 66 energy'],outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 78 energy'],outbounddf['Altitude'],marker='.')
+    axes[1].plot(outbounddf['IBS Mass 91 energy'],outbounddf['Altitude'],marker='.')
+
+    axes[2].plot(inbounddf['IBS alongtrack velocity'], inbounddf['Altitude'], color='C0', marker='.',label="Inbound")
+    axes[2].plot(outbounddf['IBS alongtrack velocity'], outbounddf['Altitude'], color='C1', marker='.',label="Outbound")
+    axes[2].set_xlabel("IBS Alongtrack Velocity")
+    axes[2].legend()
+
+
+    for ax in [axes[0],axes[1]]:
         ax.set_xscale("log")
         ax.set_xlim(3,200)
         ax.set_xlabel("Energy [eV]")
@@ -184,7 +252,13 @@ def IBS_alt_spec(flyby):
     fig.suptitle(flyby)
 
 
-IBS_alt_spec("t59")
+flyby = "t55"
+#windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
+windsdf = pd.read_csv("nonactuatingflybys_alongtrackvelocity_t55.csv", index_col=0, parse_dates=True)
+flybydf = windsdf[windsdf['Flyby'] == flyby]
+flybydf.reset_index(inplace=True)
+
+IBS_alt_spec(flyby, flybydf)
 plt.show()
 
 

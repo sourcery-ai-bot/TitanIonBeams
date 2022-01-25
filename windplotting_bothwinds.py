@@ -1,19 +1,31 @@
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from scipy import stats
-from scipy.stats import norm
 import datetime
 from heliopy.data.cassini import mag_1min
 import spiceypy as spice
 import glob
 import scipy
+import time
 
-from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
+import mpl_toolkits.mplot3d.art3d as art3d
 import matplotlib.colors as mcolors
+
+############ 3D plot margin fix##################
+from mpl_toolkits.mplot3d.axis3d import Axis
+if not hasattr(Axis, "_get_coord_info_old"):
+    def _get_coord_info_new(self, renderer):
+        mins, maxs, centers, deltas, tc, highs = self._get_coord_info_old(renderer)
+        mins += deltas / 4
+        maxs -= deltas / 4
+        return mins, maxs, centers, deltas, tc, highs
+    Axis._get_coord_info_old = Axis._get_coord_info
+    Axis._get_coord_info = _get_coord_info_new
+############################################
 
 matplotlib.rcParams.update({'font.size': 15})
 matplotlib.rcParams['axes.grid'] = True
@@ -56,12 +68,17 @@ def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
 #--Generating Windsdf----
 # alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
 # crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
+#alongtrack_windsdf = pd.read_csv("singleflyby_alongtracktest.csv", index_col=0, parse_dates=True)
+# alongtrack_windsdf = pd.read_csv("alongtrackvelocity.csv", index_col=0, parse_dates=True)
+# crosstrack_windsdf = pd.read_csv("test.csv", index_col=0, parse_dates=True)
 # windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
 # windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 
+
 windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
+#windsdf = pd.read_csv("Singleflyby_winds_full.csv", index_col=0, parse_dates=True)
 flybyslist = windsdf.Flyby.unique()
-print(flybyslist)
+print(flybyslist,len(flybyslist))
 
 
 crary_windsdf = pd.read_csv("crarywinds.csv")
@@ -120,6 +137,7 @@ def add_angle_to_corot(windsdf):
 
 # add_magdata(windsdf)
 # add_angle_to_corot(windsdf)
+# #windsdf.to_csv("singleflyby_winds_full.csv")
 # windsdf.to_csv("winds_full.csv")
 
 #------ All processing above here--------
@@ -174,17 +192,21 @@ maxwind = 500
 
 #----Regression Plots ----
 
+bothdf = windsdf.dropna(subset=["ELS alongtrack velocity"])
 regfig, (alongax,crossax) = plt.subplots(2)
-sns.regplot(data=windsdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",ax=alongax)
-z1 = np.polyfit(windsdf["IBS alongtrack velocity"],windsdf["ELS alongtrack velocity"],1)
+sns.regplot(data=bothdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",ax=alongax)
+z1 = np.polyfit(bothdf["IBS alongtrack velocity"],bothdf["ELS alongtrack velocity"],1)
 p1 = np.poly1d(z1)
-alongax.text(-300,250,str(stats.pearsonr(windsdf["IBS alongtrack velocity"], windsdf["ELS alongtrack velocity"])))
+print(stats.pearsonr(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"]))
+print(type(stats.pearsonr(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"])))
+alongax.text(-300,250,str(stats.pearsonr(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"])))
 alongax.text(-300,200,str(p1))
 
-sns.regplot(data=windsdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crossax)
-z2 = np.polyfit(windsdf["IBS crosstrack velocity"],windsdf["ELS crosstrack velocity"],1)
+testtuple = stats.pearsonr(bothdf["IBS crosstrack velocity"], bothdf["ELS crosstrack velocity"])
+sns.regplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crossax)
+z2 = np.polyfit(bothdf["IBS crosstrack velocity"],bothdf["ELS crosstrack velocity"],1)
 p2 = np.poly1d(z2)
-crossax.text(-300,250,str(stats.pearsonr(windsdf["IBS crosstrack velocity"], windsdf["ELS crosstrack velocity"])))
+crossax.text(-300,250,"({0[0]:.2f},{0[1]:.2f})".format(testtuple))
 crossax.text(-300,200,str(p2))
 
 alongax.set_xlim(-maxwind,maxwind)
@@ -272,60 +294,86 @@ def scp_plot_byflyby():
     sns.stripplot(data=windsdf, x="Flyby", y="IBS spacecraft potentials", hue="Actuation Direction", dodge=False,ax=scp_ax,marker="X")
     scp_ax.set_ylabel("Derived Spacecraft Potential")
 
-northlatitude_df = windsdf[windsdf['Latitude'] > 30]
-lowlatitude_df = windsdf[(windsdf['Latitude'] > -30) & (windsdf['Latitude'] < 30)]
-southlatitude_df = windsdf[windsdf['Latitude'] < -30]
-
-dist_fig2, latitude_ax = plt.subplots()
-sns.histplot(data=northlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="North Latitudes")
-sns.histplot(data=lowlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="Low Latitudes")
-sns.histplot(data=southlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C2',label="South Latitudes")
-latitude_ax.legend()
-
-latitude_velocityfig, latitude_velocityaxes = plt.subplots(nrows=3,ncols=2,sharex='all',sharey='all')
-plt.subplots_adjust(hspace=0.3)
-
-testx= np.linspace(-200,200,400)
-sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=northlatitude_df ,color='C0',ax=latitude_velocityaxes[0,0],label="2016 Winds")
-sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=northlatitude_df ,color='C1',ax=latitude_velocityaxes[0,0],label="2017 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=northlatitude_df ,color='C0', marker='x', ax=latitude_velocityaxes[0,1],label="2016 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=northlatitude_df ,color='C1', marker='x', ax=latitude_velocityaxes[0,1],label="2017 Winds")
-
-sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=lowlatitude_df ,color='C0',ax=latitude_velocityaxes[1,0],label="2016 Winds")
-sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=lowlatitude_df ,color='C1',ax=latitude_velocityaxes[1,0],label="2017 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=lowlatitude_df ,color='C0', marker='x', ax=latitude_velocityaxes[1,1],label="2016 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=lowlatitude_df ,color='C1', marker='x', ax=latitude_velocityaxes[1,1],label="2017 Winds")
-
-for counter, j in enumerate(["IBS alongtrack velocity", "ELS alongtrack velocity"]):
-    for innercounter, i in enumerate(["2016 Zonal Winds", "2017 Zonal Winds"]):
-        z2 = np.polyfit(lowlatitude_df[j],lowlatitude_df[i],1)
-        p2 = np.poly1d(z2)
-        print(j,i,"R = %.2f" % stats.pearsonr(lowlatitude_df[j], lowlatitude_df[i])[0],str(p2))
-        #latitude_velocityaxes[1, counter].plot(testx,p2(testx),color='C2')
-        latitude_velocityaxes[1, counter].text(0.6+(innercounter*0.2), 0.075, i + "\nR = %.2f\n" % stats.pearsonr(lowlatitude_df[j], lowlatitude_df[i])[0] + "y = %.2fx + %2.0f" % (p2[1],p2[0]),transform=latitude_velocityaxes[1, counter].transAxes,fontsize=10)
-        #latitude_velocityaxes[1, counter].text(0.6, 0.15+(innercounter)*0.2, i + " " + "%.2f x + %2.2f" % (p2[1],p2[0]),transform=latitude_velocityaxes[1, counter].transAxes,fontsize=10)
-
-sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=southlatitude_df ,color='C0',ax=latitude_velocityaxes[2,0],label="2016 Winds")
-sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=southlatitude_df ,color='C1',ax=latitude_velocityaxes[2,0],label="2017 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=southlatitude_df ,color='C0', marker='x',ax=latitude_velocityaxes[2,1],label="2016 Winds")
-sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=southlatitude_df ,color='C1', marker='x',ax=latitude_velocityaxes[2,1],label="2017 Winds")
 
 
-for ax in latitude_velocityaxes.flatten():
-    # ax.set_xlabel(" ")
-    # ax.set_ylabel("Cordiner+, 2020; \n Zonal Winds")
-    ax.legend(loc=2)
-latitude_velocityaxes[1,0].plot([-200,200],[-200,200],color='k')
-latitude_velocityaxes[1,1].plot([-200,200],[-200,200],color='k')
 
-latitude_velocityaxes[0,0].set_title("Northern Latitudes, >30 degrees")
-latitude_velocityaxes[1,0].set_title("Low Latitudes, -30 to 30 degrees")
-latitude_velocityaxes[2,0].set_title("Southern Latitudes, <-30 degrees")
-latitude_velocityaxes[0,1].set_title("Northern Latitudes, >30 degrees")
-latitude_velocityaxes[1,1].set_title("Low Latitudes, -30 to 30 degrees")
-latitude_velocityaxes[2,1].set_title("Southern Latitudes, <-30 degrees")
 
-latitude_velocityaxes[2,0].set_xlabel("Alongtrack Ion Velocity")
+def lat_dist():
+    northlatitude_df = windsdf[windsdf['Latitude'] > 30]
+    lowlatitude_df = windsdf[(windsdf['Latitude'] > -30) & (windsdf['Latitude'] < 30)]
+    southlatitude_df = windsdf[windsdf['Latitude'] < -30]
+
+    dist_fig2, latitude_ax = plt.subplots()
+    sns.histplot(data=northlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="North Latitudes")
+    sns.histplot(data=lowlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="Low Latitudes")
+    sns.histplot(data=southlatitude_df, x="IBS alongtrack velocity", ax=latitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C2',label="South Latitudes")
+    latitude_ax.legend()
+
+def lon_dist():
+    flybys_315_45 = windsdf[(windsdf['Longitude'] > 315) | (windsdf['Longitude'] < 45)]
+    flybys_45_135 = windsdf[(windsdf['Longitude'] > 45) & (windsdf['Longitude'] < 135)]
+    flybys_135_225 = windsdf[(windsdf['Longitude'] > 135) & (windsdf['Longitude'] < 225)]
+    flybys_225_315 = windsdf[(windsdf['Longitude'] > 225) & (windsdf['Longitude'] < 315)]
+
+    dist_fig2, longitude_ax = plt.subplots()
+    sns.histplot(data=flybys_315_45, x="IBS alongtrack velocity", ax=longitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C0',label="Saturn \n (Long 315-45 deg) ")
+    sns.histplot(data=flybys_45_135, x="IBS alongtrack velocity", ax=longitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="Wake \n (Long 45-135 deg) ")
+    sns.histplot(data=flybys_135_225, x="IBS alongtrack velocity", ax=longitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C2',label="Anti-Saturn \n (Long 135-225 deg) ")
+    sns.histplot(data=flybys_225_315, x="IBS alongtrack velocity", ax=longitude_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C3',label="Ram \n (Long 225-315 deg) ")
+    longitude_ax.legend()
+
+lon_dist()
+
+
+def latitude_regplot():
+    northlatitude_df = windsdf[windsdf['Latitude'] > 30]
+    lowlatitude_df = windsdf[(windsdf['Latitude'] > -30) & (windsdf['Latitude'] < 30)]
+    southlatitude_df = windsdf[windsdf['Latitude'] < -30]
+
+    latitude_velocityfig, latitude_velocityaxes = plt.subplots(nrows=3,ncols=2,sharex='all',sharey='all')
+    plt.subplots_adjust(hspace=0.3)
+
+    testx= np.linspace(-200,200,400)
+    sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=northlatitude_df ,color='C0',ax=latitude_velocityaxes[0,0],label="2016 Winds")
+    sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=northlatitude_df ,color='C1',ax=latitude_velocityaxes[0,0],label="2017 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=northlatitude_df ,color='C0', marker='x', ax=latitude_velocityaxes[0,1],label="2016 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=northlatitude_df ,color='C1', marker='x', ax=latitude_velocityaxes[0,1],label="2017 Winds")
+
+    sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=lowlatitude_df ,color='C0',ax=latitude_velocityaxes[1,0],label="2016 Winds")
+    sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=lowlatitude_df ,color='C1',ax=latitude_velocityaxes[1,0],label="2017 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=lowlatitude_df ,color='C0', marker='x', ax=latitude_velocityaxes[1,1],label="2016 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=lowlatitude_df ,color='C1', marker='x', ax=latitude_velocityaxes[1,1],label="2017 Winds")
+
+    # for counter, j in enumerate(["IBS alongtrack velocity", "ELS alongtrack velocity"]):
+    #     for innercounter, i in enumerate(["2016 Zonal Winds", "2017 Zonal Winds"]):
+    #         z2 = np.polyfit(lowlatitude_df[j],lowlatitude_df[i],1)
+    #         p2 = np.poly1d(z2)
+    #         print(j,i,"R = %.2f" % stats.pearsonr(lowlatitude_df[j], lowlatitude_df[i])[0],str(p2))
+    #         #latitude_velocityaxes[1, counter].plot(testx,p2(testx),color='C2')
+    #         latitude_velocityaxes[1, counter].text(0.6+(innercounter*0.2), 0.075, i + "\nR = %.2f\n" % stats.pearsonr(lowlatitude_df[j], lowlatitude_df[i])[0] + "y = %.2fx + %2.0f" % (p2[1],p2[0]),transform=latitude_velocityaxes[1, counter].transAxes,fontsize=10)
+    #         #latitude_velocityaxes[1, counter].text(0.6, 0.15+(innercounter)*0.2, i + " " + "%.2f x + %2.2f" % (p2[1],p2[0]),transform=latitude_velocityaxes[1, counter].transAxes,fontsize=10)
+
+    sns.regplot(x="IBS alongtrack velocity", y="2016 Zonal Winds", data=southlatitude_df ,color='C0',ax=latitude_velocityaxes[2,0],label="2016 Winds")
+    sns.regplot(x="IBS alongtrack velocity", y="2017 Zonal Winds", data=southlatitude_df ,color='C1',ax=latitude_velocityaxes[2,0],label="2017 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2016 Zonal Winds", data=southlatitude_df ,color='C0', marker='x',ax=latitude_velocityaxes[2,1],label="2016 Winds")
+    sns.regplot(x="ELS alongtrack velocity", y="2017 Zonal Winds", data=southlatitude_df ,color='C1', marker='x',ax=latitude_velocityaxes[2,1],label="2017 Winds")
+
+
+    for ax in latitude_velocityaxes.flatten():
+        # ax.set_xlabel(" ")
+        # ax.set_ylabel("Cordiner+, 2020; \n Zonal Winds")
+        ax.legend(loc=2)
+    latitude_velocityaxes[1,0].plot([-200,200],[-200,200],color='k')
+    latitude_velocityaxes[1,1].plot([-200,200],[-200,200],color='k')
+
+    latitude_velocityaxes[0,0].set_title("Northern Latitudes, >30 degrees")
+    latitude_velocityaxes[1,0].set_title("Low Latitudes, -30 to 30 degrees")
+    latitude_velocityaxes[2,0].set_title("Southern Latitudes, <-30 degrees")
+    latitude_velocityaxes[0,1].set_title("Northern Latitudes, >30 degrees")
+    latitude_velocityaxes[1,1].set_title("Low Latitudes, -30 to 30 degrees")
+    latitude_velocityaxes[2,1].set_title("Southern Latitudes, <-30 degrees")
+
+    latitude_velocityaxes[2,0].set_xlabel("Alongtrack Ion Velocity")
 
 # latitude_dist_ibs_fig, latitude_dist_ibs_ax = plt.subplots()
 # sns.histplot(data=lowlatitude_df, x="IBS alongtrack velocity", ax=latitude_dist_ibs_ax, bins=np.arange(-maxwind, maxwind, 50), kde=True,color='C1',label="IBS")
@@ -391,11 +439,11 @@ windsdf['Absolute IBS crosstrack velocity'] = abs(windsdf['IBS crosstrack veloci
 
 sns.regplot(data=windsdf,x="Angles to Zonal Wind", y="IBS alongtrack velocity", ax=angleaxes[0],color='C0')
 sns.regplot(data=windsdf,x="Angles to Zonal Wind", y="ELS alongtrack velocity", ax=angleaxes[0],color='C1')
-z3 = np.polyfit(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"], 1)
-p3 = np.poly1d(z3)
-angleaxes[0].text(0.8, 0.075,"R = %.2f\n" % stats.pearsonr(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"])[
-                                           0] + "y = %.2fx + %2.0f" % (p3[1], p3[0]),
-                                       transform=angleaxes[0].transAxes, fontsize=14)
+# z3 = np.polyfit(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"], 1)
+# p3 = np.poly1d(z3)
+# angleaxes[0].text(0.8, 0.075,"R = %.2f\n" % stats.pearsonr(windsdf["Angles to Zonal Wind"], windsdf["IBS alongtrack velocity"])[
+#                                            0] + "y = %.2fx + %2.0f" % (p3[1], p3[0]),
+#                                        transform=angleaxes[0].transAxes, fontsize=14)
 
 sns.regplot(data=windsdf,x="Angles to Zonal Wind", y='IBS crosstrack velocity', ax=angleaxes[1],color='C0')
 sns.regplot(data=windsdf,x="Angles to Zonal Wind", y='ELS crosstrack velocity', ax=angleaxes[1],color='C1')
@@ -417,37 +465,505 @@ angleaxes[1].set_ylabel("Crosstrack Velocity")
 flybys_disagreeing = ["t16","t21","t36","t39","t40","t41","t42","t48","t49","t51","t83"]
 flybys_agreeing = sorted(list(set(flybyslist) - set(flybys_disagreeing)))
 flybys_disagreeing_midlatitude = ["t40","t41","t42","t48"]
-print(flybys_agreeing)
+#print(flybys_agreeing)
 
-def alt_vel_plot(flybyslist):
+def alt_vel_plot_agree_disagree(flybyslist):
 
-    fig, ax = plt.subplots()
+    fig, axes = plt.subplots(ncols=2,sharey='all')
 
-    ax.set_ylabel("Altitude [km]")
-    for flyby in flybyslist:
+    cm = plt.get_cmap('gist_rainbow')
+    NUM_COLORS_disagree = len(flybys_disagreeing)
+    NUM_COLORS_agree = len(flybys_agreeing)
+
+    flybys_disagreeing_df = windsdf[windsdf['Flyby'].isin(flybys_disagreeing)]
+    flybys_agreeing_df = windsdf[~windsdf['Flyby'].isin(flybys_disagreeing)]
+    #print(flybys_disagreeing_df,flybys_agreeing_df)
+
+   # print(pd.cut(flybys_disagreeing_df['IBS alongtrack velocity'], np.arange(950, 1850, 100)))
+    avgVel_disagreeing_mean = flybys_disagreeing_df.groupby(pd.cut(flybys_disagreeing_df['Altitude'], np.arange(950, 1850, 100))).mean()
+    avgVel_disagreeing_std = flybys_disagreeing_df.groupby(
+        pd.cut(flybys_disagreeing_df['Altitude'], np.arange(950, 1850, 100))).std()
+    avgVel_agreeing_mean = flybys_agreeing_df.groupby(
+        pd.cut(flybys_agreeing_df['Altitude'], np.arange(950, 1850, 100))).mean()
+    avgVel_agreeing_std = flybys_agreeing_df.groupby(
+        pd.cut(flybys_agreeing_df['Altitude'], np.arange(950, 1850, 100))).std()
+
+    print(avgVel_disagreeing_mean['IBS alongtrack velocity'],avgVel_disagreeing_std['IBS alongtrack velocity'])
+    print(avgVel_agreeing_mean['IBS alongtrack velocity'], avgVel_agreeing_std['IBS alongtrack velocity'])
+
+    axes[0].set_ylabel("Altitude [km]")
+    for flybycounter, flyby in enumerate(flybys_agreeing):
+        if flyby in list(windsdf['Flyby']):
+            tempdf = windsdf[windsdf['Flyby']==flyby]
+            tempdf.reset_index(inplace=True)
+
+            #print(flyby)
+            minalt_index = tempdf["Altitude"].idxmin()
+            #print(minalt_index)
+            tempcolor = cm(1. * flybycounter / NUM_COLORS_agree)
+            #print("here, agree")
+            # sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=axes[0],color=tempcolor)
+            # sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=axes[0],color=tempcolor)
+
+
+            for counter in np.arange(0,minalt_index):
+                axes[0].errorbar([tempdf['IBS alongtrack velocity'].iloc[counter], tempdf['IBS alongtrack velocity'].iloc[counter+1]],
+                                 [tempdf['Altitude'].iloc[counter],tempdf['Altitude'].iloc[counter+1]],
+                                 xerr=[tempdf['IBS alongtrack velocity stderr'].iloc[counter],tempdf['IBS alongtrack velocity stderr'].iloc[counter+1]],
+                                 linestyle="-",color=tempcolor,label=flyby,alpha=0.35)
+            for counter in np.arange(minalt_index,  tempdf.shape[0]-1):
+                axes[0].errorbar([tempdf['IBS alongtrack velocity'].iloc[counter],tempdf['IBS alongtrack velocity'].iloc[counter + 1]],
+                        [tempdf['Altitude'].iloc[counter], tempdf['Altitude'].iloc[counter + 1]],
+                                 xerr=[tempdf['IBS alongtrack velocity stderr'].iloc[counter],
+                                       tempdf['IBS alongtrack velocity stderr'].iloc[counter + 1]],
+                                 linestyle="--",color=tempcolor,alpha=0.35)
+
+    for flybycounter, flyby in enumerate(flybys_disagreeing):
         if flyby in list(windsdf['Flyby']):
             tempdf = windsdf[windsdf['Flyby']==flyby]
             tempdf.reset_index(inplace=True)
             #print(flyby)
-
             minalt_index = tempdf["Altitude"].idxmin()
             #print(minalt_index)
+            tempcolor = cm(1. * flybycounter / NUM_COLORS_disagree)
+            #print("here, disagree")
+            sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=axes[1],color=tempcolor,markers=['x'])
+            sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=axes[1],color=tempcolor,markers=['x'])
 
-            if flyby in flybys_disagreeing:
-                #print("here, disagree")
-                sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C0',markers=['x'])
-                sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C1',markers=['x'])
-            else:
-                #print("here, agree")
-                sns.scatterplot(data=tempdf.iloc[:minalt_index,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C0')
-                sns.scatterplot(data=tempdf.iloc[minalt_index:,:], x="IBS alongtrack velocity", y="Altitude", ax=ax,color='C1')
+            for counter in np.arange(0,minalt_index):
+                axes[1].errorbar([tempdf['IBS alongtrack velocity'].iloc[counter],tempdf['IBS alongtrack velocity'].iloc[counter+1]],
+                                 [tempdf['Altitude'].iloc[counter],tempdf['Altitude'].iloc[counter+1]],
+                                 xerr=[tempdf['IBS alongtrack velocity stderr'].iloc[counter],
+                                       tempdf['IBS alongtrack velocity stderr'].iloc[counter + 1]],
+                                 linestyle="-",color=tempcolor,label=flyby,alpha=0.35)
+            for counter in np.arange(minalt_index,  tempdf.shape[0]-1):
+                axes[1].errorbar([tempdf['IBS alongtrack velocity'].iloc[counter],
+                         tempdf['IBS alongtrack velocity'].iloc[counter + 1]],
+                             [tempdf['Altitude'].iloc[counter], tempdf['Altitude'].iloc[counter + 1]],
+                                 xerr=[tempdf['IBS alongtrack velocity stderr'].iloc[counter],
+                                       tempdf['IBS alongtrack velocity stderr'].iloc[counter + 1]],
+                                 linestyle="--",
+                             color=tempcolor,alpha=0.35)
+    print(len(avgVel_disagreeing_mean['IBS alongtrack velocity']),len(np.arange(1000, 1800, 100)))
+    print(avgVel_disagreeing_mean['IBS alongtrack velocity'], np.arange(1000, 1800, 100),avgVel_disagreeing_std['IBS alongtrack velocity'])
+    axes[0].errorbar(avgVel_disagreeing_mean['IBS alongtrack velocity'], np.arange(1000, 1800, 100),
+                                 xerr=avgVel_disagreeing_std['IBS alongtrack velocity'],
+                                 linestyle="-",color="k")
+    axes[1].errorbar(avgVel_agreeing_mean['IBS alongtrack velocity'], np.arange(1000, 1800, 100),
+                                 xerr=avgVel_agreeing_std['IBS alongtrack velocity'],
+                                 linestyle="-",color="k")
 
-    ax.set_title(flyby)
-    ax.set_xlabel("Alongtrack Velocities [m/s]")
-    minvel = -250
-    maxvel= 250
-    ax.set_xlim(minvel,maxvel)
-    ax.set_ylim(bottom=950,top=1300)
+    axes[0].set_title("Agreeing Flybys")
+    axes[1].set_title("Disagreeing Flybys")
+    axes[0].set_xlabel("Alongtrack Velocities [m/s]")
+    minvel = -350
+    maxvel= 350
+    axes[0].set_xlim(minvel,maxvel)
+    axes[1].set_xlim(minvel, maxvel)
+    axes[0].legend()
+    axes[1].legend()
+
+    for ax in axes:
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+    #ax.set_ylim(bottom=950,top=1300)
+
+
+def alt_vel_plot_region(flybyslist,windsdf,lowlat=False):
+
+    fig, axes = plt.subplots(ncols=4,sharey='all',sharex='all')
+
+
+    if lowlat == True:
+        windsdf = windsdf[(windsdf['Latitude'] > -50.5) & (windsdf['Latitude'] < 50.5)]
+
+    flybys_315_45 = windsdf[(windsdf['Longitude'] > 315) | (windsdf['Longitude'] < 45)]
+    flybys_45_135 = windsdf[(windsdf['Longitude'] > 45) & (windsdf['Longitude'] < 135)]
+    flybys_135_225 = windsdf[(windsdf['Longitude'] > 135) & (windsdf['Longitude'] < 225)]
+    flybys_225_315 = windsdf[(windsdf['Longitude'] > 225) & (windsdf['Longitude'] < 315)]
+
+    #0 is Saturn
+    #90 is Wake
+    #180 is Anti-Saturn Facing
+    #270 is Ram
+
+    startalt = 950
+    endalt = 1850
+    intervalalt = 100
+
+
+    # # print(pd.cut(flybys_disagreeing_df['IBS alongtrack velocity'], np.arange(950, 1850, 100)))
+    avgVel_flybys_315_45_mean = flybys_315_45.groupby(pd.cut(flybys_315_45['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
+    avgVel_flybys_315_45_std = flybys_315_45.groupby(pd.cut(flybys_315_45['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
+    avgVel_flybys_45_135_mean = flybys_45_135.groupby(pd.cut(flybys_45_135['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
+    avgVel_flybys_45_135_std = flybys_45_135.groupby(pd.cut(flybys_45_135['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
+    avgVel_flybys_135_225_mean = flybys_135_225.groupby(pd.cut(flybys_135_225['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
+    avgVel_flybys_135_225_std = flybys_135_225.groupby(pd.cut(flybys_135_225['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
+    avgVel_flybys_225_315_mean = flybys_225_315.groupby(pd.cut(flybys_225_315['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
+    avgVel_flybys_225_315_std = flybys_225_315.groupby(pd.cut(flybys_225_315['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
+
+
+    for axescounter, flybyset in enumerate([flybys_315_45, flybys_45_135, flybys_135_225, flybys_225_315]):
+        print(axescounter,sorted(set(flybyset['Flyby'])))
+        for flybycounter, flyby in enumerate(sorted(set(flybyset['Flyby']))):
+
+            tempdf = flybyset[flybyset['Flyby']==flyby]
+            tempdf.reset_index(inplace=True)
+
+            minalt_index = tempdf["Altitude"].idxmin()
+            axes[axescounter].errorbar(tempdf['IBS alongtrack velocity'],tempdf['Altitude'],
+                             xerr=tempdf['IBS alongtrack velocity stderr'],label=flyby,alpha=0.35)
+
+    for axescounter, (mean,std) in enumerate(zip([avgVel_flybys_315_45_mean, avgVel_flybys_45_135_mean, avgVel_flybys_135_225_mean, avgVel_flybys_225_315_mean],
+                                                 [avgVel_flybys_315_45_std, avgVel_flybys_45_135_std, avgVel_flybys_135_225_std, avgVel_flybys_225_315_std])):
+        axes[axescounter].errorbar(mean['IBS alongtrack velocity'], np.arange(startalt+intervalalt/2, endalt-intervalalt/2, intervalalt),
+                         xerr=std['IBS alongtrack velocity'],
+                         linestyle="-", color="k")
+
+    # for (mean,std,label) in zip([avgVel_flybys_315_45_mean, avgVel_flybys_45_135_mean, avgVel_flybys_135_225_mean, avgVel_flybys_225_315_mean],
+    #                                              [avgVel_flybys_315_45_std, avgVel_flybys_45_135_std, avgVel_flybys_135_225_std, avgVel_flybys_225_315_std],
+    #                             ["Saturn Facing", "Wake", "Anti-Saturn Facing", "Ram"]):
+    for (mean, std, label) in zip([avgVel_flybys_315_45_mean, avgVel_flybys_135_225_mean],
+        [avgVel_flybys_315_45_std, avgVel_flybys_135_225_std],
+                                   ["Saturn Facing","Anti-Saturn Facing"]):
+            axes[4].errorbar(mean['IBS alongtrack velocity'], np.arange(startalt+intervalalt/2, endalt-intervalalt/2, intervalalt),
+                             xerr=std['IBS alongtrack velocity'],
+                             linestyle="-",label=label)
+
+
+    axes[0].set_ylabel("Altitude [km]")
+    axes[0].set_title("Saturn \n (Long 315-45 deg) ")
+    axes[1].set_title("Wake \n (Long 45-135 deg) ")
+    axes[2].set_title("Anti-Saturn \n (Long 135-225 deg) ")
+    axes[3].set_title("Ram \n (Long 225-315 deg) ")
+    axes[0].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    axes[1].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    axes[2].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    axes[3].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    axes[4].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    minvel = -400
+    maxvel= 400
+    axes[0].set_xlim(minvel,maxvel)
+    axes[0].legend()
+    axes[1].legend()
+
+    for ax in axes:
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+    #ax.set_ylim(bottom=950,top=1300)
+
+
+def alt_vel_plot_long_sza(flybyslist, windsdf):
+    fig, axes = plt.subplots(ncols=4, nrows=3, sharex='all',sharey='row')
+
+    windsdf = windsdf[(windsdf['Latitude'] > -50.5) & (windsdf['Latitude'] < 50.5)]
+
+    flybys_315_45 = windsdf[(windsdf['Longitude'] > 315) | (windsdf['Longitude'] < 45)] #Saturn
+    flybys_45_135 = windsdf[(windsdf['Longitude'] > 45) & (windsdf['Longitude'] < 135)]
+    flybys_135_225 = windsdf[(windsdf['Longitude'] > 135) & (windsdf['Longitude'] < 225)]#Anti-Saturn
+    flybys_225_315 = windsdf[(windsdf['Longitude'] > 225) & (windsdf['Longitude'] < 315)]
+
+    for axescounter, flybyset in enumerate([flybys_315_45, flybys_45_135, flybys_135_225, flybys_225_315]):
+        print(axescounter, sorted(set(flybyset['Flyby'])))
+        for flybycounter, flyby in enumerate(sorted(set(flybyset['Flyby']))):
+            tempdf = flybyset[flybyset['Flyby'] == flyby]
+            tempdf.reset_index(inplace=True)
+
+            axes[0, axescounter].scatter(tempdf['Longitude'].iloc[0], tempdf['Latitude'].iloc[0], color='k', label=flyby, alpha=1,marker='x')
+            axes[0,axescounter].scatter(tempdf['Longitude'], tempdf['Latitude'], label=flyby, alpha=0.5)
+            axes[1, axescounter].scatter(tempdf['Longitude'].iloc[0], tempdf['Altitude'].iloc[0], color='k', label=flyby, alpha=1,marker='x')
+            axes[1,axescounter].scatter(tempdf['Longitude'], tempdf['Altitude'], label=flyby, alpha=0.5)
+            axes[2, axescounter].scatter(tempdf['Longitude'].iloc[0], tempdf['Solar Zenith Angle'].iloc[0], color='k',
+                                         label=flyby, alpha=1,marker='x')
+            axes[2,axescounter].scatter(tempdf['Longitude'], tempdf['Solar Zenith Angle'], label=flyby, alpha=0.5)
+
+    #
+    axes[0,0].set_title("Saturn \n (Long 315-45 deg) ")
+    axes[0,1].set_title("Wake \n (Long 45-135 deg) ")
+    axes[0,2].set_title("Anti-Saturn \n (Long 135-225 deg) ")
+    axes[0,3].set_title("Ram \n (Long 225-315 deg) ")
+
+    axes[0,0].set_ylabel("Latitude [km]")
+    axes[1,0].set_ylabel("Altitude [km]")
+    axes[2, 0].set_ylabel("Solar Zenith Angle [deg]")
+    axes[2, 0].set_xlabel("Longitude [deg]")
+    axes[2, 1].set_xlabel("Longitude [deg]")
+    axes[2, 2].set_xlabel("Longitude [deg]")
+    axes[2, 3].set_xlabel("Longitude [deg]")
+    # axes[0].set_title("Saturn \n (Long 315-45 deg) ")
+    # axes[1].set_title("Wake \n (Long 45-135 deg) ")
+    # axes[2].set_title("Anti-Saturn \n (Long 135-225 deg) ")
+    # axes[3].set_title("Ram \n (Long 225-315 deg) ")
+    # axes[0].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    # axes[1].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    # axes[2].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    # axes[3].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    # axes[4].set_xlabel("IBS Alongtrack \n Velocities [m/s]")
+    # minvel = -400
+    # maxvel = 400
+    # axes[0].set_xlim(minvel, maxvel)
+    # axes[0].legend()
+    # axes[1].legend()
+
+    axes[0,0].invert_xaxis()
+
+
+    for ax in [axes[0,0],axes[0,1],axes[0,2],axes[0,3]]:
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(),ncol=2,fontsize=10)
+    # ax.set_ylim(bottom=950,top=1300)
+
+def box_titan_trajectory_plot(flybys,wake=True,sun=False,CA=False):
+    '''
+    Plots Cassini Trajectory on 2d plots in 3d box
+    '''
+
+    boundingvalue = 4500
+    dotinterval = 60
+    radius = 2575.15
+    exobase = 1500
+
+    lower_layer_alt = 1030
+    middle_layer_alt = 1300
+    upper_layer_alt = 1500
+
+
+    t0 = time.time()
+    # ADD Switch for planes
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.gca(projection='3d',box_aspect=(1,1,1))
+
+    i = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(i)
+    art3d.pathpatch_2d_to_3d(i, z=boundingvalue, zdir="x")
+    j = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(j)
+    art3d.pathpatch_2d_to_3d(j, z=boundingvalue, zdir="y")
+    k = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(k)
+    art3d.pathpatch_2d_to_3d(k, z=-boundingvalue, zdir="z")
+
+    m = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(m)
+    art3d.pathpatch_2d_to_3d(m, z=boundingvalue, zdir="x")
+    n = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(n)
+    art3d.pathpatch_2d_to_3d(n, z=boundingvalue, zdir="y")
+    o = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(o)
+    art3d.pathpatch_2d_to_3d(o, z=-boundingvalue, zdir="z")
+
+    for number, flyby in enumerate(flybys):
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+        # ax.plot((-(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2) ** 0.5), singleflyby_df['Y Titan'],
+        #         zs=-boundingvalue, zdir='z', color='C' + str(number), label=flyby)
+
+        ax.plot(singleflyby_df['X Titan'],singleflyby_df['Y Titan'],zs=-boundingvalue, zdir='z',color='C'+str(number),label=flyby)
+        ax.plot(singleflyby_df['X Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='y',color='C'+str(number))
+        ax.plot(singleflyby_df['Y Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='x',color='C'+str(number))
+
+        if CA == True:
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Y Titan'].iloc[0], zs=-boundingvalue, zdir='z',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='y',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['Y Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='x',
+                    color='k', marker="^")
+
+
+    # if timedots == True:
+    #     for et in np.arange(lower_et, upper_et, dotinterval):
+    #         dotstate = cassini_phase(spice.et2utc(et, "ISOC", 0))
+    #         ax.scatter(dotstate[0] / 252, dotstate[1] / 252, zs=-boundingvalue, zdir='z', c='k', marker=".", s=15)
+    #         ax.scatter(dotstate[0] / 252, dotstate[2] / 252, zs=boundingvalue, zdir='y', c='k', marker=".", s=15)
+    #         ax.scatter(dotstate[1] / 252, dotstate[2] / 252, zs=boundingvalue, zdir='x', c='k', marker=".", s=15)
+    #
+    #     ax.text2D(0.65, 0.97, r'$\cdot$ 1 minute markers  ', fontsize=12, transform=ax.transAxes)
+    #
+    if wake == True:
+        # XY Wake
+        ax.plot([-radius, -radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+        ax.plot([radius, radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+
+        wake_rect_xy = mpatches.Rectangle((-radius, -boundingvalue), 2*radius, boundingvalue, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_xy)
+        art3d.pathpatch_2d_to_3d(wake_rect_xy, z=-boundingvalue, zdir="z")
+
+        # YZ Wake
+        ax.plot([-boundingvalue, 0], [-radius, -radius], zs=boundingvalue, zdir='x', c='g')
+        ax.plot([-boundingvalue, 0], [radius, radius], zs=boundingvalue, zdir='x', c='g')
+
+        wake_rect_yz = mpatches.Rectangle((-boundingvalue, -radius), boundingvalue, 2*radius, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_yz)
+        art3d.pathpatch_2d_to_3d(wake_rect_yz, z=boundingvalue, zdir="x")
+
+    if len(flybys) == 1 and sun == True:
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+        i = pd.to_datetime(singleflyby_df['Positive Peak Time']).iloc[0]
+
+        et = spice.datetime2et(i)
+        sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+        satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
+        sundir_unorm = spice.unorm(sundir)[0]
+        satdir_unorm = spice.unorm(satdir)[0]
+        print("sundir", sundir_unorm)
+        print("satdir", satdir_unorm)
+        #
+        # ax.plot([0, satdir_unorm[0] * 1000], [0, satdir_unorm[1] * 1000],zs=-boundingvalue, zdir='z',color='r')
+        # ax.plot([0, satdir_unorm[0] * 1000], [0, satdir_unorm[2] * 1000], zs=boundingvalue, zdir='y', color='r')
+        # ax.plot([0, satdir_unorm[1] * 1000], [0, satdir_unorm[2] * 1000], zs=boundingvalue, zdir='x', color='r')
+
+        # ax.plot([0, sundir_unorm[0] * 1000], [0, sundir_unorm[1] * 1000],zs=-boundingvalue, zdir='z',color='b')
+        # ax.plot([0, sundir_unorm[0] * 1000], [0, sundir_unorm[2] * 1000], zs=boundingvalue, zdir='y', color='b')
+        # ax.plot([0, sundir_unorm[1] * 1000], [0, sundir_unorm[2] * 1000], zs=boundingvalue, zdir='x', color='b')
+
+        if sundir_unorm[1] < 0:
+            angle = np.degrees(spice.vsepg([-1, 0], [sundir_unorm[0], sundir_unorm[1]]))
+        else:
+            angle = -np.degrees(spice.vsepg([-1, 0], [sundir_unorm[0], sundir_unorm[1]]))
+
+        print("angle",angle)
+        startangle = -90 + angle
+        endangle = 90 + angle
+
+        c = mpatches.Wedge((0, 0), radius, startangle, endangle, fill=True, color='k', alpha=0.4)
+        ax.add_patch(c)
+        art3d.pathpatch_2d_to_3d(c, z=-boundingvalue, zdir="z")
+
+    ax.set_xlabel('X (km)')
+    ax.set_ylabel('Y (km)')
+    ax.set_zlabel('Z (km)')
+
+    ax.view_init(elev=30., azim=-135)
+
+    fig.legend()
+
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="z", style="sci", scilimits=(0, 0))
+
+    ax.set_xlim(-boundingvalue, boundingvalue)
+    ax.set_ylim(-boundingvalue, boundingvalue)
+    ax.set_zlim(-boundingvalue, boundingvalue)
+
+    t1 = time.time()
+    print("Time Elapsed", t1 - t0)
+
+def box_titan_trajectory_plot_cylindrical(flybys,wake=True,StartPoint=False):
+    '''
+    Plots Cassini Trajectory on 2d cylindrical plots in 3d box
+    '''
+
+    boundingvalue = 4500
+    dotinterval = 60
+    radius = 2575.15
+    exobase = 1500
+
+    lower_layer_alt = 1030
+    middle_layer_alt = 1300
+    upper_layer_alt = 1500
+
+
+    t0 = time.time()
+    # ADD Switch for planes
+
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.gca(projection='3d',box_aspect=(1,1,1))
+
+    i = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(i)
+    art3d.pathpatch_2d_to_3d(i, z=boundingvalue, zdir="x")
+    j = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(j)
+    art3d.pathpatch_2d_to_3d(j, z=boundingvalue, zdir="y")
+    k = mpatches.Circle((0, 0), radius, fill=False, ec='k', lw=1)
+    ax.add_patch(k)
+    art3d.pathpatch_2d_to_3d(k, z=-boundingvalue, zdir="z")
+
+    m = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(m)
+    art3d.pathpatch_2d_to_3d(m, z=boundingvalue, zdir="x")
+    n = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(n)
+    art3d.pathpatch_2d_to_3d(n, z=boundingvalue, zdir="y")
+    o = mpatches.Circle((0, 0), radius+upper_layer_alt, fill=False, ec='grey', lw=1)
+    ax.add_patch(o)
+    art3d.pathpatch_2d_to_3d(o, z=-boundingvalue, zdir="z")
+
+    for number, flyby in enumerate(flybys):
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[::, :]
+
+        # ax.plot(singleflyby_df['X Titan'],singleflyby_df['Y Titan'],zs=-boundingvalue, zdir='z',color='C'+str(number),label=flyby,linestyle='--')
+        # ax.plot(singleflyby_df['X Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='y',color='C'+str(number),linestyle='--')
+        ax.plot(singleflyby_df['Y Titan'],singleflyby_df['Z Titan'],zs=boundingvalue, zdir='x',color='C'+str(number))
+
+        if singleflyby_df['X Titan'].iloc[int(len(singleflyby_df['X Titan'])/2)] < 0:
+            ax.plot(-np.sqrt(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2), singleflyby_df['Y Titan'],
+                    zs=-boundingvalue, zdir='z', color='C' + str(number), label=flyby)
+        else:
+            ax.plot(np.sqrt(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2),singleflyby_df['Y Titan'],zs=-boundingvalue, zdir='z',color='C'+str(number),label=flyby)
+
+        if singleflyby_df['X Titan'].iloc[int(len(singleflyby_df['X Titan'])/2)] < 0:
+            ax.plot(-np.sqrt(singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2), singleflyby_df['Z Titan']
+                    ,zs=boundingvalue, zdir='y',color='C'+str(number))
+        else:
+            ax.plot(np.sqrt(singleflyby_df['X Titan']**2 + singleflyby_df['Z Titan']**2),singleflyby_df['Z Titan'],zs=boundingvalue, zdir='y',color='C'+str(number))
+
+        # ax.plot(singleflyby_df['Y Titan'], singleflyby_df['Z Titan'], zs=boundingvalue, zdir='x',
+        #         color='C' + str(number), linestyle='--')
+
+        if StartPoint == True:
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Y Titan'].iloc[0], zs=-boundingvalue, zdir='z',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['X Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='y',
+                    color='k', marker="^")
+            ax.plot(singleflyby_df['Y Titan'].iloc[0], singleflyby_df['Z Titan'].iloc[0], zs=boundingvalue, zdir='x',
+                    color='k', marker="^")
+
+    if wake == True:
+        # XY Wake
+        ax.plot([-radius, -radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+        ax.plot([radius, radius], [-boundingvalue, 0], zs=-boundingvalue, zdir='z', c='g')
+
+        wake_rect_xy = mpatches.Rectangle((-radius, -boundingvalue), 2*radius, boundingvalue, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_xy)
+        art3d.pathpatch_2d_to_3d(wake_rect_xy, z=-boundingvalue, zdir="z")
+
+        # YZ Wake
+        ax.plot([-boundingvalue, 0], [-radius, -radius], zs=boundingvalue, zdir='x', c='g')
+        ax.plot([-boundingvalue, 0], [radius, radius], zs=boundingvalue, zdir='x', c='g')
+
+        wake_rect_yz = mpatches.Rectangle((-boundingvalue, -radius), boundingvalue, 2*radius, fill=True, facecolor='green', alpha=0.1)
+        ax.add_patch(wake_rect_yz)
+        art3d.pathpatch_2d_to_3d(wake_rect_yz, z=boundingvalue, zdir="x")
+
+    ax.set_xlabel('SqRt(X^2 + Z^2) (km)')
+    ax.set_ylabel('Y (km)')
+    ax.set_zlabel('Z (km)')
+
+    # Customize the view angle so it's easier to see that the scatter points lie
+    # on the plane y=0
+    ax.view_init(elev=30., azim=-135)
+
+    fig.legend()
+
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+    plt.ticklabel_format(axis="z", style="sci", scilimits=(0, 0))
+
+
+    ax.set_xlim(-boundingvalue, boundingvalue)
+    ax.set_ylim(-boundingvalue, boundingvalue)
+    ax.set_zlim(-boundingvalue, boundingvalue)
+
+
+    t1 = time.time()
+    print("Time Elapsed", t1 - t0)
+
 
 def Titan_frame_plot(flybys):
 
@@ -598,11 +1114,79 @@ def Titan_frame_plot(flybys):
     for ax in [axxy, axxz, axyz]:
         ax.legend()
 
+
+def Titan_cylindrical_plot(flybys):
+
+    Titan_current_radius = 2575.15
+    lower_layer_alt = 1030
+    middle_layer_alt =  1300
+    upper_layer_alt =  0
+
+    figcyl, (axescyl_saturn,axescyl_antisaturn) = plt.subplots(nrows=2, sharex='all')
+
+    axescyl_antisaturn.set_xlabel("y")
+    axescyl_saturn.set_ylabel(r'$(x^{\frac{1}{2}} + z^{\frac{1}{2}})^{2}$')
+
+
+    for axcyl in [axescyl_saturn,axescyl_antisaturn]:
+        TitanBody_cyl = plt.Circle((0, 0), Titan_current_radius, color='y', alpha=0.5, zorder=3)
+        TitanLower_cyl = plt.Circle((0, 0), Titan_current_radius + lower_layer_alt, color='w', fill=True, alpha=0.5,
+                                    zorder=2)
+        TitanMiddle_cyl = plt.Circle((0, 0), Titan_current_radius + middle_layer_alt, color='k', fill=True, alpha=0.5,
+                                     zorder=1)
+        TitanExobase_cyl = plt.Circle((0, 0), Titan_current_radius + upper_layer_alt, color='g', fill=False, zorder=0)
+        axcyl.set_ylabel(r'$(x^{\frac{1}{2}} + z^{\frac{1}{2}})^{2}$')
+        axcyl.set_xlim(-4000, 4000)
+        axcyl.set_ylim(0, 4000)
+        axcyl.add_artist(TitanBody_cyl)
+        axcyl.add_artist(TitanLower_cyl)
+        axcyl.add_artist(TitanMiddle_cyl)
+        axcyl.add_artist(TitanExobase_cyl)
+        axcyl.set_aspect("equal")
+        axcyl.plot([0, -5000], [-2575.15, -2575.15], color='g', zorder=8)
+        axcyl.plot([0, -5000], [2575.15, 2575.15], color='g', zorder=8)
+
+    for flyby in flybys:
+        singleflyby_df = windsdf.loc[windsdf['Flyby'].isin([flyby])].iloc[:, :]
+        singleflyby_df = singleflyby_df[singleflyby_df['Altitude'] < 1500]
+
+        ydata = (singleflyby_df['X Titan'] ** 2 + singleflyby_df['Z Titan'] ** 2) ** 0.5
+
+        if singleflyby_df['X Titan'].iloc[0] < 0:
+            axescyl_antisaturn.plot(singleflyby_df['Y Titan'], ydata, marker='', color='k')
+            sns.scatterplot(x=singleflyby_df['Y Titan'],
+                            y=ydata,
+                            hue=singleflyby_df['IBS alongtrack velocity'],
+                            hue_norm=mcolors.CenteredNorm(vcenter=0, halfrange=50), label=flyby, ax=axescyl_antisaturn, palette='bwr',
+                            legend=False, alpha=0.7, zorder=5)
+
+        if singleflyby_df['X Titan'].iloc[0] > 0:
+            axescyl_saturn.plot(singleflyby_df['Y Titan'], ydata, marker='', color='k')
+            sns.scatterplot(x=singleflyby_df['Y Titan'],
+                            y=ydata,
+                            hue=singleflyby_df['IBS alongtrack velocity'],
+                            hue_norm=mcolors.CenteredNorm(vcenter=0, halfrange=50), label=flyby, ax=axescyl_saturn, palette='bwr',
+                            legend=False, alpha=0.7, zorder=5)
+    axescyl_saturn.arrow(0,500,0,500,width=25,head_width=100,zorder=9,fc='r')
+    axescyl_antisaturn.arrow(0, 1000, 0, -500,width=25,head_width=100,zorder=9,fc='r')
+    axescyl_saturn.text(-50,500,"Saturn",zorder=10,color='r')
+    axescyl_antisaturn.text(-50, 1000, "Saturn",zorder=10,color='r')
+
+    axescyl_antisaturn.invert_yaxis()
+    axescyl_antisaturn.invert_xaxis()
+    figcyl.subplots_adjust(wspace=0, hspace=0)
+
+
 # scp_plot_byflyby()
-# alt_vel_plot(flybyslist)
+#alt_vel_plot_agree_disgaree(flybyslist)
+#alt_vel_plot_long_sza(flybyslist,windsdf)
 # Titan_frame_plot(flybys_agreeing)
 # Titan_frame_plot(flybys_disagreeing)
 # Titan_frame_plot(flybys_disagreeing_midlatitude)
 
+Titan_cylindrical_plot(['t23','t25','t27','t50','t40','t41','t43','t48'])
+
+#box_titan_trajectory_plot(['t23','t25','t27','t50','t71','t40','t41','t42','t43','t48'],sun=False,CA=True)
+#box_titan_trajectory_plot_cylindrical(['t23','t25','t27','t50','t71','t40','t41','t42','t43','t48'],StartPoint=False)
 
 plt.show()

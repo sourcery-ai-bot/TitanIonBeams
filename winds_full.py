@@ -115,14 +115,16 @@ def heavy_ion_finder(elsdata, startenergy, anode, starttime, endtime):
     return datetime.datetime.fromtimestamp(testtime), elscalib['earray'][tempenergybin]
 
 
-def heavy_ion_finder_ibs(ibsdata, startenergy, starttime, endtime):
+def heavy_ion_finder_ibs(ibsdata, startenergy, starttime, endtime, prominencefactor):
+    print(startenergy, starttime,endtime)
     startslice, endslice = CAPS_slicenumber(ibsdata, starttime), CAPS_slicenumber(ibsdata, endtime)
     energybin = CAPS_energyslice("ibs", startenergy, startenergy)[0]
     tempslice = (ibsdata['ibsdata'][:, 1, startslice:endslice] / (ibscalib['ibsgeom'] * 1e-4))
     maxindices = np.unravel_index(tempslice.argmax(), tempslice.shape)
-    prominence = tempslice[maxindices] / 10
+    prominence = tempslice[maxindices] / prominencefactor
 
     singlepeakslice = (ibsdata['ibsdata'][energybin, 1, startslice:endslice] / (ibscalib['ibsgeom'] * 1e-4))
+    print(max(singlepeakslice),prominence)
     while max(singlepeakslice) > prominence:
         recentpeakslice = singlepeakslice
         recentenergybin = energybin
@@ -210,86 +212,126 @@ flyby_maxbeamtimegap = {"t16": 13, "t17": 13, "t18": 13, "t19": 13,
                         "t49": 30, "t50": 30,"t51": 30, "t71": 30, "t83": 30}
 
 data_times_pairs = [
-    ["t16", [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 45)], 20, 15, 30],
-    ["t17", [datetime.datetime(2006, 9, 7, 20, 13, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)], 20, 15, 30],
+    ["t16", [datetime.datetime(2006, 7, 22, 0, 20, 43), datetime.datetime(2006, 7, 22, 0, 32, 20)],
+     [datetime.datetime(2006, 7, 22, 0, 22), datetime.datetime(2006, 7, 22, 0, 28, 45)], 20, 6, 30, 40],
+    ["t17", [datetime.datetime(2006, 9, 7, 20, 9, 30), datetime.datetime(2006, 9, 7, 20, 24, 55)],
+     [datetime.datetime(2006, 9, 7, 20, 13, 30), datetime.datetime(2006, 9, 7, 20, 19, 40)], 20, 6, 30, 40],
     # ["t18", [datetime.datetime(2006, 9, 23, 20, 13, 30), datetime.datetime(2006, 9, 23, 20, 19, 40)], 20, 15, 30],
-    ["t19", [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)], 20, 15, 30],
-    ["t19", [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 33, 10)], 20, 15, 30],
-    ["t20", [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)], 20, 15, 40],
-    ["t21", [datetime.datetime(2006, 12, 12, 11, 40, 30), datetime.datetime(2006, 12, 12, 11, 43, 20)], 20, 15, 30],
-    ["t23", [datetime.datetime(2007, 1, 13, 8, 35), datetime.datetime(2007, 1, 13, 8, 42)], 20, 15, 30],
-    ["t25", [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)], 20, 15, 30],
-    ["t26", [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)], 20, 15, 30],
-    ["t27", [datetime.datetime(2007, 3, 26, 0, 20, 30), datetime.datetime(2007, 3, 26, 0, 26)], 20, 15, 30],
-    ["t28", [datetime.datetime(2007, 4, 10, 22, 55, 40), datetime.datetime(2007, 4, 10, 23)], 20, 15, 30],
-    ["t29", [datetime.datetime(2007, 4, 26, 21, 29, 30), datetime.datetime(2007, 4, 26, 21, 35, 30)], 20, 15, 30],
-    ["t30", [datetime.datetime(2007, 5, 12, 20, 8, 30), datetime.datetime(2007, 5, 12, 20, 11, 45)], 40, 15, 30],
-    ["t32", [datetime.datetime(2007, 6, 13, 17, 44), datetime.datetime(2007, 6, 13, 17, 48)], 20, 15, 30],
-    ["t36", [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)], 20, 15, 30],
-    ["t39", [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)], 20, 15, 30],
-    ["t40", [datetime.datetime(2008, 1, 5, 21, 27, 20), datetime.datetime(2008, 1, 5, 21, 33, 30)], 20, 15, 30],
-    ["t41", [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)], 20, 15, 30],
-    ["t42", [datetime.datetime(2008, 3, 25, 14, 25), datetime.datetime(2008, 3, 25, 14, 30, 20)], 20, 15, 30],
-    ["t43", [datetime.datetime(2008, 5, 12, 9, 59), datetime.datetime(2008, 5, 12, 10, 5)], 20, 15, 30],
-    ["t46", [datetime.datetime(2008, 11, 3, 17, 33, 10), datetime.datetime(2008, 11, 3, 17, 36, 30)], 20, 15, 30],
-    ["t47", [datetime.datetime(2008, 11, 19, 15, 53), datetime.datetime(2008, 11, 19, 15, 54)], 14, 15, 50],
-    ["t48", [datetime.datetime(2008, 12, 5, 14, 23, 30), datetime.datetime(2008, 12, 5, 14, 28)], 20, 15, 30],
-    ["t49", [datetime.datetime(2008, 12, 21, 12, 58), datetime.datetime(2008, 12, 21, 13, 2, 15)], 20, 15, 30],
-    ["t50", [datetime.datetime(2009, 2, 7, 8, 48, 45), datetime.datetime(2009, 2, 7, 8, 53)], 20, 15, 30],
-    ["t51", [datetime.datetime(2009, 3, 27, 4, 42), datetime.datetime(2009, 3, 27, 4, 46)], 20, 15, 30],
-    ["t71", [datetime.datetime(2010, 7, 7, 0, 20, 30), datetime.datetime(2010, 7, 7, 0, 25)], 20, 15, 30],
-    ["t83", [datetime.datetime(2012, 5, 22, 1, 7, 45), datetime.datetime(2012, 5, 22, 1, 13)], 20, 15, 30],
+    ["t19", [datetime.datetime(2006, 10, 9, 17, 22), datetime.datetime(2006, 10, 9, 17, 30, 14)],
+     [datetime.datetime(2006, 10, 9, 17, 28), datetime.datetime(2006, 10, 9, 17, 30, 14)], 20, 6, 30, 40],
+    ["t19", [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 36, 30)],
+     [datetime.datetime(2006, 10, 9, 17, 31, 15), datetime.datetime(2006, 10, 9, 17, 33, 10)], 20, 6, 30, 40],
+    ["t20", [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)],
+     [datetime.datetime(2006, 10, 25, 15, 55, 30), datetime.datetime(2006, 10, 25, 15, 57, 45)], 20, 15, 40, 10],
+    ["t21", [datetime.datetime(2006, 12, 12, 11, 34, 30), datetime.datetime(2006, 12, 12, 11, 50)],
+     [datetime.datetime(2006, 12, 12, 11, 39, 50), datetime.datetime(2006, 12, 12, 11, 43, 20)], 20, 7, 30, 40],
+    ["t23", [datetime.datetime(2007, 1, 13, 8, 31), datetime.datetime(2007, 1, 13, 8, 46, 15)],
+     [datetime.datetime(2007, 1, 13, 8, 35), datetime.datetime(2007, 1, 13, 8, 42)], 20, 7, 30, 40],
+    ["t25", [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)],
+     [datetime.datetime(2007, 2, 22, 3, 10), datetime.datetime(2007, 2, 22, 3, 15)], 20, 15, 30, 10],
+    ["t26", [datetime.datetime(2007, 3, 10, 1, 43, 30), datetime.datetime(2007, 3, 10, 1, 54, 45)],
+     [datetime.datetime(2007, 3, 10, 1, 45, 30), datetime.datetime(2007, 3, 10, 1, 52, 20)], 20, 7, 30, 40],
+    ["t27", [datetime.datetime(2007, 3, 26, 0, 20, 30), datetime.datetime(2007, 3, 26, 0, 28, 30)],
+     [datetime.datetime(2007, 3, 26, 0, 20, 30), datetime.datetime(2007, 3, 26, 0, 26)], 20, 7, 30, 40],
+    ["t28", [datetime.datetime(2007, 4, 10, 22, 53), datetime.datetime(2007, 4, 10, 23, 3, 20)],
+     [datetime.datetime(2007, 4, 10, 22, 55, 40), datetime.datetime(2007, 4, 10, 23)], 20, 8, 30, 40],
+    ["t29", [datetime.datetime(2007, 4, 26, 21, 28, 40), datetime.datetime(2007, 4, 26, 21, 38)],
+     [datetime.datetime(2007, 4, 26, 21, 29, 30), datetime.datetime(2007, 4, 26, 21, 35, 30)], 20, 8, 30, 40],
+    ["t30", [datetime.datetime(2007, 5, 12, 20, 8, 30), datetime.datetime(2007, 5, 12, 20, 15, 20)],
+     [datetime.datetime(2007, 5, 12, 20, 8, 30), datetime.datetime(2007, 5, 12, 20, 11, 45)], 40, 8, 30, 40],
+    ["t32", [datetime.datetime(2007, 6, 13, 17, 43, 10), datetime.datetime(2007, 6, 13, 17, 51, 25)],
+     [datetime.datetime(2007, 6, 13, 17, 44), datetime.datetime(2007, 6, 13, 17, 48)], 20, 8, 30, 40],
+    ["t36", [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)],
+     [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)], 20, 15, 30, 10],
+    ["t39", [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)],
+     [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)], 20, 15, 30, 10],
+    ["t40", [datetime.datetime(2008, 1, 5, 21, 26), datetime.datetime(2008, 1, 5, 21, 35, 15)],
+     [datetime.datetime(2008, 1, 5, 21, 27, 20), datetime.datetime(2008, 1, 5, 21, 33, 30)], 20, 6, 30, 35],
+    ["t41", [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)],
+     [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)], 20, 15, 30, 10],
+    ["t42", [datetime.datetime(2008, 3, 25, 14, 22, 30), datetime.datetime(2008, 3, 25, 14, 33)],
+     [datetime.datetime(2008, 3, 25, 14, 25), datetime.datetime(2008, 3, 25, 14, 30, 20)], 20, 6, 30, 35],
+    ["t43", [datetime.datetime(2008, 5, 12, 9, 55, 30), datetime.datetime(2008, 5, 12, 10, 8, 30)],
+     [datetime.datetime(2008, 5, 12, 9, 59), datetime.datetime(2008, 5, 12, 10, 5)], 20, 6, 30, 35],
+    ["t46", [datetime.datetime(2008, 11, 3, 17, 33, 10), datetime.datetime(2008, 11, 3, 17, 36, 30)],
+     [datetime.datetime(2008, 11, 3, 17, 33, 10), datetime.datetime(2008, 11, 3, 17, 36, 30)], 20, 15, 30, 10],
+    ["t47", [datetime.datetime(2008, 11, 19, 15, 53), datetime.datetime(2008, 11, 19, 15, 54)],
+     [datetime.datetime(2008, 11, 19, 15, 53), datetime.datetime(2008, 11, 19, 15, 54)], 14, 15, 50, 10],
+    ["t48", [datetime.datetime(2008, 12, 5, 14, 20), datetime.datetime(2008, 12, 5, 14, 32, 40)],
+     [datetime.datetime(2008, 12, 5, 14, 23, 30), datetime.datetime(2008, 12, 5, 14, 28)], 20, 6, 30, 35],
+    ["t49", [datetime.datetime(2008, 12, 21, 12, 55, 30), datetime.datetime(2008, 12, 21, 13, 4)],
+     [datetime.datetime(2008, 12, 21, 12, 58), datetime.datetime(2008, 12, 21, 13, 2, 15)], 20, 6, 30, 35],
+    ["t50", [datetime.datetime(2009, 2, 7, 8, 45, 20), datetime.datetime(2009, 2, 7, 8, 54, 45)],
+     [datetime.datetime(2009, 2, 7, 8, 48, 45), datetime.datetime(2009, 2, 7, 8, 53)], 20, 6, 30, 35],
+    ["t51", [datetime.datetime(2009, 3, 27, 4, 41), datetime.datetime(2009, 3, 27, 4, 49, 30)],
+     [datetime.datetime(2009, 3, 27, 4, 42), datetime.datetime(2009, 3, 27, 4, 46)],40, 6, 30, 35],
+    ["t71", [datetime.datetime(2010, 7, 7, 0, 17, 10), datetime.datetime(2010, 7, 7, 0, 26, 30)],
+     [datetime.datetime(2010, 7, 7, 0, 20, 30), datetime.datetime(2010, 7, 7, 0, 25)], 20, 6, 30, 35],
+    ["t83", [datetime.datetime(2012, 5, 22, 1, 2, 30), datetime.datetime(2012, 5, 22, 1, 16, 10)],
+     [datetime.datetime(2012, 5, 22, 1, 7, 45), datetime.datetime(2012, 5, 22, 1, 13)], 20, 6, 30, 35],
 ]
 
-# usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
-#               't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
+usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
+              't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
 #oldflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 #newflybys = ['t36','t48','t49','t50','t51','t71','t83']
 #LowAzimuthFlybys = ['t20', 't46']
 
 
 # usedflybys = ['t42', 't46']
-usedflybys = ['t23']
+#usedflybys = ['t83']
 
 
 def CAPS_winds(data_times_pairs):
     elspeakslist = []
-    for flyby, times, negativemass, positivemass, timewindow in data_times_pairs:
+    for flyby, positivetimes, negativetimes, negativemass, positivemass, timewindow, prominencefactor in data_times_pairs:
         if flyby in usedflybys:
             elsdata = readsav("data/els/elsres_" + filedates[flyby] + ".dat")
             generate_mass_bins(elsdata, flyby, "els")
             ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
             generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 
-            ramtimes = CAPS_ramtimes(elsdata, times[0], times[1])
+            ramtimes_positive = CAPS_ramtimes(elsdata, positivetimes[0], positivetimes[1])
+            ramtimes_negative = CAPS_ramtimes(elsdata, negativetimes[0], negativetimes[1])
+            ramtimes_otherpositive = sorted(list(set(ramtimes_positive) - set(ramtimes_negative)))
+            print(ramtimes_negative)
+            print(ramtimes_otherpositive)
             maxflux_anodes = []
-            for i in ramtimes:
+            for i in ramtimes_positive:
                 maxflux_anodes.append(ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10),
                                                         i + datetime.timedelta(seconds=10)))
             # print(ramtimes,maxflux_anodes)
 
-            for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
-                heavypeaktime_neg, heavypeakenergy_neg = heavy_ion_finder(elsdata, negativemass, maxflux_anode,
-                                                                          ramtime - datetime.timedelta(
-                                                                              seconds=timewindow / 2),
-                                                                          ramtime + datetime.timedelta(
-                                                                              seconds=timewindow / 2))
-                heavypeaktime_pos, heavypeakenergy_pos = heavy_ion_finder_ibs(ibsdata, positivemass,
+            for ramtime, maxflux_anode in zip(ramtimes_positive, maxflux_anodes):
+                if ramtime not in ramtimes_otherpositive:
+                    heavypeaktime_neg, heavypeakenergy_neg = heavy_ion_finder(elsdata, negativemass, maxflux_anode,
                                                                               ramtime - datetime.timedelta(
                                                                                   seconds=timewindow / 2),
                                                                               ramtime + datetime.timedelta(
                                                                                   seconds=timewindow / 2))
-                heavypeakangle_neg = CAPS_ELS_FOVcentre_azi_elv(heavypeaktime_neg, elsdata)[0]
-                print("test",caps_ramdirection_azielv(heavypeaktime_pos),caps_ramdirection_azielv(heavypeaktime_neg))
+                    heavypeakangle_neg = CAPS_ELS_FOVcentre_azi_elv(heavypeaktime_neg, elsdata)[0]
+                else:
+                    heavypeaktime_neg, heavypeakenergy_neg = np.NaN, np.NaN
+                    heavypeakangle_neg = np.NaN
+                heavypeaktime_pos, heavypeakenergy_pos = heavy_ion_finder_ibs(ibsdata, positivemass,
+                                                                              ramtime - datetime.timedelta(
+                                                                                  seconds=timewindow / 2),
+                                                                              ramtime + datetime.timedelta(
+                                                                                  seconds=timewindow / 2),prominencefactor)
+
+                #print("test",caps_ramdirection_azielv(heavypeaktime_pos),caps_ramdirection_azielv(heavypeaktime_neg))
                 heavypeakangle_pos = CAPS_IBS_FOVcentre_azi_elv(heavypeaktime_pos, elsdata)[0]
 
                 peaks = [heavypeaktime_neg, heavypeakenergy_neg, heavypeakangle_neg,
                          heavypeaktime_pos, heavypeakenergy_pos, heavypeakangle_pos]
 
                 # print("--------Next----------")
-                peaks.append(caps_ramdirection_time(elsdata, heavypeaktime_neg))
-                peaks.append(caps_ramdirection_azielv(heavypeaktime_neg)[0])
-                peaks.append(maxflux_anode + 1)
+                peaks.append(caps_ramdirection_time(elsdata, heavypeaktime_pos))
+                peaks.append(caps_ramdirection_azielv(heavypeaktime_pos)[0])
+                if ramtime not in ramtimes_otherpositive:
+                    peaks.append(maxflux_anode + 1)
+                else:
+                    peaks.append(np.NaN)
                 peaks.append(flyby)
                 peaks.append(str(titan_flybydates[flyby][2]) + '/' + str(titan_flybydates[flyby][1]) + '/' + str(
                     titan_flybydates[flyby][0]))
@@ -301,19 +343,23 @@ def CAPS_winds(data_times_pairs):
                 elspeakslist.append(list(peaks))
             del elsdata
             del ibsdata
+
     capsdf = pd.DataFrame(elspeakslist, columns=["Negative Peak Time", "Negative Peak Energy", "Negative Azimuth Angle",
                                                  "Positive Peak Time", "Positive Peak Energy", "Positive Azimuth Angle",
                                                  "Azimuthal Ram Time", "Azimuthal Ram Angle", "Max Flux Anode",
                                                  "Flyby", "FlybyDate", "Flyby velocity", "Actuation Direction"])
-
-    capsdf['Bulk Azimuth'] = capsdf[["Negative Azimuth Angle", "Positive Azimuth Angle"]].mean(axis=1)
+    print(capsdf)
+    #capsdf['Bulk Azimuth'] = capsdf[["Negative Azimuth Angle", "Positive Azimuth Angle"]].mean(axis=1,skipna=True)
+    capsdf['Bulk Azimuth'] = (capsdf["Negative Azimuth Angle"] + capsdf["Positive Azimuth Angle"])/2
     capsdf['Bulk Time'] = capsdf["Negative Peak Time"] + (
             (capsdf["Positive Peak Time"] - capsdf["Negative Peak Time"]) / 2)
     capsdf["Bulk Deflection from Ram Angle"] = capsdf["Bulk Azimuth"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Negative Deflection from Ram Angle"] = capsdf["Negative Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Positive Deflection from Ram Angle"] = capsdf["Positive Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
-    capsdf.drop_duplicates(subset=['Positive Peak Time'], inplace=True)
-    capsdf.drop_duplicates(subset=['Negative Peak Time'], inplace=True)
+    #print(capsdf)
+    # capsdf.drop_duplicates(subset=['Positive Peak Time'], inplace=True)
+    # capsdf.drop_duplicates(subset=['Negative Peak Time'], inplace=True)
+    print(capsdf)
 
     return capsdf
 
@@ -342,13 +388,13 @@ def satdir_from_titan(i):  # Only use for one flyby
     satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
     return satdir
 
-for tempdatetime in data['Bulk Time']:
+for tempdatetime in data['Positive Peak Time']:
     SZA = cassini_SZA(tempdatetime)
     SZAs.append(SZA)
 data['Solar Zenith Angle'] = SZAs
 
 alts, lats, lons = [], [], []
-for tempdatetime in data['Bulk Time']:
+for tempdatetime in data['Positive Peak Time']:
     alt, lat, lon = cassini_titan_altlatlon(tempdatetime)
     alts.append(alt)
     lats.append(lat)

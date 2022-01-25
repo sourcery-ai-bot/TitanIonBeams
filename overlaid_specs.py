@@ -37,7 +37,7 @@ def base_spectrogram(data, datacalib, datanorm, Z, slicenumbers, ax=None, cax=No
     Plots a spectrogram
     """
     CS = ax.pcolormesh(data['times_utc'][slicenumbers[0]:slicenumbers[-1] + 1], datacalib, Z, norm=datanorm,
-                       cmap='viridis')
+                       cmap='viridis',shading="flat")
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="1.5%", pad=.05)
     cbar = fig.colorbar(cm.ScalarMappable(norm=datanorm, cmap='viridis'), ax=ax, cax=cax)
@@ -100,7 +100,6 @@ def actuator_plot(elsdata, starttime, seconds, ax=None, fig=None):
                     elsdata['actuator'][slicenumbers[0]:slicenumbers[-1]] + 0.5, color='r', alpha=0.25)
     ax.set_ylabel("Azimuth Angle")
     ax.set_yscale("linear")
-
 
 def heavy_ion_finder(elsdata, startenergy, anode, starttime, endtime):
     startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
@@ -308,7 +307,7 @@ flyby_ramanodes = {"t16": [4, 5],
 
 
 def main():
-    flyby = "t25"
+    flyby = "t43"
     anode1 = flyby_ramanodes[flyby][0]
     anode2 = flyby_ramanodes[flyby][1]
     anode3 = anode2+1
@@ -360,7 +359,7 @@ def main():
         heavypeaktimes_ibs.append(heavypeaktime_ibs)
         heavypeakenergies_ibs.append(heavypeakenergy_ibs)
 
-    fig, (elsax, elsax2, elsax3, ibsax, actax) = plt.subplots(5, figsize=(18, 6), sharex="all")
+    fig, (elsax, elsax2, elsax3, ibsax, actax, altax) = plt.subplots(6, figsize=(18, 6), sharex="all")
     ELS_spectrogram(elsdata, anode1, filedates_times[flyby][1], 540, ax=elsax, fig=fig)
     ELS_spectrogram(elsdata, anode2, filedates_times[flyby][1], 540, ax=elsax2, fig=fig)
     ELS_spectrogram(elsdata, anode3, filedates_times[flyby][1], 540, ax=elsax3, fig=fig)

@@ -32,14 +32,14 @@ filedates_times = {"t55": ["21-may-2009", "21:27:00"],
 flyby_datetimes = {"t55": [datetime.datetime(2009, 5, 21, 21, 19, 6), datetime.datetime(2009, 5, 21, 21, 33)],
                    "t56": [datetime.datetime(2009, 6, 6,  19, 54, 45), datetime.datetime(2009, 6, 6, 20, 5, 57)],
                    "t57": [datetime.datetime(2009, 6, 22,  18, 26, 13), datetime.datetime(2009, 6, 22, 18, 40)],
-                   "t58": [datetime.datetime(2009, 7, 8, 16, 58), datetime.datetime(2009, 7, 8, 17, 12, 10)],
+                   "t58": [datetime.datetime(2009, 7, 8, 16, 58, 14), datetime.datetime(2009, 7, 8, 17, 12, 10)],
                    "t59": [datetime.datetime(2009, 7, 24, 15, 25, 36), datetime.datetime(2009, 7, 24, 15, 41)],
                    }
 
 flyby_startparams = {"t55": [[500, 500],1000,22],
                    "t56": [[500, 500],500,1],
                    "t57": [[500, 500],500,0.4],
-                   "t58": [[500, 500],500,0.4],
+                   "t58": [[250, 250],500,0.6],
                    "t59": [[1000, 4000],10000,10]}
 
 
@@ -187,7 +187,7 @@ def plotting(flyby, multipleionvelocity=False):
 
     start_ibs = CAPS_slicenumber(ibsdata,flyby_datetimes[flyby][0])
     end_ibs = CAPS_slicenumber(ibsdata,flyby_datetimes[flyby][1])
-    lowerenergy_ibs = 3.5
+    lowerenergy_ibs = 3
     upperenergy_ibs = 55
     lowerenergyslice_ibs = CAPS_energyslice("ibs", lowerenergy_ibs , lowerenergy_ibs)[0]
     upperenergyslice_ibs = CAPS_energyslice("ibs", upperenergy_ibs, upperenergy_ibs)[0]
@@ -244,10 +244,10 @@ def plotting(flyby, multipleionvelocity=False):
         elif alt > 1100 and alt < 1500:
             multipleionvelocity = False
             masses_used = [17, 28, 40, 53, 66, 78, 91]
-            if isinstance(previous_windspeeds,list):
-                previous_windspeeds = np.mean(previous_windspeeds)
             if counter == 0:
                 previous_windspeeds = flyby_startparams[flyby][0][0]
+            if isinstance(previous_windspeeds,list):
+                previous_windspeeds = np.mean(previous_windspeeds)
             last_ion_temp = titan_linearfit_temperature(alt)
             midalt_slicenumbers.append(i)
             midalt_counters.append(counter)
@@ -392,7 +392,7 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
 
         start_ibs = CAPS_slicenumber(ibsdata, flyby_datetimes[flyby][0])
         end_ibs = CAPS_slicenumber(ibsdata, flyby_datetimes[flyby][1])
-        lowerenergy_ibs = 3.5
+        lowerenergy_ibs = 3
         upperenergy_ibs = 55
         lowerenergyslice_ibs = CAPS_energyslice("ibs", lowerenergy_ibs, lowerenergy_ibs)[0]
         upperenergyslice_ibs = CAPS_energyslice("ibs", upperenergy_ibs, upperenergy_ibs)[0]
@@ -414,7 +414,7 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
         zonalangles, zonalwinds_2008MW, zonalwinds_2016, zonalwinds_2017 = [], [], [], []
         altitudes, longitude, latitude, temps = [], [], [], []
         x_titan, y_titan, z_titan, dx_titan, dy_titan, dz_titan = [], [], [], [], [], []
-        ibs_velocities = []
+        ibs_velocities, ibs_stderr = [], []
         lptimes = list(ibsdata['times_utc'][start_ibs:end_ibs])
         lpdata = read_LP_V1(flyby)
         lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
@@ -422,6 +422,11 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
         start_lp = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
         used_scp = start_lp + flyby_startparams[flyby][2]
         last_ion_temp = flyby_startparams[flyby][1]
+
+        all_possible_masses = [17, 28, 40, 53, 66, 78, 91]
+        mass_energies_dict = {}
+        for mass in all_possible_masses:
+            mass_energies_dict["ibsmass"+str(mass)] = []
 
         for counter, i in enumerate(np.arange(start_ibs,end_ibs)):
             tempdatetime = ibsdata['times_utc'][i]
@@ -444,11 +449,11 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
             elif alt > 1100 and alt < 1500:
                 multipleionvelocity = False
                 masses_used = [17, 28, 40, 53, 66, 78, 91]
+                if counter == 0:
+                    previous_windspeeds = flyby_startparams[flyby][0][0]
                 if isinstance(previous_windspeeds, list):
                     previous_windspeeds = np.mean(previous_windspeeds)
                     #used_scp = lpvalue
-                if counter == 0:
-                    previous_windspeeds = flyby_startparams[flyby][0][0]
                 last_ion_temp = titan_linearfit_temperature(alt)
                 midalt_slicenumbers.append(i)
                 midalt_counters.append(counter)
@@ -481,9 +486,17 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
                     tempvelocities.append(out_ibs.params['mass' + str(j) + '_ionvelocity'].value)
                     previous_windspeeds[counter] = out_ibs.params['mass' + str(j) + '_ionvelocity'].value
                 ibs_velocities.append(np.mean(tempvelocities))
+                ibs_stderr.append(np.std(tempvelocities))
             else:
                 previous_windspeeds = out_ibs.params['ionvelocity'].value
                 ibs_velocities.append(out_ibs.params['ionvelocity'].value)
+                ibs_stderr.append(out_ibs.params['ionvelocity'].stderr)
+
+            for mass in all_possible_masses:
+                if 'mass' + str(mass) + "_center" in out_ibs.params.keys():
+                    mass_energies_dict["ibsmass"+str(mass)].append(out_ibs.params['mass' + str(mass) + "_center"].value)
+                else:
+                    mass_energies_dict["ibsmass" + str(mass)].append(np.NaN)
 
             temp_temps = []
             for counter, j in enumerate(masses_used):
@@ -543,7 +556,9 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
         tempoutputdf['Longitude'] = longitude
         tempoutputdf['Temperature'] = derived_temps
         tempoutputdf['IBS alongtrack velocity'] = ibs_velocities
+        tempoutputdf['IBS alongtrack velocity stderr'] = ibs_stderr
         tempoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_outputs]
+        tempoutputdf['IBS spacecraft potentials stderr'] = [i.params['scp'].stderr for i in ibs_outputs]
         #tempoutputdf['ELS alongtrack velocity'] = [i.params['ionvelocity'].value for i in els_outputs]
         #tempoutputdf['ELS spacecraft potentials'] = [i.params['scp'].value for i in els_outputs]
         tempoutputdf['LP Potentials'] = lpvalues
@@ -551,12 +566,8 @@ def non_actuating_alongtrackwinds_flybys(usedflybys=["t55","t56","t57","t58","t5
         tempoutputdf['2008 MullerWodarg Winds'] = zonalwinds_2008MW
         tempoutputdf['2016 Zonal Winds'] = zonalwinds_2016
         tempoutputdf['2017 Zonal Winds'] = zonalwinds_2017
-        # tempoutputdf['IBS Mass 28 energy'] = [i.params['mass28_center'].value for i in ibs_outputs]
-        # tempoutputdf['IBS Mass 40 energy'] = [i.params['mass40_center'].value for i in ibs_outputs]
-        # tempoutputdf['IBS Mass 53 energy'] = [i.params['mass53_center'].value for i in ibs_outputs]
-        # tempoutputdf['IBS Mass 66 energy'] = [i.params['mass66_center'].value for i in ibs_outputs]
-        # tempoutputdf['IBS Mass 78 energy'] = [i.params['mass78_center'].value for i in ibs_outputs]
-        # tempoutputdf['IBS Mass 91 energy'] = [i.params['mass91_center'].value for i in ibs_outputs]
+        for i in all_possible_masses:
+            tempoutputdf['IBS Mass ' + str(i) +' energy'] = mass_energies_dict["ibsmass"+str(i)]
         print(tempoutputdf)
         outputdf = pd.concat([outputdf, tempoutputdf])
     outputdf.reset_index(inplace=True)
@@ -640,7 +651,7 @@ def single_slice_test(flyby, slicenumber,multipleionvelocity=False):
 
 
 
-non_actuating_alongtrackwinds_flybys(["t55","t56","t57","t58","t59"])
-#non_actuating_alongtrackwinds_flybys(["t57"])
-#plotting("t59", multipleionvelocity=True)
-#single_slice_test("t55",0,multipleionvelocity=True)
+#non_actuating_alongtrackwinds_flybys(["t55","t56","t57","t58","t59"])
+#non_actuating_alongtrackwinds_flybys(["t55"])
+#plotting("t55", multipleionvelocity=True)
+#single_slice_test("t58",50,multipleionvelocity=True)

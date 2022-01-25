@@ -485,7 +485,12 @@ def caps_crosstrack_xyz(time, windspeed, anodes=False):
 def caps_alongtrack_xyz(time, windspeed, anodes=False):
     state = cassini_phase(time.strftime('%Y-%m-%dT%H:%M:%S'))
     print("windspeed",windspeed,-1*windspeed)
+    print("State",state)
+    print("XYZ Dir", state[3:6], spice.vhat(state[3:6]))
     newstate = list(state[:3]) + list(spice.vhat(state[3:6]) * ((-1)*windspeed))
+    print("newstate", newstate)
+
+    print("vsep", spice.vsep(state[3:6],newstate[3:6])*spice.dpr())
 
     return newstate
 
@@ -645,22 +650,25 @@ def crosstrack_xyz_plot():
         negwindspeed_alongtracks = np.array(negwindspeed_alongtracks)
         poswindspeed_alongtracks = np.array(poswindspeed_alongtracks)
 
-        print(negwindspeed_crosstracks[:, 0],negwindspeed_alongtracks[:, 0])
-        print(negwindspeed_crosstracks[:, 3], negwindspeed_alongtracks[:, 3])
+        # print(negwindspeed_crosstracks[:, 0],negwindspeed_alongtracks[:, 0])
+        # print(negwindspeed_crosstracks[:, 3], negwindspeed_alongtracks[:, 3])
+        print(poswindspeed_alongtracks[:, 3:], poswindspeed_crosstracks[:, 3:])
 
+        poswindspeed_fullspeed = poswindspeed_alongtracks[:, 3:] + poswindspeed_crosstracks[:, 3:]
+        print("positive wind speed - full", poswindspeed_fullspeed)
 
         for i, titandir_unorm, ramdir, time in zip(negwindspeed_crosstracks, titan_dirs, ramdirs, times):
 
             parallel_to_titan_plane = spice.nvp2pl(i[:3],i[:3])
-            print(parallel_to_titan_plane)
+            #print(parallel_to_titan_plane)
             parallel_to_titan = spice.rotvec(titandir_unorm, 90 * spice.rpd(), 3)
             parallel_to_titan_noZ = [parallel_to_titan[0],parallel_to_titan[1], 0]
             parallel_to_titan_projected = spice.vprjp(spice.vhat(parallel_to_titan),parallel_to_titan_plane)
             vector_rep = spice.pl2psv(parallel_to_titan_plane)
-            print("two vectors",spice.pl2psv(parallel_to_titan_plane))
-            print(i[:3], titandir_unorm, spice.vhat(parallel_to_titan), parallel_to_titan_projected)
+            #print("two vectors",spice.pl2psv(parallel_to_titan_plane))
+            #print(i[:3], titandir_unorm, spice.vhat(parallel_to_titan), parallel_to_titan_projected)
 
-            axxy.text(i[0], i[1],time)
+            #axxy.text(i[0], i[1],time)
             axxy.arrow(i[0], i[1], titandir_unorm[0], titandir_unorm[1], color='b')
             axxy.arrow(i[0], i[1], parallel_to_titan[0], parallel_to_titan[1], color='m')
             axxy.arrow(i[0], i[1], parallel_to_titan_noZ[0], parallel_to_titan_noZ[1], color='y')
@@ -685,6 +693,11 @@ def crosstrack_xyz_plot():
         axxy.quiver(poswindspeed_alongtracks[:, 0], poswindspeed_alongtracks[:, 1], poswindspeed_alongtracks[:, 3], poswindspeed_alongtracks[:, 4],
                     label=flyby,
                     color="C1",alpha=0.5)
+        axxy.quiver(poswindspeed_alongtracks[:, 0], poswindspeed_alongtracks[:, 1], poswindspeed_fullspeed[:, 0], poswindspeed_fullspeed[:, 1],
+                    label=flyby,
+                    color="C2",alpha=0.5)
+
+        axxy.plot(negwindspeed_alongtracks[:, 0],negwindspeed_alongtracks[:, 1])
 
         axyz.quiver(negwindspeed_crosstracks[:, 1], negwindspeed_crosstracks[:, 2], negwindspeed_crosstracks[:, 4], negwindspeed_crosstracks[:, 5],
                     label=flyby,
@@ -720,6 +733,7 @@ def crosstrack_xyz_plot():
         # axxz.quiver(crosstrack_states[:, 0], crosstrack_states[:, 2], crosstrack_states[:, 3], crosstrack_states[:, 5],
         #             label=flyby,
         #             color="C" + str(counter))
+
     print(windspeeds, magnitudes)
     crosstrack_states = np.array(crosstrack_states)
     #print(crosstrack_states.shape)
@@ -742,7 +756,7 @@ def soldir_from_titan():  # Only use for one flyby
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
         print(tempdf)
-        i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
+        i = pd.to_datetime(tempdf['Positive Peak Time']).iloc[0]
         et = spice.datetime2et(i)
         sundir, ltime = spice.spkpos('SUN', et, 'IAU_TITAN', "LT+S", 'TITAN')
     return sundir
@@ -751,7 +765,7 @@ def soldir_from_titan():  # Only use for one flyby
 def satdir_from_titan():  # Only use for one flyby
     for counter, flyby in enumerate(flybys):
         tempdf = windsdf[windsdf['Flyby'] == flyby]
-        i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
+        i = pd.to_datetime(tempdf['Positive Peak Time']).iloc[0]
         et = spice.datetime2et(i)
         satdir, ltime = spice.spkpos('SATURN', et, 'IAU_TITAN', "LT+S", 'TITAN')
     return satdir
@@ -772,7 +786,7 @@ def gaussian(x, mu, sig, amp):
 # flybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 # flybys = ['t16', 't20','t21','t32','t42','t46'] #Weird Ones
 # flybys = ['t16', 't17', 't29']
-flybys = ['t40']
+flybys = ['t50']
 # flybys = ['t17', 't20', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't40',
 #               't41', 't42', 't43', 't46'] # midlatitude flybys
 
@@ -782,7 +796,7 @@ flybys = ['t40']
 # windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 # print(windsdf)
 
-windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
+windsdf = pd.read_csv("winds_full_oldflybys.csv", index_col=0, parse_dates=True)
 #flybyslist = windsdf.Flyby.unique()
 
 #crosstrack_latlon_plot()
