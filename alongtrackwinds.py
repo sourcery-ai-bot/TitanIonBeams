@@ -1111,7 +1111,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         ibsdata = readsav("data/ibs/ibsres_" + filedates[flyby] + ".dat")
         generate_aligned_ibsdata(ibsdata, elsdata, flyby)
         ibs_outputs, ibs_datetimes, ibs_GOFvalues, lpvalues, cassini_speeds = [], [], [], [],[]
-        els_outputs, els_datetimes, els_GOFvalues, els_velocities, els_scp = [], [], [], [], []
+        els_outputs, els_datetimes, els_GOFvalues, els_velocities, els_scp, els_velocities_stderr, els_scp_stderr  = [], [], [], [], [], [], []
 
         all_possible_masses = [16, 17, 28, 40, 53, 66, 78, 91]
         mass_energies_dict = {}
@@ -1153,11 +1153,15 @@ def multiple_alongtrackwinds_flybys(usedflybys):
                                            lpdata=lpdata, numofflybys=len(
                                                                      usedflybys))
                 els_velocities.append(els_output.params['ionvelocity'].value)
+                els_velocities_stderr.append(els_output.params['ionvelocity'].stderr)
                 els_scp.append(els_output.params['scp'].value)
+                els_scp_stderr.append(els_output.params['scp'].stderr)
                 els_GOFvalues.append(els_GOFvalue)
             else:
                 els_velocities.append(np.NaN)
+                els_velocities_stderr.append(np.NaN)
                 els_scp.append(np.NaN)
+                els_scp_stderr.append(np.NaN)
                 els_GOFvalues.append(np.NaN)
 
             ibs_outputs.append(ibs_output)
@@ -1270,7 +1274,9 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         tempoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_outputs]
         tempoutputdf['IBS spacecraft potentials stderr'] = [i.params['scp'].stderr for i in ibs_outputs]
         tempoutputdf['ELS alongtrack velocity'] = els_velocities
+        tempoutputdf['ELS alongtrack velocity stderr'] = els_velocities_stderr
         tempoutputdf['ELS spacecraft potentials'] = els_scp
+        tempoutputdf['ELS spacecraft potentials stderr'] = els_scp_stderr
         tempoutputdf['LP Potentials'] = lpvalues
         tempoutputdf['Angles to Zonal Wind'] = zonalangles
         tempoutputdf['2016 Zonal Winds'] = zonalwinds_2016
