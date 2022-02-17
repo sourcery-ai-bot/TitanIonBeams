@@ -875,8 +875,6 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, windspeed, 
                              't40': 2e4, 't41': 2e4, 't42': 2e4, 't43': 5e3, 't48': 2e4, 't49': 2e4, 't50': 2e4,
                              't51': 2e4, 't71': 2e4, 't83': 2e4}
 
-
-
     # print("old x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice])
     # print("new x", ibscalib['ibsearray'][lowerenergyslice:upperenergyslice] * 1.035 )
 
@@ -897,10 +895,6 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, windspeed, 
     # CS = ax.pcolormesh(elsdata['times_utc'][els_slicenumber_start:els_slicenumber_end], tempx, tempdataslice,norm=LogNorm(vmin=1e8, vmax=1e12),
     #                    cmap='viridis')
     # ax.set_yscale("log")
-
-
-
-
 
     detected_peaks = detect_peaks(dataslice)
     # print(detected_peaks)

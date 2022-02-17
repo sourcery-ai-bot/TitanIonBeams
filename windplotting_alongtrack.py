@@ -21,6 +21,8 @@ crary_windsdf = pd.read_csv("crarywinds.csv")
 original_crary_winds = ["t16","t17","t18","t21","t23","t25","t26","t28","t29","t30","t32","t36","t39","t40"]
 
 alongtrack_windsdf['Crary Potentials Estimated'] = np.where(alongtrack_windsdf['Flyby'].isin(original_crary_winds),alongtrack_windsdf["LP Potentials"]+0.25,np.nan)
+alongtrack_windsdf['Crary Potentials Extrapolated'] = np.where(~alongtrack_windsdf['Flyby'].isin(original_crary_winds),alongtrack_windsdf["LP Potentials"]+0.25,np.nan)
+
 
 desai_windsdf = pd.read_csv("DesaiPotentials.csv")
 flybyslist = alongtrack_windsdf.Flyby.unique()
@@ -89,23 +91,27 @@ print(desai_windsdf)
 
 flyby_potentialfig, flyby_potentialax = plt.subplots()
 #sns.pointplot(x="Flyby", y="ELS Potential", data=desai_windsdf,join=False,color='g',ax=flyby_potentialax,capsize=.2)
-sns.pointplot(x="Flyby", y="IBS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C0',ax=flyby_potentialax,capsize=.2)
-sns.pointplot(x="Flyby", y='Crary Potentials Estimated', data=alongtrack_windsdf,join=False,color='g',ax=flyby_potentialax,capsize=.2)
-sns.pointplot(x="Flyby", y="LP Potentials", data=alongtrack_windsdf,join=False,color='r',ax=flyby_potentialax,capsize=.2)
-sns.pointplot(x="Flyby", y="ELS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C1',ax=flyby_potentialax,capsize=.2)
+sns.pointplot(x="Flyby", y="IBS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C0',ax=flyby_potentialax,capsize=.2,markers='.')
+sns.pointplot(x="Flyby", y='Crary Potentials Estimated', data=alongtrack_windsdf,join=False,color='g',ax=flyby_potentialax,capsize=.2,markers='.')
+sns.pointplot(x="Flyby", y='Crary Potentials Extrapolated', data=alongtrack_windsdf,join=False,color='y',ax=flyby_potentialax,capsize=.2,markers='.')
+sns.pointplot(x="Flyby", y="LP Potentials", data=alongtrack_windsdf,join=False,color='r',ax=flyby_potentialax,capsize=.2,markers='.')
+sns.pointplot(x="Flyby", y="ELS spacecraft potentials", data=alongtrack_windsdf,join=False,color='C1',ax=flyby_potentialax,capsize=.2,markers='.')
 sns.pointplot(x="Flyby", y='ELS Potential', data=desai_windsdf,join=False, color='b',ax=flyby_potentialax,capsize=.2)
 
 flyby_potentialax.set_ylabel("Derived S/C Potential")
-flyby_potentialax.legend(handles=[Line2D([0], [0], marker='o', color='C0', label='IBS',
-                          markerfacecolor='C0', markersize=8),
-          Line2D([0], [0], marker='o', color='C1', label='ELS',
-                          markerfacecolor='C1', markersize=8),
-          Line2D([0], [0], marker='o', color='r', label='LP',
-               markerfacecolor='r', markersize=8),
-          Line2D([0], [0], marker='o', color='b', label='Desai+, 2018; ELS',
-               markerfacecolor='b', markersize=8),
-          Line2D([0], [0], marker='o', color='g', label='Crary+, 2009; IBS estimated',
-               markerfacecolor='g', markersize=8)],loc=8
+flyby_potentialax.legend(handles=[Line2D([0], [0], marker='.', color='C0', label='IBS',
+                                       markerfacecolor='C0', markersize=8),
+                                  Line2D([0], [0], marker='.', color='C1', label='ELS',
+                                       markerfacecolor='C1', markersize=8),
+                                  Line2D([0], [0], marker='.', color='r', label='LP',
+                                       markerfacecolor='r', markersize=8),
+                                  Line2D([0], [0], marker='o', color='b', label='Desai+, 2018; ELS',
+                                       markerfacecolor='b', markersize=8),
+                                  Line2D([0], [0], marker='.', color='g', label='Crary+, 2009; IBS estimated',
+                                       markerfacecolor='g', markersize=8),
+                                  Line2D([0], [0], marker='.', color='y', label='Crary+, 2009; IBS extrapolated',
+                                         markerfacecolor='y', markersize=8)
+                                  ],loc=8
                 )
 flyby_potentialax.set_ylabel("Derived spacecraft potential [V]")
 
