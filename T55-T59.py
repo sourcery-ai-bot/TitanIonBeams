@@ -12,6 +12,7 @@ from heliopy.data.cassini import mag_1min
 from cassinipy.caps.mssl import *
 from cassinipy.caps.util import *
 from util import *
+import time
 
 from lmfit import CompositeModel, Model
 from lmfit.models import GaussianModel
@@ -29,40 +30,55 @@ filedates_times = {"t55": ["21-may-2009", "21:27:00"],
                    "t59": ["24-jul-2009", "15:31:00"],
                    }
 
-flyby_datetimes_ibs = {"t55": [datetime.datetime(2009, 5, 21, 21, 19, 6), datetime.datetime(2009, 5, 21, 21, 32,46)],
+flyby_datetimes_ibs = {
+                    "t55": [datetime.datetime(2009, 5, 21, 21, 19, 6, 15), datetime.datetime(2009, 5, 21, 21, 32,46)],
                    "t56": [datetime.datetime(2009, 6, 6,  19, 54, 45), datetime.datetime(2009, 6, 6, 20, 5, 57)],
                    "t57": [datetime.datetime(2009, 6, 22,  18, 26, 13), datetime.datetime(2009, 6, 22, 18, 40)],
-                   "t58": [datetime.datetime(2009, 7, 8, 16, 58, 14), datetime.datetime(2009, 7, 8, 17, 12, 10)],
-                   "t59": [datetime.datetime(2009, 7, 24, 15, 25, 36), datetime.datetime(2009, 7, 24, 15, 41)],
+                   "t58": [datetime.datetime(2009, 7, 8, 16, 58), datetime.datetime(2009, 7, 8, 17, 11, 30)],
+                   "t59": [datetime.datetime(2009, 7, 24, 15, 25, 36), datetime.datetime(2009, 7, 24, 15, 40)],
                    }
 
-# flyby_datetimes_ibs = {"t55": [datetime.datetime(2009, 5, 21, 21, 19, 6), datetime.datetime(2009, 5, 21, 21, 32,46)],
-#                    "t56": [datetime.datetime(2009, 6, 6,  19, 54, 45), datetime.datetime(2009, 6, 6, 19, 55)],
-#                    "t57": [datetime.datetime(2009, 6, 22,  18, 26, 13), datetime.datetime(2009, 6, 22, 18, 40)],
-#                    "t58": [datetime.datetime(2009, 7, 8, 16, 58, 14), datetime.datetime(2009, 7, 8, 17, 12, 10)],
-#                    "t59": [datetime.datetime(2009, 7, 24, 15, 25, 36), datetime.datetime(2009, 7, 24, 15, 41)],
+# flyby_datetimes_ibs = {"t55": [datetime.datetime(2009, 5, 21, 21, 19, 6), datetime.datetime(2009, 5, 21, 21, 22)],
+#                    "t56": [datetime.datetime(2009, 6, 6,  19, 54, 45), datetime.datetime(2009, 6, 6, 19, 56)],
+#                    "t57": [datetime.datetime(2009, 6, 22,  18, 26, 13), datetime.datetime(2009, 6, 22, 18, 28)],
+#                    "t58": [datetime.datetime(2009, 7, 8, 16, 58), datetime.datetime(2009, 7, 8, 16,59)],
+#                    "t59": [datetime.datetime(2009, 7, 24, 15, 25, 36), datetime.datetime(2009, 7, 24, 15, 28, 30)],
 #                    }
 
-flyby_datetimes_els = {"t55": [datetime.datetime(2009, 5, 21, 21, 23, 20), datetime.datetime(2009, 5, 21, 21, 31)],
-                   "t56": [datetime.datetime(2009, 6, 6,  19, 57, 20), datetime.datetime(2009, 6, 6, 20, 3, 20)],
-                   "t57": [datetime.datetime(2009, 6, 22,  18, 29, 10), datetime.datetime(2009, 6, 22, 18, 36, 10)],
-                   "t58": [datetime.datetime(2009, 7, 8, 17, 0 ,30), datetime.datetime(2009, 7, 8, 17, 7, 30)],
+flyby_datetimes_els = {"t55": [datetime.datetime(2009, 5, 21, 21, 23, 30), datetime.datetime(2009, 5, 21, 21, 29, 48)],
+                   #"t56": [datetime.datetime(2009, 6, 6,  19, 57, 20), datetime.datetime(2009, 6, 6, 19, 57, 30)],
+                   "t56": [datetime.datetime(2009, 6, 6,  19, 57, 20), datetime.datetime(2009, 6, 6, 20, 3, 6)],
+                   "t57": [datetime.datetime(2009, 6, 22,  18, 29, 16), datetime.datetime(2009, 6, 22, 18, 36, 10)],
+                   "t58": [datetime.datetime(2009, 7, 8, 17, 0 ,30), datetime.datetime(2009, 7, 8, 17, 7, 12)],
                    "t59": [datetime.datetime(2009, 7, 24, 15, 30), datetime.datetime(2009, 7, 24, 15, 38)],
                    }
 
 
-flyby_startparams_ibs = {"t55": [[500, 500],1000,22],
+flyby_startparams_ibs = {"t55": [[500, 500],1000,25],
                    "t56": [[0, 0],500,0.25],
-                   "t57": [[500, 500],500,0.4],
+                   "t57": [[1300, 1300],500,0],
                    "t58": [[250, 250],500,0.6],
-                   "t59": [[1000, 4000],10000,10]}
+                   "t59": [[400, 2400],10000,5]}
+
+flyby_inboundparams_ibs = {"t55": [0,1000,0.25],
+                   "t56": [0,500,0.25],
+                   "t57": [150,500,0.25],
+                   "t58": [0,500,0.25],
+                   "t59": [500,100,8]}
+
+flyby_outboundparams_ibs = {"t55": [[500, 500],1000,0],
+                   "t56": [[0, 0],500,0],
+                   "t57": [[-130, -130],500,0],
+                   "t58": [[0, 0],500,0],
+                   "t59": [[0, 0],1000,0]}
 
 
-flyby_startparams_els = {"t55": [0,500,-0.5],
-                   "t56": [0,500,-0.5],
-                   "t57": [0,500,-0.5],
-                   "t58": [0,500,-0.5],
-                   "t59": [0,500,-0.5]}
+
+flyby_startparams_els = {"t55": [0,500,-1],
+                   "t56": [-200,500,-1],
+                   "t57": [0,500,-0.4],
+                   "t58": [-500,500,-0.5],
+                   "t59": [-200,500,-1]}
 
 flyby_masses_els = {"t55": [[26, 50],[26, 50, 79],[26, 50, 79]],
                    "t56": [[26, 50],[26, 50, 79],[26, 50, 79, 117]],
@@ -79,29 +95,29 @@ IBS_fluxfitting_dict = {"mass15_": {"sigma": [0.1, 0.2, 0.3], "amplitude": []},
                         "mass40_": {"sigma": [0.2, 0.3, 0.6], "amplitude": []},
                         "mass53_": {"sigma": [0.3, 0.5, 0.65], "amplitude": []},
                         "mass66_": {"sigma": [0.4, 0.6, 0.7], "amplitude": []}, \
-                        "mass78_": {"sigma": [0.5, 0.7, 0.8], "amplitude": []}, \
-                        "mass91_": {"sigma": [0.6, 0.8, 1], "amplitude": []}}
+                        "mass78_": {"sigma": [0.5, 0.7, 0.9], "amplitude": []}, \
+                        "mass91_": {"sigma": [0.5, 0.8, 1.1], "amplitude": []}}
 
 ELS_fluxfitting_dict = {"mass13_": {"sigma": [0.1, 0.2, 0.7], "amplitude": [5]},
-                        "mass26_": {"sigma": [0.1, 0.2, 0.7], "amplitude": [5]},
-                        "mass50_": {"sigma": [0.5, 0.6, 0.9], "amplitude": [4]},
+                        "mass26_": {"sigma": [0.1, 0.3, 1], "amplitude": [5]},
+                        "mass50_": {"sigma": [0.5, 0.6, 1.3], "amplitude": [4]},
                         "mass74_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
                         "mass77_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
-                        "mass79_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
+                        "mass79_": {"sigma": [0.5, 0.7, 2], "amplitude": [3]},
                         "mass91_": {"sigma": [0.6, 0.8, 1.6], "amplitude": [3]},
-                        "mass117_": {"sigma": [0.8, 0.9, 1.7], "amplitude": [3]}}
+                        "mass117_": {"sigma": [0.8, 0.9, 3], "amplitude": [3]}}
 
 IBS_energybound_dict = {"t55": [[4, 19],[3, 19],[3, 19]],
                                "t56": [[4, 19],[3, 19],[3, 19]],
                                "t57": [[4, 19],[3, 19],[3, 19]],
                                "t58": [[4, 18.4],[3, 19],[3, 19]],
-                               "t59": [[4, 18.2],[3, 19],[3, 19]],}
+                               "t59": [[4, 18.2],[3, 19],[3, 55]],}
 
 ELS_energybound_dict = {"t55": [[1, 9],[1, 15],[1, 15]],
                                "t56": [[1, 9],[1, 21],[1, 21]],
                                "t57": [[1, 9],[1, 17],[1, 17]],
                                "t58": [[1, 9],[1, 17],[1, 30]],
-                               "t59": [[1, 9],[1, 17],[1, 30]],}
+                               "t59": [[1, 10],[1, 17],[1, 30]],}
 
 
 if spice.ktotal('spk') == 0:
@@ -113,43 +129,43 @@ if spice.ktotal('spk') == 0:
 IBS_FWHM = 0.014
 
 
-def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeeds, scpvalue, lpvalue, temperature, charge, multipleionvelocity=False):
+def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeeds, scpvalue, lpvalue, temperature, charge, multipleionvelocity):
     gaussmodels = []
     pars = Parameters()
     eval_pars = Parameters()
 
     if charge == 1:
-
-        if multipleionvelocity == True:
+        if multipleionvelocity == False:
             if scpvalue-0.5 < lpvalue:
-                minscp = lpvalue + 0.25
+                minscp = lpvalue
             else:
-                minscp = scpvalue-0.5
-            if scpvalue + 2 < 0:
-                maxscp = scpvalue + 2
+                minscp = scpvalue-0.2
+            if scpvalue + 0.3 < 0:
+                maxscp = scpvalue + 0.3
             else:
                 maxscp = 0
-            pars.add('scp', value=scpvalue + 0.25, min=minscp, max=maxscp)
-        else:
-            pars.add('scp', value=scpvalue, min=scpvalue-0.25, max=0)
+            pars.add('scp', value=scpvalue, min=minscp, max=maxscp)
+        if multipleionvelocity == True:
+            if scpvalue-1 < lpvalue:
+                minscp = lpvalue
+            else:
+                minscp = scpvalue-1
+            if scpvalue + 2 > 0:
+                maxscp = 0
+            else:
+                maxscp = scpvalue+2
+            pars.add('scp', value=scpvalue, min=minscp, max=maxscp)
 
-        # pars.add('scp', value=LPvalue+lpoffset)
-        #pars['scp'].vary = False
     elif charge == -1:
-
         if scpvalue - 0.5 < -3:
             minscp = -3
         else:
             minscp = scpvalue - 0.5
-        if scpvalue > lpvalue:
-            maxscp = lpvalue + 0.3
+        if scpvalue + 0.3 > lpvalue:
+            maxscp = lpvalue
         else:
-            maxscp = scpvalue + 0.5
+            maxscp = scpvalue + 0.3
         pars.add('scp', value=scpvalue, min=minscp, max=maxscp)
-
-        # pars.add('scp', value=LPvalue+lpoffset)
-        # pars['scp'].vary = False
-
     if temperature > 10000:
         temperature = 10000
 
@@ -158,16 +174,25 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeeds, scpv
     pars.add('spacecraftvelocity', value=cassini_speed)
     if multipleionvelocity == False:
         if charge == 1:
-            pars.add('ionvelocity', value=windspeeds, min=windspeeds-100, max=windspeeds+100)
-        elif charge == -1:
-            if windspeeds < -300:
-                minvel = -300
+            if windspeeds < -500:
+                minvel = -500
             else:
                 minvel = windspeeds - 100
-            if windspeeds > 300:
-                maxvel = 300
+            if windspeeds > 1500:
+                maxvel = 1500
             else:
                 maxvel = windspeeds + 100
+            pars.add('ionvelocity', value=windspeeds, min=minvel, max=maxvel)
+
+        elif charge == -1:
+            if windspeeds - 150 < -600:
+                minvel = -600
+            else:
+                minvel = windspeeds - 150
+            if windspeeds + 150 > 200:
+                maxvel = 200
+            else:
+                maxvel = windspeeds + 150
             pars.add('ionvelocity', value=windspeeds, min= minvel, max=maxvel)
     pars['spacecraftvelocity'].vary = False
     pars['temp_eV'].vary = False
@@ -186,8 +211,8 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeeds, scpv
         #pars.add(tempprefix, value=mass, min=mass-1, max=mass+1)
 
         if multipleionvelocity == True:
-            windmax = windspeeds[masscounter] + 500
-            windmin = windspeeds[masscounter] - 500
+            windmax = windspeeds[masscounter] + 200
+            windmin = windspeeds[masscounter] - 200
 
             pars.add(tempprefix+'ionvelocity', value=windspeeds[masscounter], min=windmin, max=windmax)
 
@@ -220,7 +245,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeeds, scpv
             pars[tempprefix + 'sigma'].set(value=energy_sigma, min=energy_sigma-0.5, max=energy_sigma+0.1)
         else:
             pars[tempprefix + 'sigma'].set(value=sigmavals[1], min=sigmavals[0], max=sigmavals[2])
-        pars[tempprefix + 'amplitude'].set(value=np.max(yvalues) * (1 + sigmavals[1]), min=20*min(yvalues))
+        pars[tempprefix + 'amplitude'].set(value=np.max(yvalues) * (1 + sigmavals[1]), min=min(yvalues))
 
     for counter, model in enumerate(gaussmodels):
         if counter == 0:
@@ -509,21 +534,21 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
 
             if alt < 1100:
                 multipleionvelocity = False
-                masses_used = [28, 40, 53, 66, 78, 91]
                 if counter == 0 or isinstance(previous_windspeeds, list):
                     previous_windspeeds = 0
                 last_ion_temp = titan_linearfit_temperature(alt)
                 lowalt_slicenumbers.append(i)
                 lowalt_counters.append(counter)
+                #lowerenergyslice_ibs = 0
                 lowerenergyslice_ibs = CAPS_energyslice("ibs", IBS_energybound_dict[flyby][0][0], IBS_energybound_dict[flyby][0][0])[0]
                 upperenergyslice_ibs = CAPS_energyslice("ibs", IBS_energybound_dict[flyby][0][1], IBS_energybound_dict[flyby][0][1])[0]
             elif alt > 1100 and alt < 1500:
                 multipleionvelocity = False
-                masses_used = [17, 28, 40, 53, 66, 78, 91]
                 if counter == 0:
                     previous_windspeeds = flyby_startparams_ibs[flyby][0][0]
-                if isinstance(previous_windspeeds, list):
-                    previous_windspeeds = np.mean(previous_windspeeds)
+                elif isinstance(previous_windspeeds, list):
+                    previous_windspeeds = flyby_inboundparams_ibs[flyby][0]
+                    used_scp = lpvalue + 0.25
                     #used_scp = lpvalue
                 last_ion_temp = titan_linearfit_temperature(alt)
                 midalt_slicenumbers.append(i)
@@ -532,12 +557,12 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
                 upperenergyslice_ibs = CAPS_energyslice("ibs", IBS_energybound_dict[flyby][1][1], IBS_energybound_dict[flyby][1][1])[0]
             elif alt > 1500:
                 multipleionvelocity = True
-                masses_used = [17, 28]
                 if counter == 0:
                     previous_windspeeds = flyby_startparams_ibs[flyby][0]
-                    print(flyby,previous_windspeeds)
-                if isinstance(previous_windspeeds, float):
-                    previous_windspeeds = [0, 0]
+                    print(flyby,previous_windspeeds,used_scp)
+                elif isinstance(previous_windspeeds, float):
+                    previous_windspeeds = flyby_outboundparams_ibs[flyby][0]
+                    print(flyby, previous_windspeeds, used_scp)
                 highalt_slicenumbers.append(i)
                 highalt_counters.append(counter)
                 lowerenergyslice_ibs = CAPS_energyslice("ibs", IBS_energybound_dict[flyby][2][0], IBS_energybound_dict[flyby][2][0])[0]
@@ -550,61 +575,110 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
             # while ibsdata['ibsdata'][lowerenergyslice_ibs, 1, i] == 0.:
             #     lowerenergyslice_ibs += 1
 
+
             #--------NEW BIT ----------
+            #print(lowerenergyslice_ibs,ibscalib['ibsearray'][lowerenergyslice_ibs],upperenergyslice_ibs,ibscalib['ibsearray'][upperenergyslice_ibs])
+            if alt < 1500:
+                while np.mean(ibsdata['ibsdata'][lowerenergyslice_ibs:lowerenergyslice_ibs+3, 1, i]) < 2200:
+                    lowerenergyslice_ibs += 1
+                while np.mean(ibsdata['ibsdata'][upperenergyslice_ibs-2:lowerenergyslice_ibs, 1, i]) < 800:
+                    upperenergyslice_ibs -= 1
+            if alt > 1500:
+                while np.mean(ibsdata['ibsdata'][lowerenergyslice_ibs:lowerenergyslice_ibs+3, 1, i]) < 1000:
+                    lowerenergyslice_ibs += 1
+                while np.mean(ibsdata['ibsdata'][upperenergyslice_ibs-7:upperenergyslice_ibs, 1, i]) < 1000:
+                    upperenergyslice_ibs -= 1
 
-            peaks, properties = find_peaks(ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i], distance=5)
+            peaks, properties = find_peaks(ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i], distance=5, width=2)
 
+            if upperenergyslice_ibs < lowerenergyslice_ibs and plotting == True:
+                print(counter,alt)
+                print("wrong")
+                print(lowerenergyslice_ibs,ibscalib['ibsearray'][lowerenergyslice_ibs],upperenergyslice_ibs,ibscalib['ibsearray'][upperenergyslice_ibs])
 
+                plt.plot(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i])
+                plt.scatter(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i][peaks])
+                plt.yscale("log")
+                plt.show()
 
             test_ibs_masses = []
             for peak in peaks:
                 energy = ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peak]
                 if energy < 5:
                     test_ibs_masses = test_ibs_masses + [17]
-                if energy > 5 and energy < 7:
-                    test_ibs_masses = test_ibs_masses + [17, 28]
-                if energy > 7 and energy < 9:
-                    test_ibs_masses = test_ibs_masses + [17, 28, 40]
-                if energy > 9 and energy < 12:
-                    test_ibs_masses = test_ibs_masses + [17, 28, 40, 53]
-                if energy > 12 and energy < 16.5:
-                    test_ibs_masses = test_ibs_masses + [17, 28, 40, 53, 66]
-                if energy > 16.5 and energy < 19.5:
-                    test_ibs_masses = test_ibs_masses + [17, 28, 40, 53, 66, 78]
-                if energy > 19.5:
-                    test_ibs_masses = test_ibs_masses + [17, 28, 40, 53, 66, 78, 91]
-            test_ibs_masses = sorted(set(test_ibs_masses))
+                if energy > 5 and energy < 6.8:
+                    if alt > 1400:
+                        test_ibs_masses = test_ibs_masses + [17, 28]
+                    else:
+                        test_ibs_masses = test_ibs_masses + [28]
+                if energy > 6.8 and energy < 9:
+                    test_ibs_masses = test_ibs_masses + [28, 40]
+                if energy > 9 and energy < 11.5:
+                    test_ibs_masses = test_ibs_masses + [28, 40, 53]
+                if energy > 11.5 and energy < 14:
+                    test_ibs_masses = test_ibs_masses + [28, 40, 53, 66]
+                if energy > 14 and energy < 16.4:
+                    test_ibs_masses = test_ibs_masses + [28, 40, 53, 66, 78]
+                if energy > 16.4:
+                    test_ibs_masses = test_ibs_masses + [28, 40, 53, 66, 78, 91]
+            test_ibs_masses = sorted(set(test_ibs_masses))[:len(peaks)]
 
-            highest_energy_peak = ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks[-1]]
+            if len(peaks) == 0 and plotting == True:
+                print(counter,alt)
+                print("wrong")
+                print(lowerenergyslice_ibs,ibscalib['ibsearray'][lowerenergyslice_ibs],upperenergyslice_ibs,ibscalib['ibsearray'][upperenergyslice_ibs])
+
+                plt.plot(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i])
+                plt.scatter(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i][peaks])
+                plt.yscale("log")
+                plt.show()
+
+
+            #highest_energy_peak = ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks[-1]]
             slice = ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i]
 
-            counter = peaks[-1]
-            #print(highest_energy_peak, counter, lowerenergyslice_ibs, upperenergyslice_ibs)
-            #print(slice[counter+1],slice[counter])
-            while slice[counter+1] < slice[counter]:
-                counter += 1
-                if counter + 1 == len(slice):
-                    break
-            if counter - peaks[-1] < 7:
-                counter = peaks[-1] + 7
-            upperenergyslice_ibs = lowerenergyslice_ibs+counter
+            if len(peaks) != 0:
+                counter = peaks[-1]
+                #print(highest_energy_peak, counter, lowerenergyslice_ibs, upperenergyslice_ibs)
+                #print(slice[counter+1],slice[counter])
+                while slice[counter+1] < slice[counter] or slice[counter+2] < slice[counter]:
+                    counter += 1
+                    if counter + 2 >= len(slice):
+                        counter +=1
+                        break
+                if counter - peaks[-1] < 5:
+                    counter = peaks[-1] + 5
+                upperenergyslice_ibs = lowerenergyslice_ibs+counter
             #print(highest_energy_peak, counter, lowerenergyslice_ibs, upperenergyslice_ibs)
 
             # print("old", masses_used)
-            # print("new", test_ibs_masses)
+            #print("new", test_ibs_masses)
 
-            # plt.plot(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i])
-            # plt.scatter(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i][peaks])
-            # plt.yscale("log")
-            # plt.show()
+
 
             masses_used = test_ibs_masses
+
+
+            #Multiple ion velocity exception
+            if alt > 1500:
+                masses_used = [17, 28]
+
+            # if alt>1500:
+            #     print(peaks,masses_used)
+            #     plt.plot(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i])
+            #     plt.scatter(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs][peaks],ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i][peaks])
+            #     plt.yscale("log")
+            #     plt.show()
+
+            #print(alt,masses_used)
 
             #--------------------
 
             lowerenergyslices.append(lowerenergyslice_ibs)
             upperenergyslices.append(upperenergyslice_ibs)
 
+            t0 = time.time()
+            print(alt, used_scp, previous_windspeeds)
             out_ibs = total_fluxgaussian(ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs],
                                          ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i],
                                          masses=masses_used, cassini_speed=cassini_speed,
@@ -613,6 +687,37 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
                                          temperature=last_ion_temp, charge=1,
                                          multipleionvelocity=multipleionvelocity)
             used_scp = out_ibs.params['scp'].value
+
+            t1 = time.time()
+
+            if t1-t0 > 10 and plotting == True:
+                print("time", t1-t0, "alt", alt)
+                print(out_ibs.fit_report(min_correl=0.7))
+
+                x = ibscalib['ibsearray'][lowerenergyslice_ibs:upperenergyslice_ibs]
+                y = ibsdata['ibsdata'][lowerenergyslice_ibs:upperenergyslice_ibs, 1, i]
+
+
+                comps = out_ibs.eval_components(x=x)
+
+                stepplotfig_ibs, ax = plt.subplots()
+                stepplotfig_ibs.suptitle("Histogram of " + ibsdata['flyby'].upper() + " IBS data", fontsize=32)
+                ax.step(x,y, where='mid')
+                ax.scatter(x[peaks], y[peaks])
+                ax.plot(x, out_ibs.best_fit, 'k-', label='best fit')
+                ax.set_yscale("log")
+                ax.set_ylabel("Counts [/s]", fontsize=16)
+                ax.tick_params(axis='both', which='major', labelsize=15)
+                ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+                ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+                ax.minorticks_on()
+                ax.set_xlabel("Energy [eV/q]", fontsize=14)
+                for mass in masses_used:
+                    ax.plot(x, comps["mass" + str(mass) + '_'], '-', label=str(mass) + " amu/q")
+                ax.legend(loc="best")
+                ax.set_ylim(min(y),max(y)*1.2)
+                plt.show()
+
 
             if multipleionvelocity == True:
                 tempvelocities = []
@@ -634,7 +739,8 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
             elif out_ibs.params['scp'].stderr is not None:
                 ibs_scp_stderr.append(out_ibs.params['scp'].stderr)
 
-                previous_windspeeds = out_ibs.params['ionvelocity'].value
+                if multipleionvelocity == False:
+                    previous_windspeeds = out_ibs.params['ionvelocity'].value
 
             for mass in all_possible_masses:
                 if 'mass' + str(mass) + "_center" in out_ibs.params.keys():
@@ -766,13 +872,12 @@ def non_actuating_alongtrackwinds_flybys_ibs(usedflybys=["t55","t56","t57","t58"
             tempax.set_ylabel("Ion temp")
             velax.hlines(0, ibsdata['times_utc'][start_ibs], ibsdata['times_utc'][end_ibs], color='k')
 
-            velax.set_ylim(-200,200)
+            velax.set_ylim(-400,400)
             scpax.set_ylim(-1,1)
 
             plt.show()
     else:
         outputdf.to_csv("nonactuatingflybys_alongtrackvelocity_ibs.csv")
-
 
 def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58","t59"],plotting=False):
     outputdf = pd.DataFrame()
@@ -858,10 +963,12 @@ def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58"
 
             #print("first", tempdataslice)
             temp_counter_0 = 0
-            while tempdataslice[0] == 0.:
+            while tempdataslice[temp_counter_0] == 0.:
                 temp_counter_0  += 1
+            tempx = tempx[temp_counter_0:]
             tempdataslice = tempdataslice[temp_counter_0:]
             #print("after", tempdataslice)
+            tempdataslice[tempdataslice == 0.] = 1.
 
 
             peaks, properties = find_peaks(tempdataslice, height=1e3, distance=2)
@@ -889,6 +996,25 @@ def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58"
             # plt.yscale("log")
             # plt.show()
 
+            highcounter = peaks[-1]
+            # print(highest_energy_peak, counter, lowerenergyslice_ibs, upperenergyslice_ibs)
+            # print(slice[counter+1],slice[counter])
+            while tempdataslice[highcounter + 1] < tempdataslice[highcounter]:
+                highcounter += 1
+                if highcounter + 1 == len(tempdataslice):
+                    break
+            lowcounter = 0
+            while tempdataslice[lowcounter + 1] < tempdataslice[lowcounter]:
+                lowcounter += 1
+                if lowcounter + 1 == len(tempdataslice):
+                    break
+            # if counter - peaks[-1] < 7:
+            #     counter = peaks[-1] + 7
+            # upperenergyslice_ibs = lowerenergyslice_ibs + counter
+            #print(peaks[-1], counter, tempx[counter])
+            tempdataslice = tempdataslice[lowcounter:highcounter + 1]
+            tempx = tempx[lowcounter:highcounter + 1]
+
             #print("ion temp",last_ion_temp)
             derived_temps.append(last_ion_temp)
             cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
@@ -908,10 +1034,42 @@ def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58"
 
             if out_els.params['ionvelocity'].stderr is None:
                 els_velocities_stderr.append(np.nan)
+                print(out_els.fit_report(min_correl=0.7))
             elif out_els.params['ionvelocity'].stderr is not None:
                 els_velocities_stderr.append(out_els.params['ionvelocity'].stderr)
             if out_els.params['scp'].stderr is None:
                 els_scp_stderr.append(np.nan)
+                print(out_els.fit_report(min_correl=0.7))
+                stepplotfig_els, ax = plt.subplots()
+                stepplotfig_els.suptitle(
+                    "Histogram of " + elsdata['flyby'].upper() + " ELS data " + "at " + elsdata['times_utc_strings'][
+                        i], fontsize=32)
+                ax.step(tempx, tempdataslice, where='mid', label="ELS Data")
+                ax.errorbar(tempx, tempdataslice, yerr=[np.sqrt(i) for i in tempdataslice], color='k', fmt='none')
+                ax.plot(tempx, out_els.init_fit, 'b-', label='Initial Fit')
+                ax.plot(tempx, out_els.best_fit, 'k-', label='Best Fitting')
+                ax.set_yscale("log")
+                # ax.set_xlim(lowerenergyslice_els, upperenergyslice_els)
+                ax.set_ylim(0.9 * min(tempdataslice), 2 * max(tempdataslice))
+                ax.set_ylabel("Counts [/s]", fontsize=16)
+                ax.tick_params(axis='both', which='major', labelsize=15)
+                ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+                ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+                ax.minorticks_on()
+                # ax.set_title(elsdata['times_utc_strings'][actualslice])
+                ax.set_xlabel("Energy [eV/q]", fontsize=14)
+                ax.legend()
+
+                GOF = np.mean((abs(out_els.best_fit - tempdataslice) / tempdataslice) * 100)
+                ax.text(0.6, 0.01,
+                        "Ion wind = %2.0f ± %2.0f m/s" % (out_els.params['ionvelocity'], np.nan),
+                        transform=ax.transAxes, fontsize=18)
+                ax.text(0.6, .05,
+                        "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out_els.params['scp'], np.nan),
+                        transform=ax.transAxes, fontsize=18)
+                ax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes, fontsize=18)
+                ax.text(0.6, .13, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes, fontsize=18)
+
             elif out_els.params['scp'].stderr is not None:
                 els_scp_stderr.append(out_els.params['scp'].stderr)
 
@@ -1038,7 +1196,7 @@ def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58"
             tempax.set_ylabel("Ion temp")
             velax.hlines(0, elsdata['times_utc'][start_els], elsdata['times_utc'][end_els], color='k')
 
-            velax.set_ylim(-200,200)
+            velax.set_ylim(-300,200)
             scpax.set_ylim(-2.5,0)
 
             plt.show()
@@ -1047,8 +1205,6 @@ def non_actuating_alongtrackwinds_flybys_els(usedflybys=["t55","t56","t57","t58"
 
 
 def single_slice_test(flyby, slicenumber,multipleionvelocity=False):
-    elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
-    generate_mass_bins(elsdata, flyby, "els")
     ibsdata = readsav("data/ibs/ibsres_" + filedates_times[flyby][0] + ".dat")
     generate_mass_bins(ibsdata, flyby, "ibs")
 
@@ -1130,11 +1286,162 @@ def single_slice_test(flyby, slicenumber,multipleionvelocity=False):
     plt.show()
 
 
+def single_slice_test_els(flyby, slicenumber):
+    elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
+    generate_mass_bins(elsdata, flyby, "els")
+    start_els = CAPS_slicenumber(elsdata, flyby_datetimes_els[flyby][0]) + slicenumber
+
+    lpdata = read_LP_V1(flyby)
+    lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
+    tempdatetime = elsdata['times_utc'][start_els]
+
+    all_possible_masses_els = [26, 50, 79, 117]
+    mass_energies_dict, mass_energies_dict_els = {}, {}
+    for mass in all_possible_masses_els:
+        mass_energies_dict_els["elsmass" + str(mass)] = []
+
+    lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps,
+                        lpdata['SPACECRAFT_POTENTIAL'])
+    used_scp = lpvalue - 1
+    et = spice.datetime2et(tempdatetime)
+    state, ltime = spice.spkezr('CASSINI', et, 'IAU_TITAN', 'NONE', 'TITAN')
+    alt, lat, lon = cassini_titan_altlatlon(tempdatetime)
+    previous_windspeeds = 0
+
+    if alt < 1000:
+        lowerenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][2][0], ELS_energybound_dict[flyby][2][0])[0]
+        upperenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][2][1], ELS_energybound_dict[flyby][2][1])[0]
+        last_ion_temp = titan_linearfit_temperature(alt)
+    elif alt > 1000 and alt < 1130:
+        # els_masses = flyby_masses_els[flyby][1]
+        lowerenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][1][0], ELS_energybound_dict[flyby][1][0])[0]
+        upperenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][1][1], ELS_energybound_dict[flyby][1][1])[0]
+        last_ion_temp = titan_linearfit_temperature(alt)
+    elif alt > 1100:
+        # els_masses = flyby_masses_els[flyby][0]
+        lowerenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][0][0], ELS_energybound_dict[flyby][0][0])[0]
+        upperenergyslice_els = \
+        CAPS_energyslice("els", ELS_energybound_dict[flyby][0][1], ELS_energybound_dict[flyby][0][1])[0]
+        last_ion_temp = titan_linearfit_temperature(alt)
+
+    anode = ELS_maxflux_anode(elsdata, tempdatetime - datetime.timedelta(seconds=10),
+                              tempdatetime + datetime.timedelta(seconds=10))
+
+    print(ELS_energybound_dict[flyby][0][0],ELS_energybound_dict[flyby][0][1])
+
+    tempdataslice = np.float32(
+        ELS_backgroundremoval(elsdata, start_els, start_els + 1, datatype="data"))[
+                    lowerenergyslice_els:upperenergyslice_els, anode, :].flatten()
+
+    tempx = elscalib['earray'][lowerenergyslice_els:upperenergyslice_els]
+
+    cassini_speed = np.sqrt((state[3]) ** 2 + (state[4]) ** 2 + (state[5]) ** 2) * 1e3
+
+    temp_counter_0 = 0
+    while tempdataslice[temp_counter_0] == 0.:
+        temp_counter_0 += 1
+    tempx = tempx[temp_counter_0:]
+    tempdataslice = tempdataslice[temp_counter_0:]
+    tempdataslice[tempdataslice == 0.] = 1.
+
+
+
+    peaks, properties = find_peaks(tempdataslice)#, height=1e3, distance=2)
+    print(peaks,tempx[peaks])
+
+    test_els_masses = []
+    for peak in peaks:
+        energy = tempx[peak]
+        if energy > 1 and energy < 5:
+            test_els_masses = test_els_masses + [26]
+        if energy > 5 and energy < 10:
+            test_els_masses = test_els_masses + [26, 50]
+        if energy > 10 and energy < 14:
+            test_els_masses = test_els_masses + [26, 50, 79]
+        if energy > 14:
+            test_els_masses = test_els_masses + [26, 50, 79, 117]
+
+    els_masses = set(test_els_masses)
+
+    counter = peaks[-1]
+    # print(highest_energy_peak, counter, lowerenergyslice_ibs, upperenergyslice_ibs)
+    # print(slice[counter+1],slice[counter])
+    while tempdataslice[counter + 1] < tempdataslice[counter]:
+        counter += 1
+        if counter + 1 == len(tempdataslice):
+            break
+    # if counter - peaks[-1] < 7:
+    #     counter = peaks[-1] + 7
+    #upperenergyslice_ibs = lowerenergyslice_ibs + counter
+    print(peaks[-1],counter,tempx[counter])
+    tempdataslice = tempdataslice[:counter+1]
+    tempx = tempx[:counter+1]
+
+    print(els_masses,alt,tempx[0],tempx[-1])
+
+    print(used_scp)
+    out_els = total_fluxgaussian(tempx,
+                                 tempdataslice,
+                                 masses=els_masses, cassini_speed=cassini_speed,
+                                 windspeeds=previous_windspeeds, scpvalue=used_scp, lpvalue=lpvalue,
+                                 temperature=last_ion_temp, charge=-1,
+                                 multipleionvelocity=False)
+
+    if out_els.params['ionvelocity'].stderr is None:
+        vel_err = np.nan
+        print(out_els.fit_report(min_correl=0.7))
+    elif out_els.params['ionvelocity'].stderr is not None:
+        vel_err = out_els.params['ionvelocity'].stderr
+    if out_els.params['scp'].stderr is None:
+        scp_err = np.nan
+        print(out_els.fit_report(min_correl=0.7))
+    elif out_els.params['scp'].stderr is not None:
+        scp_err = out_els.params['scp'].stderr
+
+    stepplotfig_els, ax = plt.subplots()
+    stepplotfig_els.suptitle("Histogram of " + elsdata['flyby'].upper() + " ELS data " + "at " + elsdata['times_utc_strings'][start_els], fontsize=32)
+    ax.step(tempx, tempdataslice, where='mid',label="ELS Data")
+    ax.errorbar(tempx, tempdataslice, yerr=[np.sqrt(i) for i in tempdataslice], color='k', fmt='none')
+    ax.plot(tempx, out_els.init_fit, 'b-', label='Initial Fit')
+    ax.plot(tempx, out_els.best_fit, 'k-', label='Best Fitting')
+    ax.set_yscale("log")
+    #ax.set_xlim(lowerenergyslice_els, upperenergyslice_els)
+    ax.set_ylim(0.9 * min(tempdataslice), 2 * max(tempdataslice))
+    ax.set_ylabel("Counts [/s]", fontsize=16)
+    ax.tick_params(axis='both', which='major', labelsize=15)
+    ax.grid(b=True, which='major', color='k', linestyle='-', alpha=0.5)
+    ax.grid(b=True, which='minor', color='k', linestyle='--', alpha=0.25)
+    ax.minorticks_on()
+    #ax.set_title(elsdata['times_utc_strings'][actualslice])
+    ax.set_xlabel("Energy [eV/q]", fontsize=14)
+    ax.legend()
+
+    GOF = np.mean((abs(out_els.best_fit - tempdataslice) / tempdataslice) * 100)
+    ax.text(0.6, 0.01,
+                  "Ion wind = %2.0f ± %2.0f m/s" % (out_els.params['ionvelocity'], vel_err),
+                  transform=ax.transAxes, fontsize=18)
+    ax.text(0.6, .05,
+                  "ELS-derived S/C Potential = %2.2f ± %2.2f V" % (out_els.params['scp'], scp_err),
+                  transform=ax.transAxes, fontsize=18)
+    ax.text(0.6, .09, "LP-derived S/C Potential = %2.2f" % lpvalue, transform=ax.transAxes, fontsize=18)
+    ax.text(0.6, .13, "My GOF = %2.0f %%" % GOF, transform=ax.transAxes, fontsize=18)
+    print(out_els.var_names,out_els.init_vals)
+
+    plt.show()
+
 
 
 #non_actuating_alongtrackwinds_flybys_ibs(["t55","t56","t57","t58","t59"])
-non_actuating_alongtrackwinds_flybys_ibs(["t56"],plotting=True)
-#non_actuating_alongtrackwinds_flybys_els(["t56"],plotting=True)
-#non_actuating_alongtrackwinds_flybys_els(["t55","t56","t57","t58","t59"],plotting=True)
+#non_actuating_alongtrackwinds_flybys_ibs(["t55"],plotting=True)
+non_actuating_alongtrackwinds_flybys_els(["t55","t56","t57","t58","t59"])
+#non_actuating_alongtrackwinds_flybys_els(["t59"],plotting=True)
 #plotting("t55", multipleionvelocity=True)
-#single_slice_test("t56",0)
+
+
+#non_actuating_alongtrackwinds_flybys_ibs(["t59"],plotting=True)
+#single_slice_test_els("t59",15)

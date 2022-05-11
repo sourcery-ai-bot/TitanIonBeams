@@ -244,7 +244,7 @@ data_times_pairs = [
     ["t36", [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)],
      [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)], 20, 15, 30, 10],
     ["t39", [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)],
-     [datetime.datetime(2007, 10, 2, 4, 39, 30), datetime.datetime(2007, 10, 2, 4, 45)], 20, 15, 30, 10],
+     [datetime.datetime(2007, 12, 20, 22, 54, 20), datetime.datetime(2007, 12, 20, 23, 1, 20)], 20, 15, 30, 10],
     ["t40", [datetime.datetime(2008, 1, 5, 21, 26), datetime.datetime(2008, 1, 5, 21, 35, 15)],
      [datetime.datetime(2008, 1, 5, 21, 27, 20), datetime.datetime(2008, 1, 5, 21, 33, 30)], 20, 6, 30, 35],
     ["t41", [datetime.datetime(2008, 2, 22, 17, 29, 40), datetime.datetime(2008, 2, 22, 17, 34, 40)],
@@ -273,13 +273,14 @@ data_times_pairs = [
 
 usedflybys = ['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
               't41', 't42', 't43', 't48','t49','t50','t51','t71','t83']
+
 #oldflybys = ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46']
 #newflybys = ['t36','t48','t49','t50','t51','t71','t83']
 #LowAzimuthFlybys = ['t20', 't46']
 
 
 # usedflybys = ['t42', 't46']
-#usedflybys = ['t83']
+#usedflybys = ['t39']
 
 
 def CAPS_winds(data_times_pairs):
@@ -350,10 +351,10 @@ def CAPS_winds(data_times_pairs):
                                                  "Flyby", "FlybyDate", "Flyby velocity", "Actuation Direction"])
     print(capsdf)
     #capsdf['Bulk Azimuth'] = capsdf[["Negative Azimuth Angle", "Positive Azimuth Angle"]].mean(axis=1,skipna=True)
-    capsdf['Bulk Azimuth'] = (capsdf["Negative Azimuth Angle"] + capsdf["Positive Azimuth Angle"])/2
-    capsdf['Bulk Time'] = capsdf["Negative Peak Time"] + (
-            (capsdf["Positive Peak Time"] - capsdf["Negative Peak Time"]) / 2)
-    capsdf["Bulk Deflection from Ram Angle"] = capsdf["Bulk Azimuth"] - capsdf["Azimuthal Ram Angle"]
+    # capsdf['Bulk Azimuth'] = (capsdf["Negative Azimuth Angle"] + capsdf["Positive Azimuth Angle"])/2
+    # capsdf['Bulk Time'] = capsdf["Negative Peak Time"] + (
+    #         (capsdf["Positive Peak Time"] - capsdf["Negative Peak Time"]) / 2)
+    # capsdf["Bulk Deflection from Ram Angle"] = capsdf["Bulk Azimuth"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Negative Deflection from Ram Angle"] = capsdf["Negative Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
     capsdf["Positive Deflection from Ram Angle"] = capsdf["Positive Azimuth Angle"] - capsdf["Azimuthal Ram Angle"]
     #print(capsdf)
@@ -403,4 +404,4 @@ data['Altitude'] = alts
 data['Longitude'] = lons
 data['Latitude'] = lats
 
-data.to_csv("test.csv")
+data.to_csv("crosswinds_full.csv")

@@ -66,13 +66,15 @@ def magdata_magnitude_hires(tempdatetime,coords="KRTP"):
     return mag_magnitude
 
 #--Generating Windsdf----
-# alongtrack_windsdf = pd.read_csv("alongtrackvelocity_unconstrained_refinedpeaks.csv", index_col=0, parse_dates=True)
+
 # crosstrack_windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-#alongtrack_windsdf = pd.read_csv("singleflyby_alongtracktest.csv", index_col=0, parse_dates=True)
 # alongtrack_windsdf = pd.read_csv("alongtrackvelocity.csv", index_col=0, parse_dates=True)
-# crosstrack_windsdf = pd.read_csv("test.csv", index_col=0, parse_dates=True)
-# windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1)
-# windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
+#
+# windsdf = pd.concat([alongtrack_windsdf, crosstrack_windsdf], axis=1,sort=False)
+
+#windsdf = alongtrack_windsdf.join(crosstrack_windsdf, on="Negative Peak Time") #Pretty sure this line is redundant
+
+#windsdf = windsdf.loc[:, ~windsdf.columns.duplicated()]
 
 
 windsdf = pd.read_csv("winds_full.csv", index_col=0, parse_dates=True)
@@ -135,10 +137,10 @@ def add_angle_to_corot(windsdf):
 #         mag_magnitudes.append(tempmag)
 #     windsdf["BT"] = mag_magnitudes
 
-# add_magdata(windsdf)
-# add_angle_to_corot(windsdf)
+#add_magdata(windsdf)
+#add_angle_to_corot(windsdf)
 # #windsdf.to_csv("singleflyby_winds_full.csv")
-# windsdf.to_csv("winds_full.csv")
+#windsdf.to_csv("winds_full.csv")
 
 #------ All processing above here--------
 
@@ -151,22 +153,43 @@ southern_flybys_df = windsdf.loc[windsdf['Flyby'].isin(southern_hemisphere_flyby
 
 def pairplots():
     lonlatfig, lonlatax = plt.subplots()
-    sns.scatterplot(x=windsdf["Longitude"], y=windsdf["Latitude"], hue=windsdf["Flyby"], ax=lonlatax)
-    lonlatax.set_xlabel("Longitude")
-    lonlatax.set_ylabel("Latitude")
+    ax = sns.scatterplot(x=windsdf["Longitude"], y=windsdf["Latitude"], hue=windsdf["Flyby"], ax=lonlatax)
+    lonlatax.set_xlabel("Longitude [\N{DEGREE SIGN}]")
+    lonlatax.set_ylabel("Latitude [\N{DEGREE SIGN}]")
+    sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
+    ax.set_xlim(0,360)
+    ax.set_ylim(-90,90)
+
+    # reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","Flyby", "BT"]]#, "BT","Solar Zenith Angle",]]
+    # reduced_windsdf1 = windsdf[
+    #     ["IBS spacecraft potentials", "ELS spacecraft potentials", "IBS crosstrack velocity", "ELS crosstrack velocity",
+    #      "Flyby"]]  # , "BT","Solar Zenith Angle",]]
+    reduced_windsdf1 = windsdf[
+        ["IBS spacecraft potentials", "ELS spacecraft potentials", "IBS crosstrack velocity", "ELS crosstrack velocity", "Altitude",
+         "Flyby"]]  # , "BT","Solar Zenith Angle",]]
+
+    windsdf_attitude1 = windsdf[
+        ["IBS crosstrack velocity", "ELS crosstrack velocity", "xx_attitude", "xy_attitude","xz_attitude"]]  # , "BT","Solar Zenith Angle",]]
+    windsdf_attitude2 = windsdf[
+        ["IBS crosstrack velocity", "ELS crosstrack velocity","yx_attitude", "yy_attitude","yz_attitude"]]  # , "BT","Solar Zenith Angle",]]
+    windsdf_attitude3 = windsdf[
+        ["IBS crosstrack velocity", "ELS crosstrack velocity","zx_attitude", "zy_attitude","zz_attitude"]]  # , "BT","Solar Zenith Angle",]]
 
 
-    reduced_windsdf1 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "IBS crosstrack velocity","ELS crosstrack velocity","Flyby", "BT"]]#, "BT","Solar Zenith Angle",]]
-    reduced_windsdf2 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Altitude", "Longitude", "Latitude","Flyby"]]
-    reduced_windsdf3 = windsdf[["IBS spacecraft potentials", "ELS spacecraft potentials", "LP Potentials", "Actuation Direction","Flyby"]]#,"Solar Zenith Angle", ]]
-    reduced_windsdf4 = windsdf[["Positive Peak Energy", "Negative Peak Energy", "IBS crosstrack velocity","ELS crosstrack velocity", "Actuation Direction"]]
-    reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "Altitude", "Flyby", "Angle2Corot" ]]# "Angle2Corot",,"Solar Zenith Angle",]]
+    # reduced_windsdf2 = windsdf[["IBS alongtrack velocity", "ELS alongtrack velocity", "Altitude", "Longitude", "Latitude","Flyby"]]
+    # reduced_windsdf3 = windsdf[["IBS spacecraft potentials", "ELS spacecraft potentials", "LP Potentials", "Actuation Direction","Flyby"]]#,"Solar Zenith Angle", ]]
+    # reduced_windsdf4 = windsdf[["Positive Peak Energy", "Negative Peak Energy", "IBS crosstrack velocity","ELS crosstrack velocity", "Actuation Direction"]]
+    # reduced_windsdf5 = windsdf[["IBS alongtrack velocity", "Altitude", "Flyby", "Angle2Corot" ]]# "Angle2Corot",,"Solar Zenith Angle",]]
+    sns.set(font_scale=1.1)
+    #sns.pairplot(reduced_windsdf1,corner=True,diag_kind="hist")
+    # sns.pairplot(reduced_windsdf2,hue="Flyby")
+    # sns.pairplot(reduced_windsdf3,hue="Flyby")
+    # sns.pairplot(reduced_windsdf4)
+    # sns.pairplot(reduced_windsdf5,hue="Flyby")
+    sns.pairplot(windsdf_attitude1,corner=True,diag_kind="hist")
+    sns.pairplot(windsdf_attitude2,corner=True,diag_kind="hist")
+    sns.pairplot(windsdf_attitude3,corner=True,diag_kind="hist")
 
-    sns.pairplot(reduced_windsdf1,hue="Flyby")
-    sns.pairplot(reduced_windsdf2,hue="Flyby")
-    sns.pairplot(reduced_windsdf3,hue="Flyby")
-    sns.pairplot(reduced_windsdf4)
-    sns.pairplot(reduced_windsdf5,hue="Flyby")
 
 # print(windsdf)
 maxwind = 500
@@ -603,6 +626,8 @@ def alt_vel_plot_region_positive(flybyslist,windsdf,lowlat=False,compare=False):
     avgVel_flybys_135_225_std = flybys_135_225.groupby(pd.cut(flybys_135_225['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
     avgVel_flybys_225_315_mean = flybys_225_315.groupby(pd.cut(flybys_225_315['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
     avgVel_flybys_225_315_std = flybys_225_315.groupby(pd.cut(flybys_225_315['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
+    avgVel_flybys_mean = windsdf.groupby(pd.cut(windsdf['Altitude'], np.arange(startalt, endalt, intervalalt))).mean()
+    avgVel_flybys_std = windsdf.groupby(pd.cut(windsdf['Altitude'], np.arange(startalt, endalt, intervalalt))).std()
 
 
     for axescounter, flybyset in enumerate([flybys_315_45, flybys_45_135, flybys_135_225, flybys_225_315]):
@@ -1274,7 +1299,8 @@ def regplot_crosstrack():
 
 
     #sns.regplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crossax)
-    reggrid = sns.jointplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",kind='reg',xlim=(-limit,limit),ylim=(-limit,limit))
+    reggrid = sns.jointplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",kind='reg',
+                            xlim=(-limit,limit),ylim=(-limit,limit),marginal_kws=dict(bins=range(-600,600,100)))
 
     testtuple = stats.pearsonr(bothdf["IBS crosstrack velocity"], bothdf["ELS crosstrack velocity"])
     z2 = np.polyfit(bothdf["IBS crosstrack velocity"],bothdf["ELS crosstrack velocity"],1)
@@ -1282,27 +1308,84 @@ def regplot_crosstrack():
     print(p2)
     reggrid.ax_joint.text(-100,-300,"Pearson's r = ({0[0]:.2f},{0[1]:.2f})".format(testtuple))
     reggrid.ax_joint.text(-100,-350,p2)
+    reggrid.ax_joint.set_ylabel("ELS crosstrack velocity [m/s]")
+    reggrid.ax_joint.set_xlabel("IBS crosstrack velocity [m/s]")
     plt.gcf().set_size_inches(8, 8)
+    x = np.linspace(-600, 600, 10)
+    reggrid.ax_joint.plot(x, x, color='k')
+
+
+
+def regplot_crosstrack_altitude():
+
+
+    crosstrack_fig, crosstrack_ax = plt.subplots()
+
+
+    sns.scatterplot(data=windsdf, x="ELS crosstrack velocity", y="Altitude",ax=crosstrack_ax,label="ELS",color='C0')
+    sns.scatterplot(data=windsdf, x="IBS crosstrack velocity", y="Altitude", ax=crosstrack_ax,label="IBS",color='C1')
+    sns.kdeplot(data=windsdf,x="ELS crosstrack velocity", y="Altitude", levels=5, color='C0', linewidths=1)
+    sns.kdeplot(data=windsdf,x="IBS crosstrack velocity", y="Altitude", levels=5, color='C1', linewidths=1)
+
+    crosstrack_ax.set_xlabel("Crosstrack Velocity")
+    crosstrack_ax.legend()
+    # z = np.polyfit(windsdf["IBS crosstrack velocity"],windsdf["ELS crosstrack velocity"],1)
+    # p = np.poly1d(z)
+    # print("Coefficients", p )
+    # x = np.linspace(-400,400,10)
+    # crosstrack_ax.plot(x,x,color='k')
 
 def regplot_alongtrack():
     limit = 400
 
     bothdf = windsdf.dropna(subset=["ELS alongtrack velocity"])
-    regfig, alongax = plt.subplots(1,figsize=(8,8))
 
     testtuple = stats.pearsonr(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"])
     #sns.regplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crossax)
-    sns.jointplot(data=bothdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",ax=alongax,kind='reg',xlim=(-limit,limit),ylim=(-limit,limit))
+    testjointgrid = sns.jointplot(data=bothdf, x="IBS alongtrack velocity", y="ELS alongtrack velocity",
+                  kind='reg',xlim=(-limit,limit),ylim=(-limit,limit),marginal_kws=dict(bins=range(-400,400,50)))
 
     z2 = np.polyfit(bothdf["IBS alongtrack velocity"],bothdf["ELS alongtrack velocity"],1)
-    p2 = np.poly1d(z2)
-    alongax.text(-300,250,"({0[0]:.2f},{0[1]:.2f})".format(testtuple))
-    alongax.text(-300,200,str(p2))
+    p2 = "y = " + str(np.poly1d(z2))[2:]
+    testjointgrid.ax_joint.text(0,-200,"Pearson's r = ({0[0]:.2f},{0[1]:.2f})".format(testtuple))
+    testjointgrid.ax_joint.text(0,-250,str(p2))
+    testjointgrid.ax_joint.set_xlabel("IBS alongtrack velocity [m/s]")
+    testjointgrid.ax_joint.set_ylabel("ELS alongtrack velocity [m/s]")
 
+    x = np.linspace(-400,400,10)
+    testjointgrid.ax_joint.plot(x,x,color='k')
+    plt.gcf().set_size_inches(8,8)
+
+def regplot_alongtrack_basic():
+    limit = 400
+
+    bothdf = windsdf.dropna(subset=["ELS alongtrack velocity"])
+
+    testtuple = stats.pearsonr(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"])
+    #sns.regplot(data=bothdf, x="IBS crosstrack velocity", y="ELS crosstrack velocity",ax=crossax)
+    fig, ax = plt.subplots()
+
+    ax.errorbar(bothdf["IBS alongtrack velocity"], bothdf["ELS alongtrack velocity"],
+                xerr=bothdf["IBS alongtrack velocity stderr"],
+                yerr=bothdf["ELS alongtrack velocity stderr"],fmt='.',c='k',ecolor='C0',alpha=0.7)
+
+    z2 = np.polyfit(bothdf["IBS alongtrack velocity"],bothdf["ELS alongtrack velocity"],1)
+    p2 = "y = " + str(np.poly1d(z2))[2:]
+    ax.text(0,-200,"Pearson's r = ({0[0]:.2f},{0[1]:.2f})".format(testtuple))
+    ax.text(0,-250,str(p2))
+    ax.set_xlabel("IBS alongtrack velocity [m/s]")
+    ax.set_ylabel("ELS alongtrack velocity [m/s]")
+
+    x = np.linspace(-400,400,10)
+    ax.plot(x, np.poly1d(z2)(x),color='k')
+    ax.plot(x,x,color='r',linestyle='--')
+    plt.gcf().set_size_inches(8,8)
+    ax.set_ylim(-400,400)
+    ax.set_xlim(-400, 400)
 
 #scp_plot_byflyby()
-#alt_vel_plot_region_positive(flybyslist,windsdf,lowlat=True,compare=True)
-#alt_vel_plot_region_negative(flybyslist,windsdf,lowlat=True,compare=True)
+alt_vel_plot_region_positive(flybyslist,windsdf,lowlat=False,compare=True)
+alt_vel_plot_region_negative(flybyslist,windsdf,lowlat=False,compare=True)
 #alt_vel_plot_agree_disgaree(flybyslist)
 #alt_vel_plot_long_sza(flybyslist,windsdf)
 # Titan_frame_plot(flybys_agreeing)
@@ -1311,10 +1394,15 @@ def regplot_alongtrack():
 
 #Titan_cylindrical_plot(['t23','t25','t27','t50','t40','t41','t43','t48'])
 
-regplot_crosstrack()
-# regplot_alongtrack()
+#regplot_crosstrack()
+#alongtrack_byflyby()
 
 #box_titan_trajectory_plot(['t23','t25','t27','t50','t71','t40','t41','t42','t43','t48'],sun=False,CA=True)
 #box_titan_trajectory_plot_cylindrical(['t23','t25','t27','t50','t71','t40','t41','t42','t43','t48'],StartPoint=False)
+
+#regplot_crosstrack_altitude()
+#regplot_alongtrack_basic()
+
+#pairplots()
 
 plt.show()

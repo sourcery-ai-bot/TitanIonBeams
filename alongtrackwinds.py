@@ -67,7 +67,7 @@ IBS_fluxfitting_dict = {"mass16_": {"sigma": [0.2, 0.2, 0.4], "amplitude": []},
                         "mass17_": {"sigma": [0.2, 0.2, 0.4], "amplitude": []},
                         "mass28_": {"sigma": [0.2, 0.2, 0.4], "amplitude": []},
                         "mass39_": {"sigma": [0.2, 0.3, 0.6], "amplitude": []},
-                        "mass40_": {"sigma": [0.2, 0.3, 0.6], "amplitude": []},
+                        "mass40_": {"sigma": [0.2, 0.3, 0.7], "amplitude": []},
                         "mass51_": {"sigma": [0.3, 0.5, 0.65], "amplitude": []},
                         "mass52_": {"sigma": [0.3, 0.5, 0.65], "amplitude": []},
                         "mass53_": {"sigma": [0.3, 0.5, 0.65], "amplitude": []},
@@ -86,13 +86,14 @@ IBS_fluxfitting_dict_log = {"mass28_": {"sigma": [2, 1.5, 3.5], "amplitude": [30
                         "mass91_": {"sigma": [0.6, 2, 2], "amplitude": [30]}}
 
 ELS_fluxfitting_dict = {"mass13_": {"sigma": [0.1, 0.2, 0.7], "amplitude": [5]},
-                        "mass26_": {"sigma": [0.1, 0.2, 0.7], "amplitude": [5]},
-                        "mass50_": {"sigma": [0.5, 0.6, 0.9], "amplitude": [4]},
+                        "mass26_": {"sigma": [0.1, 0.3, 0.8], "amplitude": [5]},
+                        "mass38_": {"sigma": [0.1, 0.2, 0.7], "amplitude": [5]},
+                        "mass50_": {"sigma": [0.5, 0.6, 1.4], "amplitude": [4]},
                         "mass74_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
                         "mass77_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
-                        "mass79_": {"sigma": [0.5, 0.7, 1.3], "amplitude": [3]},
+                        "mass79_": {"sigma": [0.5, 1, 1.8], "amplitude": [3]},
                         "mass91_": {"sigma": [0.6, 0.8, 1.6], "amplitude": [3]},
-                        "mass117_": {"sigma": [0.8, 0.9, 1.7], "amplitude": [3]}}
+                        "mass117_": {"sigma": [0.8, 1.8, 3.3], "amplitude": [3]}}
 
 IBS_energybound_dict = {"ta": [3.8, 18], "t16": [4, 17], "t17": [3.5, 16.25], "t18": [3.5, 16.25], "t19": [3.5, 16.25],
                         "t20": [3.5, 16.5], "t21": [4.25, 16.75], "t23": [4.25, 16.85], "t25": [4.25, 18.25],
@@ -107,28 +108,28 @@ IBS_energybound_dict = {"ta": [3.8, 18], "t16": [4, 17], "t17": [3.5, 16.25], "t
                         "t71": [3.5, 16.5], "t83": [3.5, 16.5]}
 
 
-ELS_energybound_dict = {"ta": [3, 30], "t16": [1, 30], "t17": [1.5, 30], "t18": [1.5, 30], "t19": [1.5, 30],
+ELS_energybound_dict = {"ta": [3, 30], "t16": [1, 25], "t17": [1.5, 30], "t18": [1.5, 30], "t19": [1.5, 28],
                         "t20": [1, 30], "t21": [1, 30], "t23": [1, 30], "t25": [1.5, 25], "t26": [1.5, 30],
                         "t27": [1.5, 30],
                         "t28": [1.5, 30], "t29": [1, 30],
                         "t30": [1, 30], "t32": [1.5, 30], "t36": [1.5, 30], "t39": [1.5, 30], "t40": [2.3, 30],
                         "t41": [2.3, 30],
-                        "t42": [2.3, 30], "t43": [2.3, 30], "t46": [2.3, 28], "t47": [1, 35], "t48": [1, 35],
-                        "t49": [1, 35], "t50": [1, 35],
-                        "t51": [1, 35], "t55": [1, 35], "t56": [1, 35], "t57": [1, 35], "t58": [1, 35], "t59": [1, 35],
-                        "t71": [1, 35], "t83": [1, 35]}
+                        "t42": [2.3, 30], "t43": [2.3, 30], "t46": [2.3, 28], "t47": [1, 30], "t48": [1, 30],
+                        "t49": [1, 30], "t50": [1, 35],
+                        "t51": [1, 30], "t55": [1, 35], "t56": [1, 35], "t57": [1, 35], "t58": [1, 35], "t59": [1, 35],
+                        "t71": [1, 35], "t83": [1, 25]}
 
-ELS_midenergybound_dict = {"ta": [3, 18], "t16": [1, 18], "t17": [1.5, 18], "t18": [1.5, 18], "t19": [1.5, 18],
-                        "t20": [1, 18], "t21": [1, 18], "t23": [1, 18], "t25": [1.5, 18], "t26": [1.5, 19],
-                        "t27": [1.5, 18],
-                        "t28": [1.5, 18], "t29": [1, 18],
-                        "t30": [1, 18], "t32": [1.5, 18], "t36": [1.5, 18], "t39": [1.5, 18], "t40": [2.3, 18],
-                        "t41": [2.3, 18],
-                        "t42": [2.3, 18], "t43": [2.3, 18], "t46": [2.3, 18], "t47": [1, 18], "t48": [1, 18],
-                        "t49": [1, 18], "t50": [1, 18],
-                        "t51": [1, 18], "t71": [1, 18], "t83": [1, 18]}
+ELS_midenergybound_dict = {"ta": [3, 18], "t16": [1, 16], "t17": [1.5, 20], "t18": [1.5, 20], "t19": [1.5, 20],
+                        "t20": [1, 20], "t21": [1, 16], "t23": [1, 20], "t25": [1.5, 20], "t26": [1.5, 20],
+                        "t27": [1.5, 20],
+                        "t28": [1.5, 20], "t29": [1, 20],
+                        "t30": [1, 20], "t32": [1.5, 20], "t36": [1.5, 20], "t39": [1.5, 20], "t40": [2.3, 20],
+                        "t41": [2.3, 20],
+                        "t42": [2.3, 20], "t43": [2.3, 20], "t46": [2.3, 20], "t47": [1, 20], "t48": [1, 20],
+                        "t49": [1, 20], "t50": [1, 20],
+                        "t51": [1, 22], "t71": [1, 20], "t83": [1, 20]}
 
-ELS_smallenergybound_dict = {"ta": [1.5, 11], "t16": [1.5, 11], "t17": [1.5, 10], "t18": [1.5, 10], "t19": [1.5, 10],
+ELS_smallenergybound_dict = {"ta": [1.5, 11], "t16": [1.5, 11], "t17": [1.5, 11], "t18": [1.5, 11], "t19": [1.5, 12],
                              "t20": [1, 11], "t21": [1, 10], "t23": [1, 10], "t25": [1.5, 11], "t26": [1.5, 11],
                              "t27": [1.5, 11],
                              "t28": [1.5, 11], "t29": [1, 11],
@@ -192,7 +193,7 @@ ELS_init_ionvelocity_dict = {"ta": 0, "t16": 0, "t17": -50, "t19": 0,
                              "t48": 0, "t49": 0, "t50": 0, "t51": 0, "t71": -200, "t83": 20}
 
 
-LP_offset_dict = {"ta": -0.4, "t16": -0.3, "t17": -0.1, "t19": -0.35,
+LP_offset_dict = {"ta": -0.4, "t16": -0.3, "t17": -0.2, "t19": -0.35,
                   "t20": -0.35, "t21": -0.35, "t23": -0.7, "t25": -0.35, "t26": -0.4,
                   "t27": -0.6,
                   "t28": -0.4, "t29": -0.4,
@@ -246,8 +247,8 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, altitude, windsp
         # pars.add('scp', value=LPvalue+lpoffset)
         # pars['scp'].vary = False
     elif charge == -1:
-        pars.add('scp', value=LPvalue, min=LPvalue - 1.5, max=0)
-        #pars.add('scp', value=LPvalue+0.3, min=LPvalue, max=0)
+        pars.add('scp', value=LPvalue-0.6, min=LPvalue - 1.5, max=LPvalue + 0.25)
+
         # pars.add('scp', value=LPvalue+lpoffset)
         # pars['scp'].vary = False
 
@@ -298,7 +299,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, altitude, windsp
             mod = mod + model
 
     init = mod.eval(pars, x=xvalues)
-    out = mod.fit(yvalues, pars, x=xvalues)
+    out = mod.fit(yvalues, pars, x=xvalues, weights=(1/yvalues))
 
     # if poor fit essentially
     # if out.params['windspeed'].stderr is None or out.params['scp'].stderr is None:
@@ -415,7 +416,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
 
 
 #windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
-windsdf = pd.read_csv("test.csv", index_col=0, parse_dates=True)
+windsdf = pd.read_csv("crosswinds_full.csv", index_col=0, parse_dates=True)
 windsdf['Positive Peak Time'] = pd.to_datetime(windsdf['Positive Peak Time'])
 windsdf['Negative Peak Time'] = pd.to_datetime(windsdf['Negative Peak Time'])
 
@@ -520,11 +521,11 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
         els_masses = [26, 50]
 
     # if titanaltitude < 1000:
-    #     els_masses = [13, 50, 79, 117]
+    #     els_masses = [26, 39, 50, 79]
     # if titanaltitude > 1000 and titanaltitude < 1100:
-    #     els_masses = [13, 50, 79]
+    #     els_masses = [26, 39, 50]
     # elif titanaltitude > 1100:
-    #     els_masses = [13, 50]
+    #     els_masses = [26, 39]
 
     slice_halfwidth_dict = {'t16' : 10, 't17' : 10, 't19' : 8, 't21' : 10, 't23' : 10, 't25' : 10, 't26' : 10,
                          't27' : 10, 't28' : 10, 't29' : 10, 't30' : 10, 't32' : 10, 't36' : 10, 't39' : 10,
@@ -607,6 +608,7 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
 
     if len(peakvalue_indices) < len(els_masses):
         energydict = ELS_smallenergybound_dict[elsdata['flyby']]
+        els_masses = els_masses[:2]
 
     els_lowerenergyslice = CAPS_energyslice("els", energydict[0], energydict[0])[0]
     els_upperenergyslice = CAPS_energyslice("els", energydict[1], energydict[1])[0]
@@ -614,6 +616,7 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
         np.float32(ELS_backgroundremoval(elsdata, els_slicenumber_start, els_slicenumber_end, datatype="data")[
                    els_lowerenergyslice:els_upperenergyslice, anode, :])))
     tempx = list(elscalib['earray'][els_lowerenergyslice:els_upperenergyslice])
+
 
     #Finished tidying
 
@@ -642,6 +645,19 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
     merged_dataslice = np.array(merged_dataslice)
     merged_dataslice[merged_dataslice <= 0] = 1
 
+
+
+    newlowerenergyslice, newupperenergyslice = 0, -1
+    noiselevel = 200
+    while merged_dataslice[newlowerenergyslice] < noiselevel or np.mean(merged_dataslice[newlowerenergyslice:newlowerenergyslice+2]) < noiselevel:
+        newlowerenergyslice += 1
+
+    tempx = tempx[newlowerenergyslice:]
+    merged_dataslice = merged_dataslice[newlowerenergyslice:]
+
+    og_x = tempx
+    og_dataslice = merged_dataslice
+
     # print(tempx,merged_dataslice)
     # print(len(tempx),len(merged_dataslice))
     out, init = total_fluxgaussian(np.array(tempx), merged_dataslice, els_masses, cassini_speed, titanaltitude, windspeed, lpvalue,
@@ -656,7 +672,7 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
 
     if numofflybys == 1:
         energyfig, energyax = plt.subplots()
-        energyax.step(np.array(tempx),merged_dataslice, where='mid',color='b')
+        energyax.step(og_x,og_dataslice, where='mid',color='b')
         for counter, peakspair in enumerate(peakvalue_indices):
             if counter == 0:
                 energyax.step(np.array(tempx)[0:midpoints[counter] + 1],
@@ -689,8 +705,13 @@ def ELS_fluxfitting_2dfluxtest(elsdata, tempdatetime, titanaltitude, windspeed, 
         energyax.set_xlim(1, 25)
         energyax.legend()
 
+        energyax.set_title("Altitude = " + str(titanaltitude) + "km")
+
         energyax.plot(tempx, out.init_fit, 'b-', label='init fit')
         energyax.plot(tempx, out.best_fit, 'k-', label='best fit')
+        for i in els_masses:
+            energyax.plot(tempx,gaussian(tempx,out.params["mass"+str(i)+"_center"],out.params["mass"+str(i)+"_sigma"],out.params["mass"+str(i)+"_height"]),linestyle='--')
+
         energyax.text(0.6, 0.01,
                       "Ion wind = %2.0f ± %2.0f m/s" % (out.params['ionvelocity'], out.params['ionvelocity'].stderr),
                       transform=energyax.transAxes, fontsize=18)
@@ -826,7 +847,7 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, windspeed, 
 
     ibs_slicenumber_start = CAPS_slicenumber(ibsdata, tempdatetime) - slicewidth_dict[ibsdata['flyby']]
     ibs_slicenumber_end = CAPS_slicenumber(ibsdata, tempdatetime) + slicewidth_dict[ibsdata['flyby']]
-    print(ibsdata['times_utc'][ibs_slicenumber_start], ibsdata['times_utc'][ibs_slicenumber_end])
+    #print(ibsdata['times_utc'][ibs_slicenumber_start], ibsdata['times_utc'][ibs_slicenumber_end])
 
     lp_timestamps = [datetime.datetime.timestamp(d) for d in lpdata['datetime']]
     lpvalue = np.interp(datetime.datetime.timestamp(tempdatetime), lp_timestamps, lpdata['SPACECRAFT_POTENTIAL'])
@@ -935,13 +956,13 @@ def IBS_fluxfitting_2dfluxtest(ibsdata, tempdatetime, titanaltitude, windspeed, 
         newlowerenergyslice+=1
     while merged_dataslice[newupperenergyslice] < noiselevel:
         newupperenergyslice-=1
-    print("newlowerslice",newlowerenergyslice)
-    print("newupperslice", newupperenergyslice)
+    #print("newlowerslice",newlowerenergyslice)
+    #print("newupperslice", newupperenergyslice)
 
-    print(len(x),len(merged_dataslice))
+    #print(len(x),len(merged_dataslice))
     x = x[newlowerenergyslice:newupperenergyslice]
     merged_dataslice = merged_dataslice[newlowerenergyslice:newupperenergyslice]
-    print(len(x), len(merged_dataslice))
+    #print(len(x), len(merged_dataslice))
 
     # print(tempx,merged_dataslice)
     # print(len(tempx),len(merged_dataslice))
@@ -1114,6 +1135,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
 
         zonalangles, zonalwinds_2016, zonalwinds_2017 = [], [], []
         x_titan, y_titan, z_titan, dx_titan, dy_titan, dz_titan = [], [], [], [], [], []
+        xx_attitude, xy_attitude, xz_attitude, yx_attitude, yy_attitude, yz_attitude, zx_attitude, zy_attitude, zz_attitude = [],[],[],[],[],[],[],[],[]
         lptimes = list(tempdf['Positive Peak Time'])
         lpdata = read_LP_V1(flyby)
         positive_windspeed = IBS_init_ionvelocity_dict[ibsdata['flyby']]
@@ -1130,7 +1152,7 @@ def multiple_alongtrackwinds_flybys(usedflybys):
                                                                     usedflybys))
             positive_windspeed = ibs_output.params['ionvelocity'].value
 
-            print(ibs_output.params.keys())
+            #print(ibs_output.params.keys())
             for mass in all_possible_masses:
                 if 'mass' + str(mass) + "_center" in ibs_output.params.keys():
                     mass_energies_dict["ibsmass"+str(mass)].append(ibs_output.params['mass' + str(mass) + "_center"].value)
@@ -1172,6 +1194,11 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             dx_titan.append(state[3])
             dy_titan.append(state[4])
             dz_titan.append(state[5])
+            sclk = spice.sce2c(-82,et)
+            output_attitude = spice.ckgp(-82000,sclk,0.0,"J2000")
+            for attitude, attitudelist in zip(output_attitude[0].flatten(),[xx_attitude, xy_attitude, xz_attitude, yx_attitude, yy_attitude, yz_attitude, zx_attitude, zy_attitude, zz_attitude]):
+                attitudelist.append(attitude)
+
             ramdir = spice.vhat(state[3:6])
             titandir, state = titan_dir(i)
             titandir_unorm = spice.vhat(titandir)
@@ -1194,8 +1221,8 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         # testoutputdf.to_csv("testalongtrackvelocity.csv")
 
         if len(usedflybys) == 1:
-            fig5, (windaxes, potaxes, GOFaxes) = plt.subplots(3, sharex='all')
-            fig5.suptitle(usedflybys[0])
+            fig5, (windaxes, potaxes) = plt.subplots(2, sharex='all')
+            #fig5.suptitle(usedflybys[0])
             # windaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['ionvelocity'].value for i in tidied_ibs_outputs_flat],
             #                   yerr=[i.params['ionvelocity'].stderr for i in tidied_ibs_outputs_flat],
             #                   label="IBS - Ion Wind Speeds", marker='.', ls='none', color='C0')
@@ -1204,15 +1231,16 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             #                  label="ELS - Ion Wind Speeds",
             #                  marker='x', ls='none',  color='C1')
             windaxes.errorbar(tempdf['Positive Peak Time'], [i.params['ionvelocity'].value for i in ibs_outputs], yerr=[i.params['ionvelocity'].stderr for i in ibs_outputs],
-                          label="IBS - Ion Wind Speeds", marker='.', color='C0')
-            windaxes.plot(tempdf['Negative Peak Time'], els_velocities,
-                          label="ELS - Ion Wind Speeds",
+                          label="IBS", marker='.', color='C0')
+            print([i.params['ionvelocity'].value for i in els_outputs], [i.params['ionvelocity'].stderr for i in els_outputs])
+            windaxes.errorbar(tempdf['Negative Peak Time'], els_velocities, yerr=els_velocities_stderr,
+                          label="ELS",
                           marker='x', color='C1')
 
             windaxes.legend()
-            windaxes.set_ylabel("Derived Ion Velocity")
-            windaxes.hlines([-500, 0, 500], min(tempdf['Positive Peak Time']), max(tempdf['Positive Peak Time']),
-                            color='k')
+            windaxes.set_ylabel("Derived Ion Velocity [m/s]",fontsize=18)
+            windaxes.hlines([0], min(tempdf['Positive Peak Time']), max(tempdf['Positive Peak Time']),
+                            color='k',linestyle='--',alpha=0.5)
             # windaxes.set_ylim(-525, 525)
 
             # potaxes.errorbar(tidied_ibs_datetimes_flat, [i.params['scp'].value for i in tidied_ibs_outputs_flat],
@@ -1223,28 +1251,31 @@ def multiple_alongtrackwinds_flybys(usedflybys):
             #                 label="ELS - Derived S/C Potential",
             #                 marker='x', ls='none',  color='C1')
             potaxes.errorbar(tempdf['Positive Peak Time'], [i.params['scp'].value for i in ibs_outputs],yerr=[i.params['scp'].stderr for i in ibs_outputs],
-                         label="IBS - Derived S/C Potential", marker='.', color='C0')
-            potaxes.plot(tempdf['Negative Peak Time'], els_scp,
-                         label="ELS - Derived S/C Potential",
+                         label="IBS", marker='.', color='C0')
+            potaxes.errorbar(tempdf['Negative Peak Time'], els_scp,yerr=els_scp_stderr,
+                         label="ELS",
                          marker='x', color='C1')
-            potaxes.plot(lptimes, lpvalues, label="LP derived S/C potential", color='C8')
+            potaxes.plot(lptimes, lpvalues, label="LP", color='C8')
 
             potaxes.legend()
-            potaxes.set_ylabel("Derived S/C Potential")
+            potaxes.set_ylabel("Derived S/C Potential [V]",fontsize=18)
             # potaxes.plot(lptimes, np.array(lpvalues) - 0.5, color='k')
             # potaxes.plot(lptimes, np.array(lpvalues) + 0.5, color='k')
-            potaxes.hlines([np.mean(lpvalues) - 2, 0], min(tempdf['Positive Peak Time']),
-                           max(tempdf['Positive Peak Time']), color='k')
-            potaxes.set_ylim(np.mean(lpvalues) - 2.1, 0.1)
+            # potaxes.hlines([np.mean(lpvalues) - 2, 0], min(tempdf['Positive Peak Time']),
+            #                max(tempdf['Positive Peak Time']), color='k')
+            potaxes.set_ylim(np.mean(lpvalues) - 1.5, 0.1)
 
-            GOFaxes.scatter(tempdf['Positive Peak Time'], ibs_GOFvalues, label="IBS - GOF", color='C0')
-            GOFaxes.set_ylabel("Goodness of Fit - IBS")
-            GOFaxes.set_xlabel("Time")
+            # GOFaxes.scatter(tempdf['Positive Peak Time'], ibs_GOFvalues, label="IBS - GOF", color='C0')
+            # GOFaxes.set_ylabel("Goodness of Fit - IBS")
+            # GOFaxes.set_xlabel("Time")
+            # GOFaxes_els = GOFaxes.twinx()
+            # GOFaxes_els.scatter(tempdf['Negative Peak Time'], els_GOFvalues, label="ELS - GOF", color='C1',
+            #                     marker='x')
+            # GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
 
-            GOFaxes_els = GOFaxes.twinx()
-            GOFaxes_els.scatter(tempdf['Negative Peak Time'], els_GOFvalues, label="ELS - GOF", color='C1',
-                                marker='x')
-            GOFaxes_els.set_ylabel("Goodness of Fit - ELS")
+            potaxes.tick_params(top=True, right=True, labeltop=True, labelright=True,labelsize=12)
+            windaxes.tick_params(top=True, right=True,labeltop=True, labelright=True,labelsize=12)
+            windaxes.set_xlim(min(tempdf['Positive Peak Time']), max(tempdf['Positive Peak Time']))
 
         # print(tempdf['Positive Peak Time'])
         # elsstartslice = CAPS_slicenumber(elsdata,tempdf['Positive Peak Time'].iloc[0])
@@ -1263,6 +1294,15 @@ def multiple_alongtrackwinds_flybys(usedflybys):
         tempoutputdf['DX Titan'] = dx_titan
         tempoutputdf['DY Titan'] = dy_titan
         tempoutputdf['DZ Titan'] = dz_titan
+        tempoutputdf["xx_attitude"] = xx_attitude
+        tempoutputdf["xy_attitude"] = xy_attitude
+        tempoutputdf["xz_attitude"] = xz_attitude
+        tempoutputdf["yx_attitude"] = yx_attitude
+        tempoutputdf["yy_attitude"] = yy_attitude
+        tempoutputdf["yz_attitude"] = yz_attitude
+        tempoutputdf["zx_attitude"] = zx_attitude
+        tempoutputdf["zy_attitude"] = zy_attitude
+        tempoutputdf["zz_attitude"] = zz_attitude
         tempoutputdf['IBS alongtrack velocity'] = [i.params['ionvelocity'].value for i in ibs_outputs]
         tempoutputdf['IBS alongtrack velocity stderr'] = [i.params['ionvelocity'].stderr for i in ibs_outputs]
         tempoutputdf['IBS spacecraft potentials'] = [i.params['scp'].value for i in ibs_outputs]
@@ -1350,7 +1390,7 @@ def non_actuating(flyby, tempdatetime):
 
 #non_actuating_test("ta", datetime.datetime(2004,10,26,15, 31, 27))
 #single_slice_test("t43", slicenumber=3)
-#multiple_alongtrackwinds_flybys(["t27"])
+#multiple_alongtrackwinds_flybys(["t36"])
 #multiple_alongtrackwinds_flybys(['t27'])
 # multiple_alongtrackwinds_flybys(
 #     ['t16', 't17', 't20', 't21', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't42', 't46'])
@@ -1361,4 +1401,4 @@ def non_actuating(flyby, tempdatetime):
 multiple_alongtrackwinds_flybys(['t16', 't17', 't19', 't21', 't23', 't25', 't26', 't27', 't28', 't29', 't30', 't32', 't36', 't39', 't40',
               't41', 't42', 't43', 't48','t49','t50','t51','t71','t83'])
 # plt.close("all")
-#plt.show()
+plt.show()

@@ -31,7 +31,6 @@ def parse_ELS_energyangle_elevation():
 
     filecounter = 0
     for filename in datafiles:
-        print(filename)
         with open(filename, 'r') as file:
             anodeangle_counter = 0
             elevationcounter = 0
@@ -46,19 +45,26 @@ def parse_ELS_energyangle_elevation():
                     dataarray[filecounter,anodeangle_counter,elevationcounter,:] = values
                     elevationcounter += 1
         filecounter +=1
+    np.save("ELS_calibdata",dataarray)
+    print(dataarray,dataarray.shape)
     return dataarray
 
-def plot_ELS_energyangle_anodes(data,anodeangle):
+def plot_ELS_energyangle_anodes(data,anode):
+    anodeangles = range(70,-90,-20)
     fig, axes = plt.subplots(4, 2, sharex='all', sharey='all')
     anodecounter = 0
     for i in range(4):
         for j in range(2):
             # print(sweepvalues,elevations)
-            axes[i, j].pcolormesh(sweepvalues_30eV_edges, elevations_30eV_edges, data[:, 7 - (anodeangle - 1), :, anodecounter].T,
+            axes[i, j].pcolormesh(sweepvalues_30eV_edges, elevations_30eV_edges, data[:, 7 - (anode - 1), :, anodecounter].T,
                                   norm=LogNorm(vmin=1, vmax=2e4),
                                   cmap='jet', shading="flat")
             axes[i, j].set_title("Anode " + str(anodecounter+1))
             anodecounter += 1
+
+    fig.suptitle('ELS 30eV, energy-elevation at azimuthal angle ' + str(anodeangles[anode-1]) + ' degrees ', fontsize=30)
+    fig.text(0.5, 0.05, 'Electron Beam Energy [eV]', ha='center',fontsize=20)
+    fig.text(0.08, 0.5, 'Elevation [degrees]', va='center', rotation='vertical',fontsize=20)
 
     plt.show()
 
@@ -152,7 +158,9 @@ def convolution_2d(elsdata):
 
 els_30eV_data = parse_ELS_energyangle_elevation()
 
-multi_elevation_plot(els_30eV_data)
+#multi_elevation_plot(els_30eV_data)
+plot_ELS_energyangle_anodes(els_30eV_data,4)
+
 #convolution_2d(els_30eV_data)
 
 

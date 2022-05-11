@@ -55,8 +55,8 @@ def total_fluxgaussian(xvalues, yvalues, mu, sigma, amp):
     return out, init
 
 
-x_lin = np.linspace(10, 100, 25)
-x_log = np.logspace(1, 2, 25)
+x_lin = np.linspace(10, 100, 5)
+x_log = np.logspace(1, 2, 5)
 mu = 70
 sig = 5
 y_lin = gaussian(x_lin, mu, sig, 1)
@@ -70,10 +70,14 @@ percent_dif = out_log.params['center']/out_lin.params['center']
 print("Log Center/Lin Center", percent_dif)
 
 fig, ax = plt.subplots()
-ax.plot(x_lin, y_lin, color='k', label="Linear")
+ax.step(x_lin, y_lin, color='k', label="Linear")
 ax.plot(x_lin, out_lin.best_fit, 'k-.', label='Linear Fit')
-ax.plot(x_log, y_log,  color='r', label="Log")
+ax.step(x_log, y_log,  color='r', label="Log")
 ax.plot(x_log, out_log.best_fit, 'r-.', label='Log Fit')
 ax.legend()
+ax.vlines(70,0,1,label="Original",color='C0')
+ax.vlines(out_log.params['center'],0,1,label="Log Centre",color='C1')
+ax.vlines(out_lin.params['center'],0,1,label="Lin Centre",color='C2')
+ax.set_title("Log/Linear = " + str(percent_dif))
 
 plt.show()
