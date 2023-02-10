@@ -86,15 +86,13 @@ def ELS_beamanodes(elevation):
 
 def ELS_ramanodes(tempdatetime):
     ramelv = caps_ramdirection_azielv(tempdatetime)[1]
-    ramanodes = ELS_beamanodes(ramelv)
-    return ramanodes
+    return ELS_beamanodes(ramelv)
 
 
 def ELS_nonramanodes(tempdatetime):
     ramelv = caps_ramdirection_azielv(tempdatetime)[1]
     ramanodes = ELS_beamanodes(ramelv)
-    nonramanodes = [i for i in np.arange(0, 8, 1) if i not in ramanodes]
-    return nonramanodes
+    return [i for i in np.arange(0, 8, 1) if i not in ramanodes]
 
 
 def ELS_beamsfinder(data, lowerenergylim, upperenergylim, starttime, endtime, prominence=1e3):
@@ -211,18 +209,15 @@ def ELS_beamsfinder(data, lowerenergylim, upperenergylim, starttime, endtime, pr
         # print(dataslice[int(peakenergybins[peak]-startenergyslice),:,peak])
         datacut = dataslice[int(peakenergybins[peak] - startenergyslice), :, peak]
         backgroundremoved_temp = np.array(datacut) - np.mean(sorted(datacut)[:5])
-        backgroundremoved_anodes = [0 if i < 0 else i for i in backgroundremoved_temp]
+        backgroundremoved_anodes = [max(i, 0) for i in backgroundremoved_temp]
         # Fit a gaussian across the anodes to find elevation peak flux
         anodeangles = np.arange(-70, 90, 20)
         elv_init = models.Gaussian1D(amplitude=max(backgroundremoved_anodes), mean=anodeangles[int(peakanodes[peak])],
                                      stddev=5)
         elvfit = fitting.LevMarLSQFitter()(elv_init, anodeangles, backgroundremoved_anodes)
         peakelv = elvfit.mean.value
-        if peakelv < -80:
-            peakelv = -80
-        if peakelv > 80:
-            peakelv = 80
-            # print("peakelv",peakelv)
+        peakelv = max(peakelv, -80)
+        peakelv = min(peakelv, 80)
         # plt.plot(anodeangles,backgroundremoved_anodes)
         # plt.plot(anodeangles,elvfit(anodeangles))
 
@@ -261,7 +256,7 @@ def IBS_beamsfinder(data, lowerenergylim, upperenergylim, starttime, endtime, fa
     fixeddataslice = np.zeros(shape=(endslicenumber - startslicenumber))
     for slicecounter, slicenumber in enumerate(np.arange(startslicenumber, endslicenumber, 1)):
         temp = list(data['ibsdata'][startenergyslice:endenergyslice, 1, slicenumber])
-        peakenergybin = int(temp.index(max(temp)))
+        peakenergybin = temp.index(max(temp))
         peakenergybins[slicecounter] = peakenergybin + startenergyslice
         fixeddataslice[slicecounter] = dataslice[peakenergybin, slicecounter]
 
@@ -298,7 +293,7 @@ def IBS_beamsfinder(data, lowerenergylim, upperenergylim, starttime, endtime, fa
         peakenergy = energyfit.mean.value
 
         # plt.plot(energies,energyfit(energies))
-        if peakenergy == lowerenergylim or peakenergy == upperenergylim:
+        if peakenergy in [lowerenergylim, upperenergylim]:
             continue
         # plt.plot(times[left:right],fixeddataslice[left:right])
         # plt.plot(times[left:right],timefit(timestamps[left:right]))
@@ -400,8 +395,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
     dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)
     anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
-    maxflux_anode = np.argmax(anodesums)
-    return maxflux_anode
+    return np.argmax(anodesums)
 
 
 filedates = {"t16": "22-jul-2006","t17": "07-sep-2006",
@@ -538,10 +532,14 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
             endtime_els = times[1]
             #print(elsdata, starttime_els, endtime_els)
             ramtimes = CAPS_ramtimes(elsdata, starttime_els, endtime_els)
-            maxflux_anodes = []
-            for i in ramtimes:
-                maxflux_anodes.append(ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10),
-                                                        i + datetime.timedelta(seconds=10)))
+            maxflux_anodes = [
+                ELS_maxflux_anode(
+                    elsdata,
+                    i - datetime.timedelta(seconds=10),
+                    i + datetime.timedelta(seconds=10),
+                )
+                for i in ramtimes
+            ]
             #print(ramtimes,maxflux_anodes)
             heavypeaktimes, heavypeakenergies = [], []
             for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
@@ -555,7 +553,7 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
                 heavypeaktimes.append(heavypeaktime)
                 heavypeakenergies.append(heavypeakenergy)
             # print(heavypeaktimes)
-            for peaknumber, energypair in enumerate(energypairs):
+            for energypair in energypairs:
                 minenergy = energypair[0]
                 maxenergy = energypair[1]
                 # print(elsdata['flyby'],minenergy,maxenergy,starttime_els,endtime_els,lightprominence)
@@ -566,14 +564,10 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
                                                                                                              endtime_els,
                                                                                                              prominence=lightprominence)
 
-                for (peakenergy, peaktime, peakelv, peakindex) in zip(peakenergies, peaktimes, peakelvs, peakindices):
+                for peakenergy, peaktime, peakelv, peakindex in zip(peakenergies, peaktimes, peakelvs, peakindices):
                     peaks = [peakenergy, peaktime, peakelv]
 
-                    heavypeak_timediffs = []
-                    for i in heavypeaktimes:
-                        #print(peaktime,i)
-                        heavypeak_timediffs.append(abs(peaktime - i))
-
+                    heavypeak_timediffs = [abs(peaktime - i) for i in heavypeaktimes]
                     #print(heavypeak_timediffs)
                     nearestheavypeaktime = heavypeaktimes[np.argmin(heavypeak_timediffs)]
                     # print(peaktime,nearestheavypeaktime)
@@ -584,12 +578,15 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
                     # print(caps_ramdirection_azielv(peaks[1])[0],negbulkazi,peakaziangle)
                     peaks.append(peakaziangle)
                     peaks.append(caps_ramdirection_azielv(peaks[1])[0])
-                    peaks.append(caps_ramdirection_time(elsdata, peaks[1]))
-                    peaks.append(nearestheavypeaktime)
-                    peaks.append(negbulkazi)
-                    peaks.append(elsdata["flyby"])
-                    peaks.append(inst_RPWS_LP(LPdata, peaks[1]))
-                    peaks.append("els")
+                    peaks.extend(
+                        (
+                            caps_ramdirection_time(elsdata, peaks[1]),
+                            nearestheavypeaktime,
+                            negbulkazi,
+                            elsdata["flyby"],
+                        )
+                    )
+                    peaks.extend((inst_RPWS_LP(LPdata, peaks[1]), "els"))
                     peaks.append(CAPS_actuationtimeslice(peaktime, elsdata)[2])
                     elspeakslist.append(list(peaks))
             del elsdata
@@ -611,14 +608,14 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
             LPdata = read_LP_V1(flyby)
             starttime_ibs = times[0]
             endtime_ibs = times[1]
-            for peaknumber, energypair in enumerate(energypairs):
+            for energypair in energypairs:
                 minenergy = energypair[0]
                 maxenergy = energypair[1]
                 peakenergies, peaktimes, peakenergybins = IBS_beamsfinder(ibsdata, minenergy, maxenergy,
                                                                           starttime_ibs, endtime_ibs,
                                                                           prominence=lightprominence)
                 # print(peakenergies)
-                for (peakenergy, peaktime) in zip(peakenergies, peaktimes):
+                for peakenergy, peaktime in zip(peakenergies, peaktimes):
                     peaks = [peakenergy, peaktime]
                     #print(peaks)
                     # print(heavymass,peaktime-datetime.timedelta(seconds=30),peaktime+datetime.timedelta(seconds=30),heavyprominence)
@@ -655,8 +652,7 @@ def CAPS_beamsdata(times_elsdata_pairs, times_ibsdata_pairs):
                     peaks.append(heavypeaktime_ibs)
                     peaks.append(heavypeakangle_ibs)
                     peaks.append(ibsdata["flyby"])
-                    peaks.append(inst_RPWS_LP(LPdata, peaks[1]))
-                    peaks.append("ibs")
+                    peaks.extend((inst_RPWS_LP(LPdata, peaks[1]), "ibs"))
                     peaks.append(actuationdirection)
                     ibspeakslist.append(list(peaks))
             del elsdata

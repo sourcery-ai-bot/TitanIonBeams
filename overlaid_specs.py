@@ -214,9 +214,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)
     anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
 
-    maxflux_anode = np.argmax(anodesums)
-    #print(anodesums, maxflux_anode)
-    return maxflux_anode
+    return np.argmax(anodesums)
 
 
 filedates_times = {"t16": ["22-jul-2006", "00:22:00"],
@@ -285,10 +283,14 @@ starttime = flyby_datetimes[flyby][0]
 endtime = flyby_datetimes[flyby][1]
 
 ramtimes = CAPS_ramtimes(elsdata, starttime, endtime)
-maxflux_anodes = []
-for i in ramtimes:
-    maxflux_anodes.append(
-        ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10), i + datetime.timedelta(seconds=10)))
+maxflux_anodes = [
+    ELS_maxflux_anode(
+        elsdata,
+        i - datetime.timedelta(seconds=10),
+        i + datetime.timedelta(seconds=10),
+    )
+    for i in ramtimes
+]
 # print(ramtimes,maxflux_anodes)
 
 heavypeaktimes, heavypeakenergies = [], []

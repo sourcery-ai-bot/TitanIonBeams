@@ -23,9 +23,9 @@ anode = 4
 starttime = datetime.datetime(2007, 4, 26, 21, 29, 30)
 endtime = datetime.datetime(2007, 4, 26, 21, 35, 30)
 
-elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
+elsdata = readsav(f"data/els/elsres_{filedates_times[flyby][0]}.dat")
 generate_mass_bins(elsdata, flyby, "els")
-ibsdata = readsav("data/ibs/ibsres_" + filedates_times[flyby][0] + ".dat")
+ibsdata = readsav(f"data/ibs/ibsres_{filedates_times[flyby][0]}.dat")
 generate_mass_bins(ibsdata, flyby, "ibs")
 
 fig, ax = plt.subplots(subplot_kw={"yscale": "log"})

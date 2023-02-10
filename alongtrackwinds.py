@@ -71,15 +71,22 @@ IBS_energybound_dict = {"t16": [4, 17], "t17": [3.5, 16.25],
 
 
 def energy2mass(energyarray, spacecraftvelocity, ionvelocity, spacecraftpotential, iontemperature=150, charge=1):
-    massarray = (2 * (energyarray * e + (spacecraftpotential * charge * e) - 8 * k * iontemperature)) / (
-            ((spacecraftvelocity + ionvelocity) ** 2) * AMU)
-    return massarray
+    return (
+        2
+        * (
+            energyarray * e
+            + (spacecraftpotential * charge * e)
+            - 8 * k * iontemperature
+        )
+    ) / (((spacecraftvelocity + ionvelocity) ** 2) * AMU)
 
 
 def mass2energy(massarray, spacecraftvelocity, ionvelocity, spacecraftpotential, iontemperature=150, charge=1):
-    energyarray = (0.5 * massarray * ((spacecraftvelocity + ionvelocity) ** 2) * AMU - (
-            spacecraftpotential * charge * e) + 8 * k * iontemperature) / e
-    return energyarray
+    return (
+        0.5 * massarray * ((spacecraftvelocity + ionvelocity) ** 2) * AMU
+        - (spacecraftpotential * charge * e)
+        + 8 * k * iontemperature
+    ) / e
 
 
 def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPvalue, temperature, charge, FWHM):
@@ -104,7 +111,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
     pars['charge'].vary = False
 
     for masscounter, mass in enumerate(masses):
-        tempprefix = "mass" + str(mass) + '_'
+        tempprefix = f"mass{str(mass)}_"
         gaussmodels.append(GaussianModel(prefix=tempprefix))
         pars.add(tempprefix, value=mass, vary=False)
         effectivescpexpr = 'scp + ((' + tempprefix + '*AMU*spacecraftvelocity)/e)*windspeed' #Windspeed defined positive if going in same direction as Cassini
@@ -125,11 +132,7 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
         pars[tempprefix + 'amplitude'].set(value=np.mean(yvalues) * (1 + (0.1 * masscounter)), min=min(yvalues))
 
     for counter, model in enumerate(gaussmodels):
-        if counter == 0:
-            mod = model
-        else:
-            mod = mod + model
-
+        mod = model if counter == 0 else mod + model
     init = mod.eval(pars, x=xvalues)
     out = mod.fit(yvalues, pars, x=xvalues)
 
@@ -151,11 +154,11 @@ def total_fluxgaussian(xvalues, yvalues, masses, cassini_speed, windspeed, LPval
 
 
 def titan_linearfit_temperature(altitude):
-    if altitude > 1150:
-        temperature = 110 + 0.26 * (altitude - 1200)
-    else:
-        temperature = 133 - 0.12 * (altitude - 1100)
-    return temperature
+    return (
+        110 + 0.26 * (altitude - 1200)
+        if altitude > 1150
+        else 133 - 0.12 * (altitude - 1100)
+    )
 
 
 # [28, 29, 39, 41, 52, 54, 65, 66, 76, 79, 91]
@@ -218,7 +221,9 @@ def IBS_fluxfitting(ibsdata, tempdatetime, titanaltitude, ibs_masses=[28, 40, 53
     stepplotax.text(0.8, .11, "Temp = %2.2f" % out.params['temp'], transform=stepplotax.transAxes)
     stepplotax.text(0.8, .14, "Chi-square = %.2E" % out.chisqr, transform=stepplotax.transAxes)
     for mass in ibs_masses:
-        stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+        stepplotax.plot(
+            x, comps[f"mass{str(mass)}_"], '--', label=f"{str(mass)} amu/q"
+        )
     stepplotax.legend(loc='best')
 
     return out, lpvalue
@@ -268,7 +273,9 @@ def ELS_fluxfitting(elsdata, time, seconds, anode, lpvalue=-1.3):
 
     comps = out.eval_components(x=x)
     for mass in masses:
-        stepplotax.plot(x, comps["mass" + str(mass) + '_'], '--', label=str(mass) + " amu/q")
+        stepplotax.plot(
+            x, comps[f"mass{str(mass)}_"], '--', label=f"{str(mass)} amu/q"
+        )
 
     stepplotax.legend(loc='best')
 

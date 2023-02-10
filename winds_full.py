@@ -158,8 +158,7 @@ def ELS_maxflux_anode(elsdata, starttime, endtime):
     startslice, endslice = CAPS_slicenumber(elsdata, starttime), CAPS_slicenumber(elsdata, endtime)
     dataslice = ELS_backgroundremoval(elsdata, startslice, endslice)
     anodesums = np.sum(np.sum(dataslice, axis=2), axis=0)
-    maxflux_anode = np.argmax(anodesums)
-    return maxflux_anode
+    return np.argmax(anodesums)
 
 
 def cassini_titan_altlatlon(tempdatetime):
@@ -229,10 +228,14 @@ def CAPS_winds(data_times_pairs):
             generate_aligned_ibsdata(ibsdata, elsdata, flyby)
 
             ramtimes = CAPS_ramtimes(elsdata, times[0], times[1])
-            maxflux_anodes = []
-            for i in ramtimes:
-                maxflux_anodes.append(ELS_maxflux_anode(elsdata, i - datetime.timedelta(seconds=10),
-                                                        i + datetime.timedelta(seconds=10)))
+            maxflux_anodes = [
+                ELS_maxflux_anode(
+                    elsdata,
+                    i - datetime.timedelta(seconds=10),
+                    i + datetime.timedelta(seconds=10),
+                )
+                for i in ramtimes
+            ]
             # print(ramtimes,maxflux_anodes)
 
             for ramtime, maxflux_anode in zip(ramtimes, maxflux_anodes):
@@ -249,11 +252,16 @@ def CAPS_winds(data_times_pairs):
                 heavypeakangle_neg = CAPS_ELS_FOVcentre_azi_elv(heavypeaktime_neg, elsdata)[0]
                 heavypeakangle_pos = CAPS_IBS_FOVcentre_azi_elv(heavypeaktime_pos, elsdata)[0]
 
-                peaks = [heavypeaktime_neg, heavypeakenergy_neg, heavypeakangle_neg,
-                         heavypeaktime_pos, heavypeakenergy_pos, heavypeakangle_pos]
+                peaks = [
+                    heavypeaktime_neg,
+                    heavypeakenergy_neg,
+                    heavypeakangle_neg,
+                    heavypeaktime_pos,
+                    heavypeakenergy_pos,
+                    heavypeakangle_pos,
+                    caps_ramdirection_time(elsdata, heavypeaktime_neg),
+                ]
 
-                # print("--------Next----------")
-                peaks.append(caps_ramdirection_time(elsdata, heavypeaktime_neg))
                 peaks.append(caps_ramdirection_azielv(heavypeaktime_neg)[0])
                 peaks.append(flyby)
                 peaks.append(titan_flybyvelocities[flyby])

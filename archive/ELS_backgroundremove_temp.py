@@ -55,7 +55,7 @@ def ELS_backgroundremoval(data, startslice, endslice):
         for energycounter in range(63):
             backgroundremoved_temp = np.array(data['def'][energycounter, :8, timecounter]) - np.mean(
                 sorted(data['def'][energycounter, :8, timecounter])[:6])
-            backgroundremoved_anodes = [0 if i < 0 else i for i in backgroundremoved_temp]
+            backgroundremoved_anodes = [max(i, 0) for i in backgroundremoved_temp]
             def_backgroundremoved[energycounter, :, backgroundcounter] = backgroundremoved_anodes
 
     return def_backgroundremoved
@@ -105,7 +105,7 @@ anodes = [4,5]
 lowerenergy = 2
 upperenergy = 500
 
-elsdata = readsav("data/els/elsres_" + filedates_times[flyby][0] + ".dat")
+elsdata = readsav(f"data/els/elsres_{filedates_times[flyby][0]}.dat")
 generate_mass_bins(elsdata, flyby, "els")
 
 starttime = flyby_datetimes[flyby][0]

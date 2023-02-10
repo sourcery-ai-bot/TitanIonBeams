@@ -38,10 +38,10 @@ def read_LP_V1(flyby):
     if flyby[0] == 'e':
         moon = 'enceladus'
 
-    print('data/lp/RPWS_LP_T_' + str(titan_flybydates[flyby][0]) + "*" + flyby.upper() + "_V1.TAB")
-    with open(glob.glob(
-            'data/lp/RPWS_LP_T_' + str(titan_flybydates[flyby][0]) + "*" + flyby.upper() + "_V1.TAB")[0],
-              'r') as csvfile:
+    print(
+        f'data/lp/RPWS_LP_T_{str(titan_flybydates[flyby][0])}*{flyby.upper()}_V1.TAB'
+    )
+    with open(glob.glob(f'data/lp/RPWS_LP_T_{str(titan_flybydates[flyby][0])}*{flyby.upper()}_V1.TAB')[0], 'r') as csvfile:
         tempreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in tempreader:
             if abs(float(row[4])) < 1e32:
@@ -67,8 +67,8 @@ def secofday2utc(datelist, secofdaylist):
 
 def read_SC_Values(data, i, moon):
     #    print(data['flyby'] + "_IBS_SpacecraftPotentialValues.csv")
-    with open(moon + "/" + data['flyby'] + "/" + data['instrument'] + "/" + data['flyby'] + "_" + data[
-        'instrument'] + "_SpacecraftPotentialValues_new.csv", 'r') as csvfile:
+    with open(((f"{moon}/" + data['flyby'] + "/" + data['instrument'] + "/" + data['flyby'] + "_" + data[
+        'instrument']) + "_SpacecraftPotentialValues_new.csv"), 'r') as csvfile:
         tempreader = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in tempreader:
             if data['instrument'] == 'els':
@@ -86,7 +86,7 @@ def read_SC_Values(data, i, moon):
                     data['spacecraftpotentials_LP'].append(spacecraftpotential_LP)
                     return spacecraftpotential, spacecraftpotential_LP
             elif data['instrument'] == 'sng':
-                if data[str('sngsecofday')][i] == int(row[0]):
+                if data['sngsecofday'][i] == int(row[0]):
                     spacecraftpotential = float(row[1])
                     spacecraftpotential_LP = float(row[2])
                     data['spacecraftpotentials'].append(spacecraftpotential)
@@ -106,13 +106,15 @@ def inst_RPWS_LP(LPdata, tempdatetime):
         counter += 1
 
     lptimestamps = [toTimestamp(d) for d in LPdata['datetime'][counter - 1:counter + 1]]
-    spacecraftpotential = np.interp(toTimestamp(tempdatetime), lptimestamps,
-                                    LPdata['SPACECRAFT_POTENTIAL'][counter - 1:counter + 1])
-    return spacecraftpotential
+    return np.interp(
+        toTimestamp(tempdatetime),
+        lptimestamps,
+        LPdata['SPACECRAFT_POTENTIAL'][counter - 1 : counter + 1],
+    )
 
 
 def read_ramangle(flyby):
-    ramdata = readsav("data/titan/ramangles/" + flyby.upper() + "-ram.dat")
+    ramdata = readsav(f"data/titan/ramangles/{flyby.upper()}-ram.dat")
     # print(ramdata.keys())
     ramdata['utc'] = secofday2utc(titan_flybydates[flyby.lower()], ramdata['panel1_pa_time'])
 

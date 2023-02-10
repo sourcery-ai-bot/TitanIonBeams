@@ -43,8 +43,7 @@ def ELS_beamanodes(elevation):
 
 def ELS_ramanodes(tempdatetime):
     ramelv = caps_ramdirection_azielv(tempdatetime)[1]
-    ramanodes = ELS_beamanodes(ramelv)
-    return ramanodes
+    return ELS_beamanodes(ramelv)
 
 
 def cassini_titan_altlatlon(tempdatetime):
@@ -61,7 +60,7 @@ def caps_all_anodes(tempdatetime):
     sclkdp = spice.sce2c(-82, et)  # converts an et to a continuous encoded sc clock (ticks)
 
     caps_els_anode_vecs = []
-    for anodenumber, x in enumerate(np.arange(70, -90, -20)):
+    for x in np.arange(70, -90, -20):
         # print(anodenumber, x)
         rotationmatrix_anode = spice.spiceypy.axisar(np.array([1, 0, 0]),
                                                      x * spice.rpd())  # Get angles for different anodes
@@ -115,13 +114,7 @@ def caps_crosstrack(tempdatetime, windspeed):
     # print("temp crossvec",crossvec)
     # print("vsep SC Frame",spice.vsep(ram_unit,crossvec)*spice.dpr())
     cmat_t = spice.xpose(cmat)
-    crossvec_titan = spice.mxv(cmat_t, crossvec)  # Transform back to IAU Titan Frame
-
-    # print("crossvec", crossvec)
-    # print("crossvec_titan", crossvec_titan, spice.unorm(crossvec_titan))
-    # print("vsep titan frame", spice.vsep(ramdir, crossvec_titan) * spice.dpr())
-
-    return crossvec_titan
+    return spice.mxv(cmat_t, crossvec)
 
 
 def caps_crosstrack_spice(tempdatetime, windspeed):
@@ -343,12 +336,8 @@ def cassini_titan_test(flyby, anodes=False):
 
 
 def caps_crosstrack_latlon(time, negwindspeed, poswindspeed, anodes=False):
-    anode_vecs = []
-    anode_seps = [[], [], [], [], [], [], [], []]
-    beamanodes = []
+    beamanodes = [np.mean(ELS_ramanodes(time)) + 1]
 
-    # print(time)
-    beamanodes.append(np.mean(ELS_ramanodes(time)) + 1)
     state = cassini_phase(time.strftime('%Y-%m-%dT%H:%M:%S'))
     # crossvec = caps_crosstrack(time, windspeed) * abs(windspeed) * 1e-3 #Old Method
     crossvec, anode1, anode8 = caps_crosstrack_spice(time, np.mean([negwindspeed, poswindspeed]))  # SPICE Plane method
@@ -367,7 +356,8 @@ def caps_crosstrack_latlon(time, negwindspeed, poswindspeed, anodes=False):
     lat = transformed_state_neg[2] * spice.dpr()
 
     if anodes:
-        anode_vecs.append(caps_all_anodes(time))
+        anode_vecs = [caps_all_anodes(time)]
+        anode_seps = [[], [], [], [], [], [], [], []]
         for anodecounter, i in enumerate(anode_vecs[-1]):
             anode_seps[anodecounter].append(
                 spice.vsep(spice.vhat(state[3:]), spice.vhat(anode_vecs[-1][anodecounter])) * spice.dpr())
@@ -400,9 +390,7 @@ def caps_crosstrack_latlon(time, negwindspeed, poswindspeed, anodes=False):
 def caps_crosstrack_xyz(time, windspeed, anodes=False):
     state = cassini_phase(time.strftime('%Y-%m-%dT%H:%M:%S'))
     crossvec, temp1, temp2 = caps_crosstrack_spice(time, windspeed)
-    newstate = list(state[:3]) + list(crossvec * abs(windspeed))
-
-    return newstate
+    return list(state[:3]) + list(crossvec * abs(windspeed))
 
 
 
@@ -443,7 +431,7 @@ def crosstrack_latlon_plot():
             magnitudes_neg.append(np.sqrt(projectedvector_neg[0] ** 2 + projectedvector_neg[1] ** 2))
             magnitudes_pos.append(np.sqrt(projectedvector_pos[0] ** 2 + projectedvector_pos[1] ** 2))
             flybyslist.append(flyby)
-            flybycolors.append("C" + str(counter))
+            flybycolors.append(f"C{str(counter)}")
 
     for lon, lat, dlon_neg, dlat_neg, dlon_pos, dlat_pos, windspeed_neg, windspeed_pos, flyby, flybycolor in zip(lons,
                                                                                                                  lats,
@@ -540,15 +528,30 @@ def crosstrack_xyz_plot():
         # ax.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 2],
         #          crosstrack_states[:, 3], crosstrack_states[:, 4], crosstrack_states[:, 5], label=flyby,
         #         color="C" + str(counter))
-        axxy.quiver(crosstrack_states[:, 0], crosstrack_states[:, 1], crosstrack_states[:, 3], crosstrack_states[:, 4],
-                    label=flyby,
-                    color="C" + str(counter))
-        axyz.quiver(crosstrack_states[:, 1], crosstrack_states[:, 2], crosstrack_states[:, 4], crosstrack_states[:, 5],
-                    label=flyby,
-                    color="C" + str(counter))
-        axxz.quiver(crosstrack_states[:, 0], crosstrack_states[:, 2], crosstrack_states[:, 3], crosstrack_states[:, 5],
-                    label=flyby,
-                    color="C" + str(counter))
+        axxy.quiver(
+            crosstrack_states[:, 0],
+            crosstrack_states[:, 1],
+            crosstrack_states[:, 3],
+            crosstrack_states[:, 4],
+            label=flyby,
+            color=f"C{str(counter)}",
+        )
+        axyz.quiver(
+            crosstrack_states[:, 1],
+            crosstrack_states[:, 2],
+            crosstrack_states[:, 4],
+            crosstrack_states[:, 5],
+            label=flyby,
+            color=f"C{str(counter)}",
+        )
+        axxz.quiver(
+            crosstrack_states[:, 0],
+            crosstrack_states[:, 2],
+            crosstrack_states[:, 3],
+            crosstrack_states[:, 5],
+            label=flyby,
+            color=f"C{str(counter)}",
+        )
     print(windspeeds, magnitudes)
     crosstrack_states = np.array(crosstrack_states)
     print(crosstrack_states.shape)
@@ -563,11 +566,11 @@ def crosstrack_xyz_plot():
     figxy.legend()
     figyz.legend()
     figxz.legend()
-    
+
     return axxy
 
 def soldir_from_titan(): #Only use for one flyby
-    for counter, flyby in enumerate(flybys):
+    for flyby in flybys:
         tempdf = windsdf[windsdf['Flyby'] == flyby]
         i = pd.to_datetime(tempdf['Bulk Time']).iloc[0]
         et = spice.datetime2et(i)

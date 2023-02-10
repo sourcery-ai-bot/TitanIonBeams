@@ -35,16 +35,13 @@ def cassini_titan_altlatlon(tempdatetime):
 CAPS_readin_df = pd.read_csv("Beams_database.csv", index_col=0, parse_dates=True)
 CAPS_readin_df['Peak Time'] = pd.to_datetime(CAPS_readin_df.index)
 data = pd.DataFrame()
-for counter, flyby in enumerate(CAPS_readin_df.Flyby.unique()):
-
+for flyby in CAPS_readin_df.Flyby.unique():
     single_flyby_df_grouped = CAPS_readin_df[CAPS_readin_df['Flyby'] == flyby].groupby(pd.Grouper(freq='30s'))
     group_list = [(index, group) for index, group in single_flyby_df_grouped if len(group) > 0]
     tempdata = pd.DataFrame(
         [x[1].iloc[x[1]['Peak Energy'].argmax()] for x in group_list])
 
     data = pd.concat([data,tempdata])
-    #print(flyby, data)
-
 alts, lats, lons = [], [], []
 for tempdatetime in data.index:
     alt, lat, lon = cassini_titan_altlatlon(tempdatetime)
@@ -62,7 +59,7 @@ data = data[(data["Actuation Direction"]=="positive") | (data["Actuation Directi
 velocityseries = pd.Series(dtype=float)
 flybyslist = data.Flyby.unique()
 
-for counter, flyby in enumerate(data.Flyby.unique()):
+for flyby in data.Flyby.unique():
     tempdf = data[data['Flyby'] == flyby]
     tempvelocities = [np.sin(x * spice.rpd()) * titan_flybyvelocities[flyby] for x in
                       tempdf["Bulk Deflection from Ram Angle"]]
